@@ -1,41 +1,67 @@
 <?php
-/* 
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
+declare(ENCODING = 'utf-8') ;
+namespace Erfurt\Sparql\Query2;
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2011 Thomas Maroschik <tmaroschik@dfau.de>
+ *  All rights reserved
+ *
+ *  This class is a port of the corresponding class of the
+ *  {@link http://aksw.org/Projects/Erfurt Erfurt} project.
+ *  All credits go to the Erfurt team.
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * Description of BlankNodePropertyList
  *
- * @author jonas
+ * @package Semantic
+ * @scope prototype
  */
-class Erfurt_Sparql_Query2_BlankNodePropertyList implements Erfurt_Sparql_Query2_TriplesNode {
-    protected $propertyList;
+class BlankNodePropertyList implements Interfaces\TriplesNode {
+	protected $propertyList;
 
-    function __construct(Erfurt_Sparql_Query2_PropertyList $propertyList) {
-        if($propertyList->isEmpty()){
-            throw new RuntimeException('Argument 1 passed to Erfurt_Sparql_Query2_BlankNodePropertyList::__construct must not be an empty PropertyList', E_USER_ERROR);
-        }
-        $this->propertyList = $propertyList;
-    }
+	function __construct(PropertyList $propertyList) {
+		if ($propertyList->isEmpty()) {
+			throw new \RuntimeException('Argument 1 passed to BlankNodePropertyList::__construct must not be an empty PropertyList', E_USER_ERROR);
+		}
+		$this->propertyList = $propertyList;
+	}
 
-    public function getSparql(){
-        return '[' . $this->propertyList . ']';
-    }
-    public function getPropertyList() {
-        return $this->propertyList;
-    }
+	public function getSparql() {
+		return '[' . $this->propertyList . ']';
+	}
 
-    public function setPropertyList(Erfurt_Sparql_Query2_PropertyList $propertyList) {
-        if($propertyList->isEmpty()){
-            throw new RuntimeException('Argument 1 passed to Erfurt_Sparql_Query2_BlankNodePropertyList::setPropertyList must not be an empty PropertyList', E_USER_ERROR);
-        }
-        $this->propertyList = $propertyList;
-    }
+	public function getPropertyList() {
+		return $this->propertyList;
+	}
 
-    public function __toString(){
-        return $this->getSparql();
-    }
+	public function setPropertyList(PropertyList $propertyList) {
+		if ($propertyList->isEmpty()) {
+			throw new \RuntimeException('Argument 1 passed to BlankNodePropertyList::setPropertyList must not be an empty PropertyList', E_USER_ERROR);
+		}
+		$this->propertyList = $propertyList;
+	}
+
+	public function __toString() {
+		return $this->getSparql();
+	}
 
 }
+
 ?>
