@@ -176,7 +176,7 @@ class KnowledgeBaseTest extends BaseTestCase {
 
 		$storeMock->expects($this->once())
 				->method('getModel')
-				->will($this->returnValue(new \Erfurt\Rdf\Model($acModelUri)));
+				->will($this->returnValue(new \Erfurt\Rdf\Graph($acModelUri)));
 
 		$appMock = $this->getAccessibleMock('\Erfurt\KnowledgeBase',
 								  array('getStore'),
@@ -192,7 +192,7 @@ class KnowledgeBaseTest extends BaseTestCase {
 
 		$acModel = $appMock->getAccessControlModel();
 
-		if (!($acModel instanceof \Erfurt\Rdf\Model)) {
+		if (!($acModel instanceof \Erfurt\Rdf\Graph)) {
 			$this->fail();
 		}
 
@@ -478,7 +478,7 @@ class KnowledgeBaseTest extends BaseTestCase {
 		$sysModelUri = $config->sysont->modelUri;
 
 		$sysModel = \Erfurt\KnowledgeBase::getInstance()->getSysOntModel();
-		$this->assertTrue($sysModel instanceof \Erfurt\Rdf\Model);
+		$this->assertTrue($sysModel instanceof \Erfurt\Rdf\Graph);
 		$this->assertEquals($sysModelUri, $sysModel->getModelUri());
 	}
 

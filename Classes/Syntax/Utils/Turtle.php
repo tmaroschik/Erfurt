@@ -54,28 +54,28 @@ class Turtle {
 		return $s;
 	}
 
-	public static function findUriSplitIndex($uri) {
-		$uriLength = strlen($uri);
-		$idx = $uriLength - 1;
+	public static function findIriSplitIndex($iri) {
+		$iriLength = strlen($iri);
+		$idx = $iriLength - 1;
 
 		$i = $idx;
 		for ($i = $idx; $i >= 0; --$i) {
-			if (!self::isNameChar(mb_substr($uri, $i, 1, 'UTF-8'))) {
+			if (!self::isNameChar(mb_substr($iri, $i, 1, 'UTF-8'))) {
 				break;
 			}
 		}
 
 		$idx = $i + 1;
 
-		for ($i = $idx; $i < $uriLength; ++$i) {
-			if (self::isNameStartChar(mb_substr($uri, $i, 1, 'UTF-8'))) {
+		for ($i = $idx; $i < $iriLength; ++$i) {
+			if (self::isNameStartChar(mb_substr($iri, $i, 1, 'UTF-8'))) {
 				break;
 			}
 		}
 
 		$idx = $i;
 
-		if ($idx > 0 && $idx < $uriLength) {
+		if ($idx > 0 && $idx < $iriLength) {
 			return $idx;
 		}
 

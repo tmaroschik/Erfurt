@@ -130,7 +130,7 @@ class Erfurt_Store_Adapter_Multistore implements Erfurt_Store_Adapter_Interface,
         return $fullCount;
     }
     
-    public function createModel($graphUri, $type = Erfurt_Store::MODEL_TYPE_OWL)
+    public function createModel($graphUri, $type = Erfurt_Store::GRAPH_TYPE_OWL)
     {
         $this->_availableGraphs = null;
         $this->_configuredGraphs[$graphUri] = self::DEFAULT_BACKEND;

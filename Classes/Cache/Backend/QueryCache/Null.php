@@ -56,7 +56,7 @@ class Null extends Backend {
 		return false;
 	}
 
-	public function invalidateWithModelIri($modelIri) {
+	public function invalidateWithModelIri($graphIri) {
 		return false;
 	}
 

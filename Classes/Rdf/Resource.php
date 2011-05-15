@@ -43,10 +43,10 @@ class Resource extends Node {
 	const DESCRIPTION_MAX_DEPTH = 3;
 
 	/**
-	 * The model to which this resource belongs.
-	 * @var Erfurt_Rdf_Model
+	 * The graph to which this resource belongs.
+	 * @var \Erfurt\Rdf\Graph
 	 */
-	protected $model = null;
+	protected $graph = null;
 
 	/**
 	 * The name of the resource (either a IRI or a local name)
@@ -105,14 +105,14 @@ class Resource extends Node {
 	 * Constructor
 	 *
 	 * @param string $iri
-	 * @param \Erfurt\Rdf\Model $model
+	 * @param \Erfurt\Rdf\Graph $graph
 	 */
-	public function __construct($iri, $model = NULL) {
-		if ($model !== NULL && !$model instanceof \Erfurt\Rdf\Model) {
-			throw new \InvalidArgumentException('The model argument must be instance of \Erfurt\Rdf\Model. ' . get_class($model) . ' given.', 1304630209);
+	public function __construct($iri, $graph = NULL) {
+		if ($graph !== NULL && !$graph instanceof \Erfurt\Rdf\Graph) {
+			throw new \InvalidArgumentException('The graph argument must be instance of \Erfurt\Rdf\Graph. ' . get_class($graph) . ' given.', 1304630209);
 		}
-		$this->model = $model;
-		$namespaces = $this->model ? $this->model->getNamespaces() : array();
+		$this->graph = $graph;
+		$namespaces = $this->graph ? $this->graph->getNamespaces() : array();
 		$matches = array();
 
 		// parse namespace/local part
@@ -169,7 +169,7 @@ class Resource extends Node {
 	 */
 	public function serialize($notation = 'xml') {
 		$serializer = $this->objectManager->create('\Erfurt\Syntax\RdfSerializer', $notation);
-		return $serializer->serializeResourceToString($this->getIri(), $this->model->getModelIri(), true);
+		return $serializer->serializeResourceToString($this->getIri(), $this->graph->getGraphIri(), true);
 	}
 
 	public function getDescription($maxDepth = self::DESCRIPTION_MAX_DEPTH) {
@@ -242,7 +242,7 @@ class Resource extends Node {
 				->setWherePart(sprintf('{<%s> ?p ?o . }', $this->getIri()));
 		$description = array();
 
-		if (($maxDepth > 0) && $result = $this->model->sparqlQuery($query, array('result_format' => 'extended'))) {
+		if (($maxDepth > 0) && $result = $this->graph->sparqlQuery($query, array('result_format' => 'extended'))) {
 			foreach ($result['results']['bindings'] as $row) {
 				$property = $row['p']['value'];
 				$this->descriptionResource($property);
@@ -254,7 +254,7 @@ class Resource extends Node {
 					'value' => $row['o']['value']
 				);
 
-				if ($row['o']['type'] == 'uri') {
+				if ($row['o']['type'] == 'iri') {
 					$this->descriptionResource($row['o']['value']);
 				} else {
 					if ($row['o']['type'] == 'typed-literal') {
@@ -288,7 +288,7 @@ class Resource extends Node {
 		);
 	}
 
-	protected function descriptionResource($uri) {
+	protected function descriptionResource($iri) {
 	}
 
 	public function isBlankNode() {
@@ -297,10 +297,6 @@ class Resource extends Node {
 
 	public function getId() {
 		// Alias for BlankNodes
-		return $this->getIri();
-	}
-
-	public function getUri() {
 		return $this->getIri();
 	}
 

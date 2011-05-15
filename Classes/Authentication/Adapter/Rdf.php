@@ -31,7 +31,7 @@ namespace Erfurt\Authentication\Adapter;
 /**
  * RDF authentication adapter.
  *
- * Authenticates a subject via an RDF store using a provided model.
+ * Authenticates a subject via an RDF store using a provided graph.
  *
  * @package $PACKAGE$
  * @subpackage $SUBPACKAGE$
@@ -47,7 +47,7 @@ class Rdf implements AdapterInterface {
 	protected $password = null;
 
 	/** @var string */
-	protected $accessModelUri = null;
+	protected $accessGraphIri = null;
 
 	/** @var array */
 	protected $users = array();
@@ -62,7 +62,7 @@ class Rdf implements AdapterInterface {
 	protected $databasePassword = null;
 
 	/** @var array */
-	protected $uris = null;
+	protected $iris = null;
 
 	protected $loginDisabled = null;
 
@@ -146,7 +146,7 @@ class Rdf implements AdapterInterface {
 				$identity = array(
 
 					'username' => $this->username,
-					'uri' => '',
+					'iri' => '',
 					'dbuser' => false,
 					'anonymous' => false
 				);
@@ -166,7 +166,7 @@ class Rdf implements AdapterInterface {
 				if ($this->users[$this->username]['denyLogin'] === true) {
 					$authResult = new \Erfurt\Authentication\Result(\Erfurt\Authentication\Result::FAILURE, null, array('Login not allowed!'));
 				} else {
-					if ($this->users[$this->username]['userUri'] === false) {
+					if ($this->users[$this->username]['userIri'] === false) {
 						// does user not exist?
 						$authResult = new \Erfurt\Authentication\Result(\Erfurt\Authentication\Result::FAILURE, null, array('Unknown user identifier.'));
 					} else {
@@ -178,7 +178,7 @@ class Rdf implements AdapterInterface {
 								\Erfurt\Authentication\Result::FAILURE, null, array('Wrong password entered!')
 							);
 						} else {
-							$identity['uri'] = $this->users[$this->username]['userUri'];
+							$identity['iri'] = $this->users[$this->username]['userIri'];
 							$identity['email'] = $this->users[$this->username]['userEmail'];
 
 							$identityObject = $this->objectManager->create('\Erfurt\Authentication\Identity', $identity);
@@ -206,41 +206,41 @@ class Rdf implements AdapterInterface {
 	private function fetchDataForUser($username) {
 
 		$returnVal = array(
-			'userUri' => false,
+			'userIri' => false,
 			'denyLogin' => false,
 			'userPassword' => '',
 			'userEmail' => ''
 		);
 
-		$uris = $this->getUris();
+		$iris = $this->getIris();
 
 		$sparqlQuery = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
 		$sparqlQuery->setProloguePart('SELECT ?subject ?predicate ?object');
 
 		$wherePart = 'WHERE { ?subject ?predicate ?object . ?subject <' . EF_RDF_TYPE . '> <' .
-					 $uris['user_class'] . '> . ?subject <' . $uris['user_username'] . '> "' . $username . '"^^<' .
+					 $iris['user_class'] . '> . ?subject <' . $iris['user_username'] . '> "' . $username . '"^^<' .
 					 EF_XSD_NS . 'string> }';
 		$sparqlQuery->setWherePart($wherePart);
 
 		if ($result = $this->_sparql($sparqlQuery)) {
 
 			foreach ($result as $userStatement) {
-				// set user URI
-				if (($returnVal['userUri']) === false) {
-					$returnVal['userUri'] = $userStatement['subject'];
+				// set user IRI
+				if (($returnVal['userIri']) === false) {
+					$returnVal['userIri'] = $userStatement['subject'];
 				}
 
 				// check other predicates
 				switch ($userStatement['predicate']) {
-					case $uris['action_deny']:
+					case $iris['action_deny']:
 						// if login is disallowed
-						if ($userStatement['object'] === $uris['action_login']) {
+						if ($userStatement['object'] === $iris['action_login']) {
 							return array('denyLogin' => true);
 						}
-					case $uris['user_password']:
+					case $iris['user_password']:
 						$returnVal['userPassword'] = $userStatement['object'];
 						break;
-					case $uris['user_mail']:
+					case $iris['user_mail']:
 						$returnVal['userEmail'] = $userStatement['object'];
 						break;
 					default:
@@ -260,32 +260,32 @@ class Rdf implements AdapterInterface {
 	 * @return void
 	 */
 	public function fetchDataForAllUsers() {
-		$uris = $this->getUris();
+		$iris = $this->getIris();
 
 		$userSparql = new Sparql\SimpleQuery();
 		$userSparql->setProloguePart('SELECT ?subject ?predicate ?object');
 
 		$wherePart = 'WHERE { ?subject ?predicate ?object . ?subject <' . EF_RDF_TYPE . '> <' .
-					 $uris['user_class'] . '> }';
+					 $iris['user_class'] . '> }';
 		$userSparql->setWherePart($wherePart);
 
 		if ($result = $this->_sparql($userSparql)) {
 			foreach ($result as $statement) {
 				switch ($statement['predicate']) {
-					case $uris['action_deny']:
-						if ($statement['object'] == $uris['action_login']) {
+					case $iris['action_deny']:
+						if ($statement['object'] == $iris['action_login']) {
 							$this->users[$statement['subject']]['loginForbidden'] = true;
 						}
 						break;
-					case $uris['user_username']:
+					case $iris['user_username']:
 						// save username
 						$this->users[$statement['subject']]['userName'] = $statement['object'];
 						break;
-					case $uris['user_password']:
+					case $iris['user_password']:
 						// save password
 						$this->users[$statement['subject']]['userPassword'] = $statement['object'];
 						break;
-					case $uris['user_mail']:
+					case $iris['user_mail']:
 						// save e-mail
 						$this->users[$statement['subject']]['userEmail'] = $statement['object'];
 						break;
@@ -350,13 +350,13 @@ class Rdf implements AdapterInterface {
 	}
 
 	/**
-	 * Queries the ac model.
+	 * Queries the ac graph.
 	 *
 	 * @return array|null
 	 */
 	private function _sparql($sparqlQuery) {
 		try {
-			$sparqlQuery->addFrom($this->accessModelUri());
+			$sparqlQuery->addFrom($this->accessGraphIri());
 			$result = $this->getStore()->sparqlQuery($sparqlQuery, array('use_ac' => false));
 		}
 		catch (\Exception $e) {
@@ -375,11 +375,11 @@ class Rdf implements AdapterInterface {
 	 * @return array
 	 */
 	private function getAnonymousUser() {
-		$uris = $this->getUris();
+		$iris = $this->getIris();
 
 		$user = array(
 			'username' => 'Anonymous',
-			'uri' => $uris['user_anonymous'],
+			'iri' => $iris['user_anonymous'],
 			'dbuser' => false,
 			'email' => '',
 			'anonymous' => true
@@ -396,11 +396,11 @@ class Rdf implements AdapterInterface {
 	 * @return array
 	 */
 	private function getSuperAdmin() {
-		$uris = $this->getUris();
+		$iris = $this->getIris();
 
 		$user = array(
 			'username' => 'SuperAdmin',
-			'uri' => $uris['user_superadmin'],
+			'iri' => $iris['user_superadmin'],
 			'dbuser' => true,
 			'email' => '',
 			'anonymous' => false
@@ -413,7 +413,7 @@ class Rdf implements AdapterInterface {
 
 	private function getDatabaseUsername() {
 		if (null === $this->databaseUsername) {
-			$this->databaseUsername = $this->getStore()->getDbUser();
+			$this->databaseUsername = $this->getStore()->getDatabaseUser();
 		}
 
 		return $this->databaseUsername;
@@ -421,7 +421,7 @@ class Rdf implements AdapterInterface {
 
 	private function getDatabasePassword() {
 		if (null === $this->databasePassword) {
-			$this->databasePassword = $this->getStore()->getDbPassword();
+			$this->databasePassword = $this->getStore()->getDatabasePassword();
 		}
 
 		return $this->databasePassword;
@@ -431,18 +431,18 @@ class Rdf implements AdapterInterface {
 		return $this->store;
 	}
 
-	private function accessModelUri() {
-		if (null === $this->accessModelUri) {
-			$this->accessModelUri = $this->knowledgeBase->getAccessControlConfiguration()->modelUri;
+	private function accessGraphIri() {
+		if (null === $this->accessGraphIri) {
+			$this->accessGraphIri = $this->knowledgeBase->getAccessControlConfiguration()->graphIri;
 		}
 
-		return $this->accessModelUri;
+		return $this->accessGraphIri;
 	}
 
-	private function getUris() {
-		if (null === $this->uris) {
+	private function getIris() {
+		if (null === $this->iris) {
 			$accessControlConfiguration = $this->knowledgeBase->getAccessControlConfiguration();
-			$this->uris = array(
+			$this->iris = array(
 				'user_class' => $accessControlConfiguration->user->class,
 				'user_username' => $accessControlConfiguration->user->name,
 				'user_password' => $accessControlConfiguration->user->pass,
@@ -454,7 +454,7 @@ class Rdf implements AdapterInterface {
 			);
 		}
 
-		return $this->uris;
+		return $this->iris;
 	}
 
 	private function isLoginDisabled() {

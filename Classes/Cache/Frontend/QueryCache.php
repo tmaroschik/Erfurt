@@ -196,8 +196,8 @@ class QueryCache {
 	 * @param	  array   $statements	 statements array in the form: statements[$subject][$predicate] = $object;
 	 * @return	 array   $qids		   list of queryIds which are nwo invalidated
 	 */
-	public function invalidateWithStatements($modelIri, $statements = array()) {
-		$qids = $this->getBackend()->invalidate($modelIri, $statements);
+	public function invalidateWithStatements($graphIri, $statements = array()) {
+		$qids = $this->getBackend()->invalidate($graphIri, $statements);
 		if ($qids) {
 			if (((boolean)$this->knowledgeBase->getCacheConfiguration()->query->logging) == true) {
 				foreach ($qids as $qid) {
@@ -221,11 +221,11 @@ class QueryCache {
 	 * @param	  string   $object	object of the triple
 	 * @return	 int	  $count	 number of queries which was affected of the invalidation process
 	 */
-	public function invalidate($modelIri, $subject, $predicate, $object) {
+	public function invalidate($graphIri, $subject, $predicate, $object) {
 		$statements = array();
 		$statements[$subject][$predicate][] = $object;
 
-		$qids = $this->invalidateWithStatements($modelIri, $statements);
+		$qids = $this->invalidateWithStatements($graphIri, $statements);
 		return $qids;
 	}
 
@@ -233,12 +233,12 @@ class QueryCache {
 	/**
 	 *	invalidating CacheResults according to a given modelIRI
 	 * @access	 public
-	 * @param	  string   $modelIri  modelIri
+	 * @param	  string   $graphIri  graphIri
 	 * @return	 string   $status	status of the process
 	 */
-	public function invalidateWithModelIri($modelIri) {
+	public function invalidateWithModelIri($graphIri) {
 
-		$qids = $this->getBackend()->invalidateWithModelIri($modelIri);
+		$qids = $this->getBackend()->invalidateWithModelIri($graphIri);
 		$objectCache = $this->knowledgeBase->getCache();
 		if (!($objectCache->getBackend() instanceof \Erfurt\Cache\Backend\Null)) {
 			$this->_invalidateCacheObjects($qids);
@@ -249,7 +249,7 @@ class QueryCache {
 	/**
 	 *	starting a Caching Transaction to assign cache Objects to queryCacheResults
 	 * @access	 public
-	 * @param	  string   $modelIri  modelIri
+	 * @param	  string   $graphIri  graphIri
 	 * @return	 string   $status	status of the process
 	 */
 	public function startTransaction($transactionKey) {
@@ -263,7 +263,7 @@ class QueryCache {
 	/**
 	 *	starting a Caching Transaction to assign cache Objects to queryCacheResults
 	 * @access	 public
-	 * @param	  string   $modelIri  modelIri
+	 * @param	  string   $graphIri  graphIri
 	 * @return	 string   $status	status of the process
 	 */
 	public function endTransaction($transactionKey) {
@@ -276,7 +276,7 @@ class QueryCache {
 	/**
 	 *	starting a Caching Transaction to assign cache Objects to queryCacheResults
 	 * @access	 public
-	 * @param	  string   $modelIri  modelIri
+	 * @param	  string   $graphIri  graphIri
 	 * @return	 string   $status	status of the process
 	 */
 	public function getTransactions() {

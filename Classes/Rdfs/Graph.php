@@ -35,14 +35,15 @@ namespace Erfurt\Rdfs;
  * @subpackage $SUBPACKAGE$
  * @scope prototype
  */
-class Model extends \Erfurt\Rdf\Model {
+class Graph extends \Erfurt\Rdf\Graph {
+
 	/**
 	 * Resource factory method
 	 *
-	 * @return Erfurt_Rdfs_Resource
+	 * @return Erfurt\Rdfs\Resource
 	 */
 	public function getResource($resourceIri) {
-		return new \Erfurt\Rdfs\Resource($resourceIri, $this);
+		return $this->objectManager->create('Erfurt\Rdfs\Resource', $resourceIri, $this);
 	}
 
 }

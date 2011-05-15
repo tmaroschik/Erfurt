@@ -31,7 +31,7 @@ namespace Erfurt\Authentication\Adapter;
 /**
  * RDF authentication adapter.
  *
- * Authenticates a subject via an RDF store using a provided model.
+ * Authenticates a subject via an RDF store using a provided graph.
  *
  * @package $PACKAGE$
  * @subpackage $SUBPACKAGE$
@@ -46,7 +46,7 @@ class Typo3 implements AdapterInterface {
 	protected $password = null;
 
 	/** @var string */
-	protected $accessModelUri = null;
+	protected $accessGraphIri = null;
 
 	/** @var array */
 	protected $users = array();
@@ -61,7 +61,7 @@ class Typo3 implements AdapterInterface {
 	protected $databasePassword = null;
 
 	/** @var array */
-	protected $uris = null;
+	protected $iris = null;
 
 	protected $loginDisabled = null;
 
@@ -135,7 +135,7 @@ class Typo3 implements AdapterInterface {
 			$this->username = $GLOBALS["TSFE"]->fe_user->user['username'];
 			$this->password = $GLOBALS["TSFE"]->fe_user->user['password'];
 			$identity = $GLOBALS["TSFE"]->fe_user->user;
-			$identity['uri']		= '';
+			$identity['iri']		= '';
 			$identity['dbuser']		= false;
 			$identity['anonymous']	= false;
 			$identityObject = $this->objectManager->create('\Erfurt\Authentication\Identity', $identity);
@@ -147,7 +147,7 @@ class Typo3 implements AdapterInterface {
 				$this->username = $GLOBALS['BE_USER']->user['username'];
 				$this->password = $GLOBALS['BE_USER']->user['password'];
 				$identity = $GLOBALS['BE_USER']->user;
-				$identity['uri']		= '';
+				$identity['iri']		= '';
 				$identity['dbuser']		= false;
 				$identity['anonymous']	= false;
 				$identityObject = $this->objectManager->create('\Erfurt\Authentication\Identity', $identity);
@@ -167,11 +167,11 @@ class Typo3 implements AdapterInterface {
 	 * @return array
 	 */
 	protected function getAnonymousUser() {
-		$uris = $this->getUris();
+		$iris = $this->getIris();
 
 		$user = array(
 			'username' => 'Anonymous',
-			'uri' => $uris['user_anonymous'],
+			'iri' => $iris['user_anonymous'],
 			'dbuser' => false,
 			'email' => '',
 			'anonymous' => true
@@ -188,11 +188,11 @@ class Typo3 implements AdapterInterface {
 	 * @return array
 	 */
 	protected function getSuperAdmin() {
-		$uris = $this->getUris();
+		$iris = $this->getIris();
 
 		$user = array(
 			'username' => 'SuperAdmin',
-			'uri' => $uris['user_superadmin'],
+			'iri' => $iris['user_superadmin'],
 			'dbuser' => true,
 			'email' => '',
 			'anonymous' => false
@@ -207,18 +207,18 @@ class Typo3 implements AdapterInterface {
 		return $this->store;
 	}
 
-	protected function accessModelUri() {
-		if (null === $this->accessModelUri) {
-			$this->accessModelUri = $this->knowledgeBase->getAccessControlConfiguration()->modelUri;
+	protected function accessGraphIri() {
+		if (null === $this->accessGraphIri) {
+			$this->accessGraphIri = $this->knowledgeBase->getAccessControlConfiguration()->graphIri;
 		}
 
-		return $this->accessModelUri;
+		return $this->accessGraphIri;
 	}
 
-	protected function getUris() {
-		if (null === $this->uris) {
+	protected function getIris() {
+		if (null === $this->iris) {
 			$accessControlConfiguration = $this->knowledgeBase->getAccessControlConfiguration();
-			$this->uris = array(
+			$this->iris = array(
 				'user_class' => $accessControlConfiguration->user->class,
 				'user_username' => $accessControlConfiguration->user->name,
 				'user_password' => $accessControlConfiguration->user->pass,
@@ -230,7 +230,7 @@ class Typo3 implements AdapterInterface {
 			);
 		}
 
-		return $this->uris;
+		return $this->iris;
 	}
 
 	protected function isLoginDisabled() {

@@ -33,7 +33,7 @@ class Turtle implements AdapterInterface {
 	protected $_pos = 0;
 	//protected $_lastCharLength = 1;
 
-	protected $_baseUri = null;
+	protected $_baseIri = null;
 	protected $_subject = null;
 	protected $_predicate = null;
 	protected $_object = null;
@@ -49,7 +49,7 @@ class Turtle implements AdapterInterface {
 	protected $_statements = array();
 
 	protected $_parseToStore = false;
-	protected $_graphUri = null;
+	protected $_graphIri = null;
 	protected $_useAc = true;
 	protected $_stmtCounter = 0;
 
@@ -69,13 +69,13 @@ class Turtle implements AdapterInterface {
 		$this->knowledgeBase = $knowledgeBase;
 	}
 
-	public function parseFromDataString($dataString, $baseUri = null) {
+	public function parseFromDataString($dataString, $baseIri = null) {
 		$this->_parse($dataString);
 		return $this->_statements;
 	}
 
 	public function parseFromFilename($filename) {
-		$this->_baseUri = $filename;
+		$this->_baseIri = $filename;
 
 		$fileHandle = fopen($filename, 'r');
 
@@ -99,14 +99,14 @@ class Turtle implements AdapterInterface {
 	}
 
 	public function parseFromUrl($url) {
-		$this->_baseUri = $url;
+		$this->_baseIri = $url;
 
 		return $this->parseFromFilename($url);
 	}
 
-	public function parseFromDataStringToStore($data, $graphUri, $useAc = true, $baseUri = null) {
+	public function parseFromDataStringToStore($data, $graphIri, $useAc = true, $baseIri = null) {
 		$this->_parseToStore = true;
-		$this->_graphUri = $graphUri;
+		$this->_graphIri = $graphIri;
 		$this->_useAc = $useAc;
 		$this->parseFromDataString($data);
 
@@ -116,9 +116,9 @@ class Turtle implements AdapterInterface {
 		return true;
 	}
 
-	public function parseFromFilenameToStore($filename, $graphUri, $useAc = true) {
+	public function parseFromFilenameToStore($filename, $graphIri, $useAc = true) {
 		$this->_parseToStore = true;
-		$this->_graphUri = $graphUri;
+		$this->_graphIri = $graphIri;
 		$this->_useAc = $useAc;
 		$this->parseFromFilename($filename);
 		$this->_writeStatementsToStore();
@@ -127,8 +127,8 @@ class Turtle implements AdapterInterface {
 		return true;
 	}
 
-	public function parseFromUrlToStore($url, $graphUri, $useAc = true) {
-		return $this->parseFromFilenameToStore($url, $graphUri, $useAc);
+	public function parseFromUrlToStore($url, $graphIri, $useAc = true) {
+		return $this->parseFromFilenameToStore($url, $graphIri, $useAc);
 	}
 
 	public function parseNamespacesFromDataString($data) {
@@ -165,7 +165,7 @@ class Turtle implements AdapterInterface {
 		$this->_data = '';
 		$this->_pos = 0;
 
-		$this->_baseUri = null;
+		$this->_baseIri = null;
 		$this->_subject = null;
 		$this->_predicate = null;
 		$this->_object = null;
@@ -179,7 +179,7 @@ class Turtle implements AdapterInterface {
 		$this->_statements = array();
 
 		$this->_parseToStore = false;
-		$this->_graphUri = null;
+		$this->_graphIri = null;
 		$this->_useAc = true;
 		$this->_stmtCounter = 0;
 	}
@@ -199,7 +199,7 @@ class Turtle implements AdapterInterface {
 
 		foreach ($this->_namespaces as $prefix => $ns) {
 			try {
-				$erfurtNamespaces->addNamespacePrefix($this->_graphUri, $ns, $prefix, $this->_useAc);
+				$erfurtNamespaces->addNamespacePrefix($this->_graphIri, $ns, $prefix, $this->_useAc);
 			}
 			catch (\Erfurt\Namespaces\Exception $e) {
 				// We need to catch the store exception, for the namespace component throws exceptions in case a prefix
@@ -302,7 +302,7 @@ class Turtle implements AdapterInterface {
 		$this->_read();
 		$this->_skipWS();
 
-		$ns = $this->_parseUri();
+		$ns = $this->_parseIri();
 		$this->_addNamespace($token, $ns);
 	}
 
@@ -310,7 +310,7 @@ class Turtle implements AdapterInterface {
 		$prefix = (string)$prefix;
 
 		if ($ns instanceof \Erfurt\Rdf\Resource) {
-			$ns = $ns->getUri();
+			$ns = $ns->getIri();
 		} else {
 			$ns = (string)$ns;
 		}
@@ -318,7 +318,7 @@ class Turtle implements AdapterInterface {
 		$this->_namespaces[$prefix] = $ns;
 	}
 
-	protected function _parseUri() {
+	protected function _parseIri() {
 		$this->_read();
 		$c = $this->_read();
 
@@ -330,23 +330,23 @@ class Turtle implements AdapterInterface {
 
 		#$c = $this->_skipWS();
 
-		$uri = $this->_resolveUri($this->_decodeString($token, true));
-		return \Erfurt\Rdf\Resource::initWithIri($uri);
+		$iri = $this->_resolveIri($this->_decodeString($token, true));
+		return \Erfurt\Rdf\Resource::initWithIri($iri);
 	}
 
-	protected function _resolveUri($uri) {
-		if ((strlen($uri) > 0) && ($uri[0] === '#') || (strpos($uri, ':') === false)) {
-			if ($this->_getBaseUri()) {
-				return substr($this->_getBaseUri(), 0, strrpos($this->_getBaseUri(), '/') + 1) . $uri;
+	protected function _resolveIri($iri) {
+		if ((strlen($iri) > 0) && ($iri[0] === '#') || (strpos($iri, ':') === false)) {
+			if ($this->_getBaseIri()) {
+				return substr($this->_getBaseIri(), 0, strrpos($this->_getBaseIri(), '/') + 1) . $iri;
 			}
 		}
 
-		return $uri;
+		return $iri;
 	}
 
-	protected function _getBaseUri() {
-		if (null !== $this->_baseUri) {
-			return $this->_baseUri;
+	protected function _getBaseIri() {
+		if (null !== $this->_baseIri) {
+			return $this->_baseIri;
 		} else {
 			return false;
 		}
@@ -361,12 +361,12 @@ class Turtle implements AdapterInterface {
 
 	protected function _parseBase() {
 		$this->_skipWS();
-		$baseUri = $this->_parseUri();
-		$this->_setBaseUri($baseUri);
+		$baseIri = $this->_parseIri();
+		$this->_setBaseIri($baseIri);
 	}
 
-	protected function _setBaseUri($baseUri) {
-		$this->_baseUri = $baseUri;
+	protected function _setBaseIri($baseIri) {
+		$this->_baseIri = $baseIri;
 	}
 
 	protected function _parseTriples() {
@@ -398,7 +398,7 @@ class Turtle implements AdapterInterface {
 		$c = $this->_peek();
 
 		if ($c === '<') {
-			return $this->_parseUri();
+			return $this->_parseIri();
 		} else {
 			if ($c === '_') {
 				return $this->_parseNodeId();
@@ -904,12 +904,12 @@ class Turtle implements AdapterInterface {
 			if ($s->isBlankNode()) {
 				$s = '_:' . $s->getId();
 			} else {
-				$s = $s->getUri();
+				$s = $s->getIri();
 			}
 		}
 
 		if ($p instanceof \Erfurt\Rdf\Resource) {
-			$p = $p->getUri();
+			$p = $p->getIri();
 		}
 
 		if ($o instanceof \Erfurt\Rdf\Resource) {
@@ -917,8 +917,8 @@ class Turtle implements AdapterInterface {
 				$o = '_:' . $o->getId();
 				$oType = 'bnode';
 			} else {
-				$o = $o->getUri();
-				$oType = 'uri';
+				$o = $o->getIri();
+				$oType = 'iri';
 			}
 		} else {
 			if ($o instanceof \Erfurt\Rdf\Literal) {
@@ -940,7 +940,7 @@ class Turtle implements AdapterInterface {
 			if (substr((string)$o, 0, 2) === '_:') {
 				$oType = 'bnode';
 			} else {
-				$oType = 'uri';
+				$oType = 'iri';
 			}
 		}
 
@@ -966,14 +966,14 @@ class Turtle implements AdapterInterface {
 	}
 
 	protected function _writeStatementsToStore() {
-		// Check whether model exists.
+		// Check whether graph exists.
 		$store = $this->knowledgeBase->getStore();
-		if (!$store->isModelAvailable($this->_graphUri, $this->_useAc)) {
-			throw new \Exception('Model with uri ' . $this->_graphUri . ' not available.');
+		if (!$store->isGraphAvailable($this->_graphIri, $this->_useAc)) {
+			throw new \Exception('Graph with iri ' . $this->_graphIri . ' not available.');
 		}
 
 		if ($this->_stmtCounter > 0) {
-			$store->addMultipleStatements($this->_graphUri, $this->_statements, $this->_useAc);
+			$store->addMultipleStatements($this->_graphIri, $this->_statements, $this->_useAc);
 			$this->_statements = array();
 			$this->_stmtCounter = 0;
 		}

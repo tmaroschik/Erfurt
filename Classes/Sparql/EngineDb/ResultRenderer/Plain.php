@@ -47,7 +47,7 @@ class Plain implements EngineDb\ResultRenderer {
 	// --- Protected properties -----------------------------------------------
 	// ------------------------------------------------------------------------
 
-	protected $uriValues = array();
+	protected $iriValues = array();
 	protected $literalValues = array();
 
 	protected $_vars = null;
@@ -80,7 +80,7 @@ class Plain implements EngineDb\ResultRenderer {
 						break;
 					default:
 						$arResult = $this->_getVariableArrayFromRecordSets($arRecordSets, $strResultForm, false);
-						if (count($this->uriValues) > 0 || count($this->literalValues) > 0) {
+						if (count($this->iriValues) > 0 || count($this->literalValues) > 0) {
 							// If the query contains a ORDER BY wen need to reorder the result
 							$sm = $query->getSolutionModifier();
 							if (null !== $sm['order by']) {
@@ -238,7 +238,7 @@ class Plain implements EngineDb\ResultRenderer {
 					$result = $this->_createResource($row[$this->_vars[$strVarName]['sql_value']]);
 				} else {
 					$result = $this->_createResource(
-						$this->uriValues[$row[$this->_vars[$strVarName]['sql_ref']]]);
+						$this->iriValues[$row[$this->_vars[$strVarName]['sql_ref']]]);
 				}
 				break;
 			case 1:
@@ -246,7 +246,7 @@ class Plain implements EngineDb\ResultRenderer {
 					$result = $this->_createBlankNode($row[$this->_vars[$strVarName]['sql_value']]);
 				} else {
 					$result = $this->_createBlankNode(
-						$this->uriValues[$row[$this->_vars[$strVarName]['sql_ref']]]);
+						$this->iriValues[$row[$this->_vars[$strVarName]['sql_ref']]]);
 				}
 				break;
 			default:
@@ -263,7 +263,7 @@ class Plain implements EngineDb\ResultRenderer {
 					#    $result = $this->_createLiteral(
 					#        $row[$this->_vars[$strVarName]['sql_value']],
 					#        $row[$this->_vars[$strVarName]['sql_lang']],
-					#        $this->uriValues[$row[$this->_vars[$strVarName]['sql_dt_ref']]]
+					#        $this->iriValues[$row[$this->_vars[$strVarName]['sql_dt_ref']]]
 					#    );
 					#}
 				} else {
@@ -279,7 +279,7 @@ class Plain implements EngineDb\ResultRenderer {
 					#    $result = $this->_createLiteral(
 					#        $this->literalValues[$row[$this->_vars[$strVarName]['sql_ref']]],
 					#        $row[$this->_vars[$strVarName]['sql_lang']],
-					#        $this->uriValues[$row[$this->_vars[$strVarName]['sql_dt_ref']]]
+					#        $this->iriValues[$row[$this->_vars[$strVarName]['sql_dt_ref']]]
 					#    );
 					#}
 				}
@@ -309,7 +309,7 @@ class Plain implements EngineDb\ResultRenderer {
 		if ($row[$this->_vars[$strVarName]['sql_ref']] === null) {
 			$result = $this->_createResource($row[$this->_vars[$strVarName]['sql_value']]);
 		} else {
-			$result = $this->_createResource($this->uriValues[$row[$this->_vars[$strVarName]['sql_ref']]]);
+			$result = $this->_createResource($this->iriValues[$row[$this->_vars[$strVarName]['sql_ref']]]);
 		}
 		if ($asArray) {
 			return $result;
@@ -318,10 +318,10 @@ class Plain implements EngineDb\ResultRenderer {
 		}
 	}
 
-	protected function _createResource($uri) {
+	protected function _createResource($iri) {
 		return array(
-			'type' => 'uri',
-			'value' => $uri
+			'type' => 'iri',
+			'value' => $iri
 		);
 	}
 
@@ -344,14 +344,14 @@ class Plain implements EngineDb\ResultRenderer {
 			if ($row[$this->_vars[$strVarName]['sql_ref']] === null) {
 				$result = $this->_createResource($row[$this->_vars[$strVarName]['sql_value']]);
 			} else {
-				$result = $this->_createResource($this->uriValues[$row[$this->_vars[$strVarName]['sql_ref']]]);
+				$result = $this->_createResource($this->iriValues[$row[$this->_vars[$strVarName]['sql_ref']]]);
 			}
 		} else {
 			if ($row[$this->_vars[$strVarName]['sql_ref']] === null) {
 				$result = $this->_createBlankNode($row[$this->_vars[$strVarName]['sql_value']]);
 			} else {
 				$result = $this->_createBlankNode(
-					$this->uriValues[$row[$this->_vars[$strVarName]['sql_ref']]]);
+					$this->iriValues[$row[$this->_vars[$strVarName]['sql_ref']]]);
 			}
 		}
 		if ($asArray) {
@@ -418,33 +418,33 @@ class Plain implements EngineDb\ResultRenderer {
 
 	protected function _getVariableArrayFromRecordSets($arRecordSets, $strResultForm, $asArray = false) {
 		// First, we need to check, whether there is a need to dereference some values
-		$refVariableNamesUri = array();
+		$refVariableNamesIri = array();
 		$refVariableNamesLit = array();
 		foreach ($this->_vars as $var) {
 			if ($var[1] === 'o') {
 				if (isset($var['sql_ref'])) {
 					$refVariableNamesLit[] = $var['sql_ref'];
-					$refVariableNamesUri[] = $var['sql_ref'];
+					$refVariableNamesIri[] = $var['sql_ref'];
 				}
 				if (isset($var['sql_dt_ref'])) {
-					$refVariableNamesUri[] = $var['sql_dt_ref'];
+					$refVariableNamesIri[] = $var['sql_dt_ref'];
 				}
 			} else {
 				if (isset($var['sql_ref'])) {
-					$refVariableNamesUri[] = $var['sql_ref'];
+					$refVariableNamesIri[] = $var['sql_ref'];
 				}
 			}
 		}
 		;
-		$refVariableNamesUri = array_unique($refVariableNamesUri);
+		$refVariableNamesIri = array_unique($refVariableNamesIri);
 		$refVariableNamesLit = array_unique($refVariableNamesLit);
-		$refIdsUri = array();
+		$refIdsIri = array();
 		$refIdsLit = array();
 		foreach ($arRecordSets as $dbRecordSet) {
 			foreach ($dbRecordSet as $row) {
-				foreach ($refVariableNamesUri as $name) {
+				foreach ($refVariableNamesIri as $name) {
 					if ($row["$name"] !== null) {
-						$refIdsUri[] = $row["$name"];
+						$refIdsIri[] = $row["$name"];
 					}
 				}
 				foreach ($refVariableNamesLit as $name) {
@@ -454,11 +454,11 @@ class Plain implements EngineDb\ResultRenderer {
 				}
 			}
 		}
-		if (count($refIdsUri) > 0) {
-			$sql = 'SELECT id, v FROM tx_semantic_uri WHERE id IN (' . implode(',', $refIdsUri) . ')';
+		if (count($refIdsIri) > 0) {
+			$sql = 'SELECT id, v FROM tx_semantic_iri WHERE id IN (' . implode(',', $refIdsIri) . ')';
 			$result = $this->engine->sqlQuery($sql);
 			foreach ($result as $row) {
-				$this->uriValues[$row['id']] = $row['v'];
+				$this->iriValues[$row['id']] = $row['v'];
 			}
 		}
 		if (count($refIdsLit) > 0) {

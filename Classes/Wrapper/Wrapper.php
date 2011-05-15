@@ -29,7 +29,7 @@ namespace Erfurt\Wrapper;
  ***************************************************************/
 /**
  * This abstract class provides the basis for dedicated data wrapper
- * implementation classes, that provide RDF data for a given URI. Developers
+ * implementation classes, that provide RDF data for a given IRI. Developers
  * are encouraged to utilize the built-in config and cache objects in order
  * to make wrappers customizable by the user and to avoid expensive requests
  * to be done to frequent. The default cache lifetime is one hour.
@@ -184,32 +184,32 @@ abstract class Wrapper {
 
 	/**
 	 * This method forms the second step in the data fetching process.
-	 * If a given URI is handled by a wrapper, this method tests whether there
-	 * is data available for the URI. In many situations this will imply,
+	 * If a given IRI is handled by a wrapper, this method tests whether there
+	 * is data available for the IRI. In many situations this will imply,
 	 * that the data is actually fetched. It is a appropriate solution to cache
 	 * requested data in order to do a request only once.
 	 *
-	 * @param string $uri The URI to test for available data.
-	 * @param string $graphUri The URI fro the graph to use. Some wrapper implementations
+	 * @param string $iri The IRI to test for available data.
+	 * @param string $graphIri The IRI fro the graph to use. Some wrapper implementations
 	 * may need it, e.g. to do SPARQL queries against the graph.
-	 * @return boolean Returns whether there is data available for the given URI or not.
+	 * @return boolean Returns whether there is data available for the given IRI or not.
 	 * @throws Erfurt_Wrapper_Exception
 	 */
-	abstract public function isAvailable($uri, $graphUri);
+	abstract public function isAvailable($iri, $graphIri);
 
 	/**
 	 * This method will be called first in most cases. It therefore should
-	 * not yet fetch any data. This method is intended to match a given URI
-	 * against a certain URI-schema and return whether the wrapper will handle
-	 * such URIs.
+	 * not yet fetch any data. This method is intended to match a given IRI
+	 * against a certain IRI-schema and return whether the wrapper will handle
+	 * such IRIs.
 	 *
-	 * @param string $uri The URI to be tested.
-	 * @param string $graphUri The URI fro the graph to use. Some wrapper implementations
+	 * @param string $iri The IRI to be tested.
+	 * @param string $graphIri The IRI fro the graph to use. Some wrapper implementations
 	 * may need it, e.g. to do SPARQL queries against the graph.
-	 * @return boolean Returns whether the wrapper will handle the given URI.
+	 * @return boolean Returns whether the wrapper will handle the given IRI.
 	 * @throws Erfurt_Wrapper_Exception
 	 */
-	abstract public function isHandled($uri, $graphUri);
+	abstract public function isHandled($iri, $graphIri);
 
 	/**
 	 * This method actually executes the wrapper. Whatever the internal
@@ -239,13 +239,13 @@ abstract class Wrapper {
 	 *
 	 * [1] @link http://n2.talis.com/wiki/RDF_PHP_Specification
 	 *
-	 * @param string $uri This is the URI for which data should be wrapped.
-	 * @param string $graphUri The URI fro the graph to use. Some wrapper implementations
+	 * @param string $iri This is the IRI for which data should be wrapped.
+	 * @param string $graphIri The IRI fro the graph to use. Some wrapper implementations
 	 * may need it, e.g. to do SPARQL queries against the graph.
 	 * @return array|false
 	 * @throws Erfurt_Wrapper_Exception
 	 */
-	abstract public function run($uri, $graphUri);
+	abstract public function run($iri, $graphIri);
 
 }
 

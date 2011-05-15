@@ -99,32 +99,32 @@ class RdfJson implements AdapterInterface {
 		return $this->parseFromDataString($dataString);
 	}
 
-	public function parseFromDataStringToStore($dataString, $graphUri, $useAc = true) {
+	public function parseFromDataStringToStore($dataString, $graphIri, $useAc = true) {
 		$triples = $this->parseFromDataString($dataString);
 
 		$store = $this->knowledgeBase->getStore();
 
-		$store->addMultipleStatements($graphUri, $triples, $useAc);
+		$store->addMultipleStatements($graphIri, $triples, $useAc);
 
 		return true;
 	}
 
-	public function parseFromFilenameToStore($filename, $graphUri, $useAc = true) {
+	public function parseFromFilenameToStore($filename, $graphIri, $useAc = true) {
 		$triples = $this->parseFromFilename($filename);
 
 		$store = $this->knowledgeBase->getStore();
 
-		$store->addMultipleStatements($graphUri, $triples, $useAc);
+		$store->addMultipleStatements($graphIri, $triples, $useAc);
 
 		return true;
 	}
 
-	public function parseFromUrlToStore($url, $graphUri, $useAc = true) {
+	public function parseFromUrlToStore($url, $graphIri, $useAc = true) {
 		$triples = $this->parseFromUrl($url);
 
 		$store = $this->knowledgeBase->getStore();
 
-		$store->addMultipleStatements($graphUri, $triples, $useAc);
+		$store->addMultipleStatements($graphIri, $triples, $useAc);
 
 		return true;
 	}

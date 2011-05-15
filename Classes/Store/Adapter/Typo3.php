@@ -38,12 +38,12 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	/**
 	 * @array
 	 */
-	protected $modelCache = array();
+	protected $graphCache = array();
 
 	/**
 	 * @array
 	 */
-	protected $modelInfoCache;
+	protected $graphInfoCache;
 
 	/**
 	 * @var \t3lib_DB
@@ -92,7 +92,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	 */
 	public function injectKnowledgeBase(\Erfurt\KnowledgeBase $knowledgeBase) {
 		$this->knowledgeBase = $knowledgeBase;
-		// load title properties for model titles
+		// load title properties for graph titles
 //		if (isset($this->knowledgeBase->getConfiguration()->properties->title)) {
 //			$this->titleProperties = $this->knowledgeBase->getConfiguration()->properties->title->toArray();
 //		}
@@ -108,9 +108,9 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function addMultipleStatements($graphUri, array $statementsArray, array $options = array()) {
-		$modelInfoCache = $this->getModelInfos();
-		$graphId = $modelInfoCache[$graphUri]['modelId'];
+	public function addMultipleStatements($graphIri, array $statementsArray, array $options = array()) {
+		$graphInfoCache = $this->getGraphInfos();
+		$graphId = $graphInfoCache[$graphIri]['graphId'];
 		$sqlQuery = 'INSERT IGNORE INTO tx_semantic_statement (g,s,p,o,s_r,p_r,o_r,st,ot,ol,od,od_r) VALUES ';
 		$insertArray = array();
 		$counter = 0;
@@ -129,7 +129,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 						$subjectIs = '0';
 					}
 					// check the type of the object
-					if ($o['type'] === 'uri') {
+					if ($o['type'] === 'iri') {
 						$objectIs = '0';
 						$lang = false;
 						$dType = false;
@@ -150,13 +150,13 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 					$sRef = false;
 					if (strlen((string)$s) > $this->getSchemaReferenceThreshold()) {
 						$subjectHash = md5((string)$s);
-						$sRef = $this->insertValueInto('tx_semantic_uri', $graphId, $s, $subjectHash);
+						$sRef = $this->insertValueInto('tx_semantic_iri', $graphId, $s, $subjectHash);
 						$s = substr((string)$s, 0, 128) . $subjectHash;
 					}
 					$pRef = false;
 					if (strlen((string)$p) > $this->getSchemaReferenceThreshold()) {
 						$predicateHash = md5((string)$p);
-						$pRef = $this->insertValueInto('tx_semantic_uri', $graphId, $p, $predicateHash);
+						$pRef = $this->insertValueInto('tx_semantic_iri', $graphId, $p, $predicateHash);
 						$p = substr((string)$p, 0, 128) . $predicateHash;
 					}
 					$oRef = false;
@@ -165,7 +165,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 						if ($o['type'] === 'literal') {
 							$tableName = 'tx_semantic_literal';
 						} else {
-							$tableName = 'tx_semantic_uri';
+							$tableName = 'tx_semantic_iri';
 						}
 						$oRef = $this->insertValueInto($tableName, $graphId, $o['value'], $objectHash);
 						$o['value'] = substr((string)$o['value'], 0, 128) . $objectHash;
@@ -199,7 +199,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 					#$data['ol'] = $lang;
 					if (strlen((string)$dType) > $this->getSchemaReferenceThreshold()) {
 						$dTypeHash = md5((string)$dType);
-						$dtRef = $this->insertValueInto('tx_semantic_uri', $graphId, $dType, $dTypeHash);
+						$dtRef = $this->insertValueInto('tx_semantic_iri', $graphId, $dType, $dTypeHash);
 //						$dType = substr((string)$data['od'], 0, 128) . $dTypeHash;
 						$dType = $dTypeHash;
 //						$data['od_r'] = $dtRef;
@@ -251,13 +251,13 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function addStatement($graphUri, $subject, $predicate, $object, array $options = array()) {
+	public function addStatement($graphIri, $subject, $predicate, $object, array $options = array()) {
 		$statementArray = array();
 		$statementArray["$subject"] = array();
 		$statementArray["$subject"]["$predicate"] = array();
 		$statementArray["$subject"]["$predicate"][] = $object;
 		try {
-			$this->addMultipleStatements($graphUri, $statementArray);
+			$this->addMultipleStatements($graphIri, $statementArray);
 		}
 		catch (\Exception $e) {
 			throw new \Exception('Insertion of statement failed:' .
@@ -288,57 +288,59 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function createModel($graphUri, $type = \Erfurt\Store\Store::MODEL_TYPE_OWL) {
+	public function createGraph($graphIri, $type = \Erfurt\Store\Store::GRAPH_TYPE_OWL) {
 		$data = array(
-			'uri' => &$graphUri
+			'iri' => &$graphIri
 		);
-		$baseUri = $graphUri;
-		if ($baseUri !== '') {
-			$data['base'] = $baseUri;
+		$baseIri = $graphIri;
+		if ($baseIri !== '') {
+			$data['base'] = $baseIri;
 		}
-		// insert the new model into the database
+		// insert the new graph into the database
 		$this->databaseConnection->exec_INSERTquery('tx_semantic_graph', $data);
 		$graphId = $this->lastInsertId();
-		$uriRef = false;
-		if (strlen($graphUri) > $this->getSchemaReferenceThreshold()) {
-			$uriHash = md5($uri);
-			$uriData = array(
-				'g' => $graphid,
-				'v' => $uri,
-				'vh' => $uriHash);
-			$uriRef = $this->insertValueInto('tx_semantic_uri', $uriData);
-			$updateData = array(
-				'uri' => $uriHash,
-				'uri_r' => $uriRef);
-			$this->databaseConnection->exec_UPDATEquery('tx_semantic_graph', 'id = graphId', $updateData);
+		$iriRef = false;
+		if (strlen($graphIri) > $this->getSchemaReferenceThreshold()) {
+			// TODO check this, this is somehow wrong
+//			$iriHash = md5($graphIri);
+//			$iriData = array(
+//				'g' => $graphId,
+//				'v' => $graphIri,
+//				'vh' => $iriHash);
+//			$iriRef = $this->insertValueInto('tx_semantic_iri', $iriRef, $iriData, $iriHash);
+//			$updateData = array(
+//				'iri' => $iriHash,
+//				'iri_r' => $iriRef);
+//			$this->databaseConnection->exec_UPDATEquery('tx_semantic_graph', 'id = graphId', $updateData);
 		}
 		$baseRef = false;
-		if (strlen($baseUri) > $this->getSchemaReferenceThreshold()) {
-			$baseHash = md5($baseUri);
-			$baseData = array(
-				'g' => $graphid,
-				'v' => $baseUri,
-				'vh' => $baseHash);
-			$baseRef = $this->insertValueInto('tx_semantic_uri', $baseData);
-			$updateData = array(
-				'base' => $baseHash,
-				'base_r' => $baseRef);
-			$this->databaseConnection->exec_UPDATEquery('tx_semantic_graph', 'id = graphId', $updateData);
+		if (strlen($baseIri) > $this->getSchemaReferenceThreshold()) {
+			// TODO check this, this is somehow wrong
+//			$baseHash = md5($baseIri);
+//			$baseData = array(
+//				'g' => $graphId,
+//				'v' => $baseIri,
+//				'vh' => $baseHash);
+//			$baseRef = $this->insertValueInto('tx_semantic_iri', $baseData);
+//			$updateData = array(
+//				'base' => $baseHash,
+//				'base_r' => $baseRef);
+//			$this->databaseConnection->exec_UPDATEquery('tx_semantic_graph', 'id = graphId', $updateData);
 		}
-		// invalidate the cache and fetch model infos again
+		// invalidate the cache and fetch graph infos again
 		$cache = $this->knowledgeBase->getCache();
-		$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('model_info'));
-		$this->modelInfoCache = null;
-		if ($type === \Erfurt\Store\Store::MODEL_TYPE_OWL) {
-			$this->addStatement($graphUri, $graphUri, EF_RDF_TYPE, array('type' => 'uri', 'value' => EF_OWL_ONTOLOGY));
-			$this->modelInfoCache = null;
+		$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('graph_info'));
+		$this->graphInfoCache = null;
+		if ($type === \Erfurt\Store\Store::GRAPH_TYPE_OWL) {
+			$this->addStatement($graphIri, $graphIri, EF_RDF_TYPE, array('type' => 'iri', 'value' => EF_OWL_ONTOLOGY));
+			$this->graphInfoCache = null;
 		}
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function deleteMatchingStatements($graphUri, $subject, $predicate, $object, array $options = array()) {
-		$modelInfoCache = $this->getModelInfos();
-		$modelId = $modelInfoCache[$graphUri]['modelId'];
+	public function deleteMatchingStatements($graphIri, $subject, $predicate, $object, array $options = array()) {
+		$graphInfoCache = $this->getGraphInfos();
+		$graphId = $graphInfoCache[$graphIri]['graphId'];
 		if ($subject !== null && strlen($subject) > $this->getSchemaReferenceThreshold()) {
 			$subject = substr($subject, 0, 128) . md5($subject);
 		}
@@ -369,7 +371,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 			}
 			if (isset($object['type'])) {
 				switch ($object['type']) {
-					case 'uri':
+					case 'iri':
 						$whereString .= ' AND ot = 0';
 						break;
 					case 'literal':
@@ -394,22 +396,22 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 		}
 		// remove the specified statements from the database
 		$ret = $this->databaseConnection->delete('tx_semantic_statement', $whereString);
-		// Clean up tx_semantic_uri and tx_semantic_literal table
-		$this->_cleanUpValueTables($graphUri);
+		// Clean up tx_semantic_iri and tx_semantic_literal table
+		$this->_cleanUpValueTables($graphIri);
 		// return number of affected rows (>0 means there were triples deleted)
 		return $ret;
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function deleteMultipleStatements($graphUri, array $statementsArray) {
-		$modelInfoCache = $this->getModelInfos();
-		$modelId = $modelInfoCache[$graphUri]['modelId'];
+	public function deleteMultipleStatements($graphIri, array $statementsArray) {
+		$graphInfoCache = $this->getGraphInfos();
+		$graphId = $graphInfoCache[$graphIri]['graphId'];
 		$this->databaseConnection->beginTransaction();
 		try {
 			foreach ($statementsArray as $subject => $predicatesArray) {
 				foreach ($predicatesArray as $predicate => $objectsArray) {
 					foreach ($objectsArray as $object) {
-						$whereString = 'g = ' . $modelId . ' ';
+						$whereString = 'g = ' . $graphId . ' ';
 						// check whether the subject is a blank node
 						if (substr($subject, 0, 2) === '_:') {
 							$subject = substr($subject, 2);
@@ -418,7 +420,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 							$whereString .= 'AND st = 0 ';
 						}
 						// check the type of the object
-						if ($object['type'] === 'uri') {
+						if ($object['type'] === 'iri') {
 							$whereString .= 'AND ot = 0 ';
 						} else {
 							if ($object['type'] === 'bnode') {
@@ -453,7 +455,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 			}
 			// if everything went ok... commit the changes to the database
 			$this->databaseConnection->commit();
-			$this->_cleanUpValueTables($graphUri);
+			$this->_cleanUpValueTables($graphIri);
 		}
 		catch (\Exception $e) {
 			// something went wrong... rollback
@@ -463,39 +465,39 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function deleteModel($graphUri) {
-		$modelInfoCache = $this->getModelInfos();
-		if (isset($modelInfoCache[$graphUri]['modelId'])) {
-			$graphId = $modelInfoCache[$graphUri]['modelId'];
+	public function deleteGraph($graphIri) {
+		$graphInfoCache = $this->getGraphInfos();
+		if (isset($graphInfoCache[$graphIri]['graphId'])) {
+			$graphId = $graphInfoCache[$graphIri]['graphId'];
 		} else {
-			throw new \Exception('Model deletion failed: No db id found for model URL.');
+			throw new \Exception('Graph deletion failed: No db id found for graph URL.');
 		}
-		// remove all rows with the specified modelID from the models, statements and namespaces tables
+		// remove all rows with the specified graphID from the graphs, statements and namespaces tables
 		$this->databaseConnection->delete('tx_semantic_graph', "id = $graphId");
 		$this->databaseConnection->delete('tx_semantic_statement', "g = $graphId");
-		$this->databaseConnection->delete('tx_semantic_uri', "g = $graphId");
+		$this->databaseConnection->delete('tx_semantic_iri', "g = $graphId");
 		$this->databaseConnection->delete('tx_semantic_literal', "g = $graphId");
-		// invalidate the cache and fetch model infos again
+		// invalidate the cache and fetch graph infos again
 		$cache = $this->knowledgeBase->getCache();
-		$tags = array('model_info', $modelInfoCache[$graphUri]['modelId']);
+		$tags = array('graph_info', $graphInfoCache[$graphIri]['graphId']);
 		#$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, $tags);
-		$this->modelCache = array();
-		$this->modelInfoCache = null;
+		$this->graphCache = array();
+		$this->graphInfoCache = null;
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function exportRdf($modelIri, $serializationType = 'xml', $filename = false) {
+	public function exportRdf($graphIri, $serializationType = 'xml', $filename = false) {
 		throw new \Exception('Not implemented yet.');
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function getAvailableModels() {
-		$modelInfoCache = $this->getModelInfos();
-		$models = array();
-		foreach ($modelInfoCache as $mInfo) {
-			$models[$mInfo['modelIri']] = true;
+	public function getAvailableGraphs() {
+		$graphInfoCache = $this->getGraphInfos();
+		$graphs = array();
+		foreach ($graphInfoCache as $mInfo) {
+			$graphs[$mInfo['graphIri']] = true;
 		}
-		return $models;
+		return $graphs;
 	}
 
 	public function getBackendName() {
@@ -508,110 +510,112 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	}
 
 	/**
-	 * Returns a list of graph uris, where each graph in the list contains at least
-	 * one statement where the given resource uri is subject.
+	 * Returns a list of graph iris, where each graph in the list contains at least
+	 * one statement where the given resource iri is subject.
 	 *
-	 * @param string $resourceUri
+	 * @param string $resourceIri
 	 * @return array
 	 */
-	public function getGraphsUsingResource($resourceUri) {
-		$sqlQuery = 'SELECT DISTINCT g.uri FROM tx_semantic_statement s
+	public function getGraphsUsingResource($resourceIri) {
+		$sqlQuery = 'SELECT DISTINCT g.iri FROM tx_semantic_statement s
                      LEFT JOIN tx_semantic_graph g ON ( g.id = s.g)
-                     WHERE s.s = \'' . $resourceUri . '\'';
+                     WHERE s.s = \'' . $resourceIri . '\'';
 		$sqlResult = $this->sqlQuery($sqlQuery);
 		$result = array();
 		foreach ($sqlResult as $row) {
-			$result[] = $row['uri'];
+			$result[] = $row['iri'];
 		}
 		return $result;
 	}
 
 	/**
-	 * Recursively gets owl:imported model IRIs starting with $modelIri as root.
+	 * Recursively gets owl:imported graph IRIs starting with $graphIri as root.
 	 *
-	 * @param string $modelIri
+	 * @param string $graphIri
 	 */
-	public function getImportsClosure($modelIri) {
-		$modelInfoCache = $this->getModelInfos();
-		if (isset($modelInfoCache["$modelIri"]['imports'])) {
-			return $modelInfoCache["$modelIri"]['imports'];
+	public function getImportsClosure($graphIri) {
+		$graphInfoCache = $this->getGraphInfos();
+		if (isset($graphInfoCache["$graphIri"]['imports'])) {
+			return $graphInfoCache["$graphIri"]['imports'];
 		} else {
 			return array();
 		}
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function getModel($modelIri) {
-		// if model is already in cache return the cached value
-		if (isset($this->modelCache[$modelIri])) {
-			return clone $this->modelCache[$modelIri];
+	public function getGraph($graphIri) {
+		// if graph is already in cache return the cached value
+		if (isset($this->graphCache[$graphIri])) {
+			return clone $this->graphCache[$graphIri];
 		}
-		$modelInfoCache = $this->getModelInfos();
-		$baseUri = $modelInfoCache[$modelIri]['baseIri'];
-		if ($baseUri === '') {
-			$baseUri = null;
+		$graphInfoCache = $this->getGraphInfos();
+		$baseIri = $graphInfoCache[$graphIri]['baseIri'];
+		if ($baseIri === '') {
+			$baseIri = null;
 		}
-		// choose the right type for the model instance and instanciate it
-		if ($modelInfoCache[$modelIri]['type'] === 'owl') {
-			$m = $this->objectManager->create('\Erfurt\Owl\Model', $modelIri, $baseUri);
+		// choose the right type for the graph instance and instanciate it
+		if ($graphInfoCache[$graphIri]['type'] === 'owl') {
+			$m = $this->objectManager->create('\Erfurt\Owl\Graph', $graphIri, $baseIri);
 		} else {
-			if ($this->modelInfoCache[$modelIri]['type'] === 'rdfs') {
-				$m = $this->objectManager->create('\Erfurt\Rdfs\Model', $modelIri, $baseUri);
+			if ($this->graphInfoCache[$graphIri]['type'] === 'rdfs') {
+				$m = $this->objectManager->create('\Erfurt\Rdfs\Graph', $graphIri, $baseIri);
 			} else {
-				$m = $this->objectManager->create('\Erfurt\Rdf\Model', $modelIri, $baseUri);
+				$m = $this->objectManager->create('\Erfurt\Rdf\Graph', $graphIri, $baseIri);
 			}
 		}
-		$this->modelCache[$modelIri] = $m;
+		$this->graphCache[$graphIri] = $m;
 		return $m;
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function getNewModel($graphUri, $baseUri = '', $type = 'owl') {
+	public function getNewGraph($graphIri, $baseIri = '', $type = 'owl') {
 		$data = array(
-			'uri' => &$graphUri
+			'iri' => &$graphIri
 		);
-		if ($baseUri !== '') {
-			$data['base'] = $baseUri;
+		if ($baseIri !== '') {
+			$data['base'] = $baseIri;
 		}
-		// insert the new model into the database
+		// insert the new graph into the database
 		$this->databaseConnection->insert('tx_semantic_graph', $data);
 		$graphId = $this->lastInsertId();
-		$uriRef = false;
-		if (strlen($graphUri) > $this->getSchemaReferenceThreshold()) {
-			$uriHash = md5($uri);
-			$uriData = array(
-				'g' => $graphid,
-				'v' => $uri,
-				'vh' => $uriHash);
-			$uriRef = $this->insertValueInto('tx_semantic_uri', $uriData);
-			$updateData = array(
-				'uri' => $uriHash,
-				'uri_r' => $uriRef);
-			$this->databaseConnection->update('tx_semantic_graph', $updateData, "id = graphId");
+		$iriRef = false;
+		if (strlen($graphIri) > $this->getSchemaReferenceThreshold()) {
+			// TODO duplicate code like in self::createGraph()
+//			$iriHash = md5($iri);
+//			$iriData = array(
+//				'g' => $graphid,
+//				'v' => $iri,
+//				'vh' => $iriHash);
+//			$iriRef = $this->insertValueInto('tx_semantic_iri', $iriData);
+//			$updateData = array(
+//				'iri' => $iriHash,
+//				'iri_r' => $iriRef);
+//			$this->databaseConnection->update('tx_semantic_graph', $updateData, "id = graphId");
 		}
 		$baseRef = false;
-		if (strlen($baseUri) > $this->getSchemaReferenceThreshold()) {
-			$baseHash = md5($baseUri);
-			$baseData = array(
-				'g' => $graphid,
-				'v' => $baseUri,
-				'vh' => $baseHash);
-			$baseRef = $this->insertValueInto('tx_semantic_uri', $baseData);
-			$updateData = array(
-				'base' => $baseHash,
-				'base_r' => $baseRef);
-			$this->databaseConnection->update('tx_semantic_graph', $updateData, "id = graphId");
+		if (strlen($baseIri) > $this->getSchemaReferenceThreshold()) {
+			// TODO duplicate code like in self::createGraph()
+//			$baseHash = md5($baseIri);
+//			$baseData = array(
+//				'g' => $graphid,
+//				'v' => $baseIri,
+//				'vh' => $baseHash);
+//			$baseRef = $this->insertValueInto('tx_semantic_iri', $baseData);
+//			$updateData = array(
+//				'base' => $baseHash,
+//				'base_r' => $baseRef);
+//			$this->databaseConnection->update('tx_semantic_graph', $updateData, "id = graphId");
 		}
-		// invalidate the cache and fetch model infos again
+		// invalidate the cache and fetch graph infos again
 		$cache = $this->knowledgeBase->getCache();
-		$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('model_info'));
-		$this->modelInfoCache = null;
+		$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('graph_info'));
+		$this->graphInfoCache = null;
 		if ($type === 'owl') {
-			$this->addStatement($graphUri, $graphUri, EF_RDF_TYPE, array('type' => 'uri', 'value' => EF_OWL_ONTOLOGY));
-			$this->modelInfoCache = null;
+			$this->addStatement($graphIri, $graphIri, EF_RDF_TYPE, array('type' => 'iri', 'value' => EF_OWL_ONTOLOGY));
+			$this->graphInfoCache = null;
 		}
-		// instanciate the model
-		$m = $this->getModel($graphUri);
+		// instanciate the graph
+		$m = $this->getGraph($graphIri);
 		return $m;
 	}
 
@@ -626,13 +630,13 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function importRdf($modelUri, $data, $type, $locator) {
+	public function importRdf($graphIri, $data, $type, $locator) {
 		// TODO fix or remove
 		if ($this->databaseConnection instanceof \t3lib_DB) {
 			$parser = $this->objectManager->create('\Erfurt\Syntax\RdfParser', $type);
-			$parsedArray = $parser->parse($data, $locator, $modelUri, false);
-			$modelInfoCache = $this->getModelInfos();
-			$modelId = $modelInfoCache["$modelUri"]['modelId'];
+			$parsedArray = $parser->parse($data, $locator, $graphIri, false);
+			$graphInfoCache = $this->getGraphInfos();
+			$graphId = $graphInfoCache["$graphIri"]['graphId'];
 			// create file
 			$tmpDir = $this->knowledgeBase->getTemporaryDirectory();
 			$filename = $tmpDir . '/import' . md5((string)time()) . '.csv';
@@ -673,7 +677,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 								$oType = '0';
 							}
 						}
-						$lineString = $modelId . ';' . $s . ';' . $p . ';' . $o['value'] . ';';
+						$lineString = $graphId . ';' . $s . ';' . $p . ';' . $o['value'] . ';';
 						$lineString .= "\N;\N;\N;";
 						$lineString .= $sType . ';' . $oType . ';';
 						if (isset($o['lang'])) {
@@ -716,31 +720,32 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 				$o = $stm['o']['value'];
 				if (strlen($s) > $this->getSchemaReferenceThreshold()) {
 					$sHash = md5($s);
-					$sId = $this->insertValueInto('tx_semantic_uri', $modelId, $s, $sHash);
+					$sId = $this->insertValueInto('tx_semantic_iri', $graphId, $s, $sHash);
 					$s = substr($s, 0, 128) . $sHash;
 				}
 				if (strlen($p) > $this->getSchemaReferenceThreshold()) {
 					$pHash = md5($p);
-					$pId = $this->insertValueInto('tx_semantic_uri', $modelId, $p, $pHash);
+					$pId = $this->insertValueInto('tx_semantic_iri', $graphId, $p, $pHash);
 					$p = substr($p, 0, 128) . $pHash;
 				}
 				if (strlen($o) > $this->getSchemaReferenceThreshold()) {
 					$oHash = md5($o);
 					if ($stm['o']['type'] === 'literal') {
-						$oId = $this->insertValueInto('tx_semantic_literal', $modelId, $o, $oHash);
+						$oId = $this->insertValueInto('tx_semantic_literal', $graphId, $o, $oHash);
 					} else {
-						$oId = $this->insertValueInto('tx_semantic_uri', $modelId, $o, $oHash);
+						$oId = $this->insertValueInto('tx_semantic_iri', $graphId, $o, $oHash);
 					}
 					$o = substr($o, 0, 128) . $oHash;
 				}
 				if (isset($stm['o']['datatype']) && strlen($stm['o']['datatype']) > $this->getSchemaReferenceThreshold()) {
-					$oDtHash = md5($stm['o']['datatype']);
-					$dtId = $this->insertValueInto('tx_semantic_uri', $modelId, $stm['o']['datatype'], $oDtHash);
-					$oDt = substr($oDt, 0, 128) . $oDtHash;
+					// TODO: where does $oDt come from?
+//					$oDtHash = md5($stm['o']['datatype']);
+//					$dtId = $this->insertValueInto('tx_semantic_iri', $graphId, $stm['o']['datatype'], $oDtHash);
+//					$oDt = substr($oDt, 0, 128) . $oDtHash;
 				}
 				$sql = "INSERT INTO tx_semantic_statement
                         (g,s,p,o,s_r,p_r,o_r,st,ot,ol,od,od_r)
-                        VALUES ($modelId,'$s','$p','$o',";
+                        VALUES ($graphId,'$s','$p','$o',";
 				if ($sId !== false) {
 					$sql .= $sId . ',';
 				} else {
@@ -764,7 +769,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 				if ($stm['o']['type'] === 'literal') {
 					$sql .= '2,';
 				} else {
-					if ($stm['o']['type'] === 'uri') {
+					if ($stm['o']['type'] === 'iri') {
 						$sql .= '0,';
 					} else {
 						$sql .= '1,';
@@ -777,7 +782,8 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 				}
 				if (isset($stm['o']['datatype'])) {
 					if ($dtId !== false) {
-						$sql .= '"' . $oDt . '",' . $dtId . ')';
+						// TODO where does $oDt come from?
+//						$sql .= '"' . $oDt . '",' . $dtId . ')';
 					} else {
 						$sql .= '"' . $stm['o']['datatype'] . '",' . "\N)";
 					}
@@ -796,13 +802,13 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	}
 
 	public function init() {
-		$this->modelInfoCache = null;
+		$this->graphInfoCache = null;
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
-	public function isModelAvailable($modelIri) {
-		$modelInfoCache = $this->getModelInfos();
-		if (isset($modelInfoCache[$modelIri])) {
+	public function isGraphAvailable($graphIri) {
+		$graphInfoCache = $this->getGraphInfos();
+		if (isset($graphInfoCache[$graphIri])) {
 			return true;
 		} else {
 			return false;
@@ -823,12 +829,12 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	public function sparqlAsk($query) {
 		//TODO works for me...., why hasnt this be enabled earlier? is the same as sparqlQuery... looks like the engine supports it. but there is probably a reason for this not to be supported
 		$start = microtime(true);
-		$engine = $this->objectManager->create('\Erfurt\Sparql\EngineDb\Adapter\Typo3', $this->databaseConnection, $this->getModelInfos());
+		$engine = $this->objectManager->create('\Erfurt\Sparql\EngineDb\Adapter\Typo3', $this->databaseConnection, $this->getGraphInfos());
 		$parser = $this->objectManager->create('\Erfurt\Sparql\Parser');
 		if (!($query instanceof Sparql\Query)) {
 			$query = $parser->parse((string)$query);
 		}
-		$result = $engine->queryModel($query);
+		$result = $engine->queryGraph($query);
 		// Debug executed SPARQL queries in debug mode (7)
 		$logger = $this->knowledgeBase->getLog();
 		$time = (microtime(true) - $start) * 1000;
@@ -841,12 +847,12 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	public function sparqlQuery($query, $options = array()) {
 		$resultform = (isset($options[STORE_RESULTFORMAT])) ? $options[STORE_RESULTFORMAT] : STORE_RESULTFORMAT_PLAIN;
 		$start = microtime(true);
-		$engine = $this->objectManager->create('\Erfurt\Sparql\EngineDb\Adapter\Typo3', $this->databaseConnection, $this->getModelInfos());
+		$engine = $this->objectManager->create('\Erfurt\Sparql\EngineDb\Adapter\Typo3', $this->databaseConnection, $this->getGraphInfos());
 		$parser = $this->objectManager->create('\Erfurt\Sparql\Parser');
 		if (!($query instanceof Sparql\Query)) {
 			$query = $parser->parse((string)$query);
 		}
-		$result = $engine->queryModel($query, $resultform);
+		$result = $engine->queryGraph($query, $resultform);
 		// Debug executed SPARQL queries in debug mode (7)
 		$logger = $this->knowledgeBase->getLog();
 		$time = (microtime(true) - $start) * 1000;
@@ -887,12 +893,12 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 		return $result;
 	}
 
-	protected function getModelInfos() {
-		if (null === $this->modelInfoCache) {
-			// try to fetch model and namespace infos... if all tables are present this should not lead to an error.
-			$this->fetchModelInfos();
+	protected function getGraphInfos() {
+		if (null === $this->graphInfoCache) {
+			// try to fetch graph and namespace infos... if all tables are present this should not lead to an error.
+			$this->fetchGraphInfos();
 		}
-		return $this->modelInfoCache;
+		return $this->graphInfoCache;
 	}
 
 	protected function getSchemaReferenceThreshold() {
@@ -904,18 +910,18 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	protected function optimizeTables() {
 		if ($this->databaseConnection instanceof \Zend_Db_Adapter_Mysqli) {
 			$this->databaseConnection->sql_query('OPTIMIZE TABLE tx_semantic_statement');
-			$this->databaseConnection->sql_query('OPTIMIZE TABLE tx_semantic_uri');
+			$this->databaseConnection->sql_query('OPTIMIZE TABLE tx_semantic_iri');
 			$this->databaseConnection->sql_query('OPTIMIZE TABLE tx_semantic_literal');
 		} else {
 			// not supported yet.
 		}
 	}
 
-	protected function _cleanUpValueTables($graphUri) {
-		if (isset($this->modelInfoCache[$graphUri]['modelId'])) {
-			$graphId = $this->modelInfoCache[$graphUri]['modelId'];
+	protected function _cleanUpValueTables($graphIri) {
+		if (isset($this->graphInfoCache[$graphIri]['graphId'])) {
+			$graphId = $this->graphInfoCache[$graphIri]['graphId'];
 		} else {
-			throw new \Exception('Failed to clean up value tables: No db id for <' . $graphUri .
+			throw new \Exception('Failed to clean up value tables: No db id for <' . $graphIri .
 													 '> was found.');
 		}
 		$sql = "SELECT l.id as id, count(l.id)
@@ -933,7 +939,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 			$this->databaseConnection->delete('tx_semantic_literal', $whereString);
 		}
 		$sql = "SELECT u.id as id, count(u.id)
-                FROM tx_semantic_uri u
+                FROM tx_semantic_iri u
                 JOIN tx_semantic_statement s ON s.g = $graphId AND (s.s_r = u.id OR s.p_r = u.id OR s.od_r = u.id OR
                 (s.ot IN (0, 1) AND s.o_r = u.id))
                 WHERE u.g = $graphId
@@ -945,7 +951,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 		if (count($idArray) > 0) {
 			$ids = implode(',', $idArray);
 			$whereString = "g = $graphId AND id NOT IN ($ids)";
-			$this->databaseConnection->delete('tx_semantic_uri', $whereString);
+			$this->databaseConnection->delete('tx_semantic_iri', $whereString);
 		}
 	}
 
@@ -968,7 +974,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 //		$sql = "SELECT id FROM $tableName WHERE vh = '$valueHash'";
 		$result = $this->databaseConnection->exec_SELECTgetSingleRow('id', $tableName, 'vh = ' . $valueHash .'');
 		if (!$result) {
-			throw new \Exception('Fetching of uri id failed: ' .
+			throw new \Exception('Fetching of iri id failed: ' .
 													 $this->databaseConnection->sql_error());
 		}
 		$id = $result['id'];
@@ -979,76 +985,76 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	 *
 	 * @throws \Erfurt\Exception
 	 */
-	private function fetchModelInfos() {
+	private function fetchGraphInfos() {
 		$cache = $this->knowledgeBase->getCache();
-		$id = $cache->makeId($this, '_fetchModelInfos', array());
+		$id = $cache->makeId($this, '_fetchGraphInfos', array());
 		$cachedVal = $cache->load($id);
 		if ($cachedVal) {
-			$this->modelInfoCache = $cachedVal;
+			$this->graphInfoCache = $cachedVal;
 		} else {
-			$sql = 'SELECT g.id, g.uri, g.uri_r, g.base, g.base_r, s.o, u.v,
+			$sql = 'SELECT g.id, g.iri, g.iri_r, g.base, g.base_r, s.o, u.v,
                         (SELECT count(*)
                         FROM tx_semantic_statement s2
                         WHERE s2.g = g.id
-                        AND s2.s = g.uri
+                        AND s2.s = g.iri
                         AND s2.st = 0
                         AND s2.p = \'' . EF_RDF_TYPE . '\'
                         AND s2.o = \'' . EF_OWL_ONTOLOGY . '\'
                         AND s2.ot = 0) as is_owl_ontology
                     FROM tx_semantic_graph g
                     LEFT JOIN tx_semantic_statement s ON (g.id = s.g
-                        AND g.uri = s.s
+                        AND g.iri = s.s
                         AND s.p = \'' . EF_OWL_IMPORTS . '\'
                         AND s.ot = 0)
-                    LEFT JOIN tx_semantic_uri u ON (u.id = g.uri_r OR u.id = g.base_r OR u.id = s.o_r)';
+                    LEFT JOIN tx_semantic_iri u ON (u.id = g.iri_r OR u.id = g.base_r OR u.id = s.o_r)';
 			$result = $this->sqlQuery($sql);
 			if ($result === false) {
-				throw new \Exception('Error while fetching model and namespace informations. Possibly the tables required for TYPO3 Store Adapter are not set up correctly. Check in Extension Manager.', 1303219180);
+				throw new \Exception('Error while fetching graph and namespace informations. Possibly the tables required for TYPO3 Store Adapter are not set up correctly. Check in Extension Manager.', 1303219180);
 			} else {
-				$this->modelInfoCache = array();
+				$this->graphInfoCache = array();
 				#$rowSet = $result->fetchAll();
 				#var_dump($result);exit;
 				foreach ($result as $row) {
-					if (!isset($this->modelInfoCache[$row['uri']])) {
-						$this->modelInfoCache[$row['uri']]['modelId'] = $row['id'];
-						$this->modelInfoCache[$row['uri']]['modelIri'] = $row['uri'];
-						$this->modelInfoCache[$row['uri']]['baseIri'] = $row['base'];
-						$this->modelInfoCache[$row['uri']]['imports'] = array();
-						// set the type of the model
+					if (!isset($this->graphInfoCache[$row['iri']])) {
+						$this->graphInfoCache[$row['iri']]['graphId'] = $row['id'];
+						$this->graphInfoCache[$row['iri']]['graphIri'] = $row['iri'];
+						$this->graphInfoCache[$row['iri']]['baseIri'] = $row['base'];
+						$this->graphInfoCache[$row['iri']]['imports'] = array();
+						// set the type of the graph
 						if ($row['is_owl_ontology'] > 0) {
-							$this->modelInfoCache[$row['uri']]['type'] = 'owl';
+							$this->graphInfoCache[$row['iri']]['type'] = 'owl';
 						} else {
-							$this->modelInfoCache[$row['uri']]['type'] = 'rdfs';
+							$this->graphInfoCache[$row['iri']]['type'] = 'rdfs';
 						}
 						if ($row['o'] !== null &&
-							!isset($this->modelInfoCache[$row['uri']]['imports'][$row['o']])) {
-							$this->modelInfoCache[$row['uri']]['imports'][$row['o']] = $row['o'];
+							!isset($this->graphInfoCache[$row['iri']]['imports'][$row['o']])) {
+							$this->graphInfoCache[$row['iri']]['imports'][$row['o']] = $row['o'];
 						}
 					} else {
 						if ($row['o'] !== null &&
-							!isset($this->modelInfoCache[$row['uri']]['imports'][$row['o']])) {
-							$this->modelInfoCache[$row['uri']]['imports'][$row['o']] = $row['o'];
+							!isset($this->graphInfoCache[$row['iri']]['imports'][$row['o']])) {
+							$this->graphInfoCache[$row['iri']]['imports'][$row['o']] = $row['o'];
 						}
 					}
 				}
-				//var_dump($this->_modelInfoCache);exit;
+				//var_dump($this->_graphInfoCache);exit;
 				// build the transitive closure for owl:imports
 				// check for recursive owl:imports; also check for cylces!
 				do {
 					// indicated whether anything was changed in the array or not and whether loop needs to run again
 					$hasChanged = false;
-					// test every model exists in the model table
-					foreach ($this->modelInfoCache as $modelIri) {
-						// only owl models can import other models
-						if ($modelIri['type'] !== 'owl') {
+					// test every graph exists in the graph table
+					foreach ($this->graphInfoCache as $graphIri) {
+						// only owl graphs can import other graphs
+						if ($graphIri['type'] !== 'owl') {
 							continue;
 						}
-						foreach ($modelIri['imports'] as $importsIri) {
-							if (isset($this->modelInfoCache[$importsIri])) {
-								foreach ($this->modelInfoCache[$importsIri]['imports'] as $importsImportIri) {
-									if (!isset($modelIri['imports'][$importsImportIri]) &&
-										!($importsImportIri === $modelIri['modelIri'])) {
-										$this->modelInfoCache[$modelIri['modelIri']]
+						foreach ($graphIri['imports'] as $importsIri) {
+							if (isset($this->graphInfoCache[$importsIri])) {
+								foreach ($this->graphInfoCache[$importsIri]['imports'] as $importsImportIri) {
+									if (!isset($graphIri['imports'][$importsImportIri]) &&
+										!($importsImportIri === $graphIri['graphIri'])) {
+										$this->graphInfoCache[$graphIri['graphIri']]
 										['imports'][$importsImportIri] = $importsImportIri;
 										$hasChanged = true;
 									}
@@ -1058,14 +1064,14 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 					}
 				} while ($hasChanged === true);
 			}
-			$cache->save($this->modelInfoCache, $id, array('model_info'));
+			$cache->save($this->graphInfoCache, $id, array('graph_info'));
 		}
 	}
 
 	/**
 	 * Checks whether all needed database table for the adapter are present.
 	 *
-	 * Currently we need three tables: 'models', 'statements' and 'namespaces'
+	 * Currently we need three tables: 'graphs', 'statements' and 'namespaces'
 	 *
 	 * @throws \Erfurt\Exception
 	 * @return boolean Returns true if all tables are present.
@@ -1076,7 +1082,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 			if (!in_array('tx_semantic_info', $existingTables) ||
 				!in_array('tx_semantic_graph', $existingTables) ||
 				!in_array('tx_semantic_statement', $existingTables) ||
-				!in_array('tx_semantic_uri', $existingTables) ||
+				!in_array('tx_semantic_iri', $existingTables) ||
 				!in_array('tx_semantic_literal', $existingTables)) {
 				return false;
 			} else {

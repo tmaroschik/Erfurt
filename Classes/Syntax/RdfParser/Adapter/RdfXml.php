@@ -51,12 +51,12 @@ class RdfXml implements AdapterInterface {
 	protected $_statements = array();
 
 	protected $_xmlParser = null;
-	protected $_baseUri = null;
+	protected $_baseIri = null;
 
 	protected $_currentCharData = null;
 
 	protected $_parseToStore = false;
-	protected $_graphUri = null;
+	protected $_graphIri = null;
 	protected $_useAc = true;
 	protected $_stmtCounter = 0;
 
@@ -80,9 +80,9 @@ class RdfXml implements AdapterInterface {
 		$this->knowledgeBase = $knowledgeBase;
 	}
 
-	public function parseFromDataString($dataString, $baseUri = null) {
-		if (null !== $baseUri) {
-			$this->_baseUri = $baseUri;
+	public function parseFromDataString($dataString, $baseIri = null) {
+		if (null !== $baseIri) {
+			$this->_baseIri = $baseIri;
 		}
 
 		$xmlParser = $this->_getXmlParser();
@@ -100,7 +100,7 @@ class RdfXml implements AdapterInterface {
 	}
 
 	public function parseFromFilename($filename) {
-		$this->_baseUri = $filename;
+		$this->_baseIri = $filename;
 
 		stream_context_get_default(array(
 										'http' => array(
@@ -130,9 +130,9 @@ class RdfXml implements AdapterInterface {
 		return $this->_statements;
 	}
 
-	public function parseFromFilenameToStore($filename, $graphUri, $useAc = true) {
+	public function parseFromFilenameToStore($filename, $graphIri, $useAc = true) {
 		$this->_parseToStore = true;
-		$this->_graphUri = $graphUri;
+		$this->_graphIri = $graphIri;
 		$this->_useAc = $useAc;
 		$this->parseFromFilename($filename);
 
@@ -142,11 +142,11 @@ class RdfXml implements AdapterInterface {
 		return true;
 	}
 
-	public function parseFromDataStringToStore($data, $graphUri, $useAc = true, $baseUri = null) {
+	public function parseFromDataStringToStore($data, $graphIri, $useAc = true, $baseIri = null) {
 		$this->_parseToStore = true;
-		$this->_graphUri = $graphUri;
+		$this->_graphIri = $graphIri;
 		$this->_useAc = $useAc;
-		$this->parseFromDataString($data, $baseUri);
+		$this->parseFromDataString($data, $baseIri);
 
 		$this->_writeStatementsToStore();
 		$this->_addNamespacesToStore();
@@ -155,7 +155,7 @@ class RdfXml implements AdapterInterface {
 	}
 
 	public function parseFromUrl($url) {
-		$this->_baseUri = $url;
+		$this->_baseIri = $url;
 
 		$client = $this->knowledgeBase->getHttpClient($url, array(
 																	  'maxredirects' => 10,
@@ -168,9 +168,9 @@ class RdfXml implements AdapterInterface {
 		return $this->parseFromDataString($response->getBody());
 	}
 
-	public function parseFromUrlToStore($url, $graphUri, $useAc = true) {
+	public function parseFromUrlToStore($url, $graphIri, $useAc = true) {
 		$this->_parseToStore = true;
-		$this->_graphUri = $graphUri;
+		$this->_graphIri = $graphIri;
 		$this->_useAc = $useAc;
 		$this->parseFromUrl($url);
 
@@ -227,7 +227,7 @@ class RdfXml implements AdapterInterface {
 		$erfurtNamespaces = $this->knowledgeBase->getNamespaces();
 		foreach ($this->_namespaces as $ns => $prefix) {
 			try {
-				$erfurtNamespaces->addNamespacePrefix($this->_graphUri, $ns, $prefix);
+				$erfurtNamespaces->addNamespacePrefix($this->_graphIri, $ns, $prefix);
 			}
 			catch (\Erfurt\Namespaces\Exception $e) {
 				// We need to catch the store exception, for the namespace component throws exceptions in case a prefix
@@ -245,7 +245,7 @@ class RdfXml implements AdapterInterface {
 
 		if ($name === EF_RDF_NS . 'RDF') {
 			if (isset($attrs[(EF_XML_NS . 'base')])) {
-				$this->_baseUri = $attrs[(EF_XML_NS . 'base')];
+				$this->_baseIri = $attrs[(EF_XML_NS . 'base')];
 			}
 			return;
 		}
@@ -309,10 +309,10 @@ class RdfXml implements AdapterInterface {
 				if (null === $lastListResource) {
 					$subject = $this->_peekStack(1);
 
-					$this->_addStatement($subject->getResource(), $topElement->getUri(), EF_RDF_NIL, 'uri');
+					$this->_addStatement($subject->getResource(), $topElement->getIri(), EF_RDF_NIL, 'iri');
 					$this->_handleReification(EF_RDF_NIL);
 				} else {
-					$this->_addStatement($lastListResource, EF_RDF_REST, EF_RDF_NIL, 'uri');
+					$this->_addStatement($lastListResource, EF_RDF_REST, EF_RDF_NIL, 'iri');
 				}
 			}
 		}
@@ -351,7 +351,7 @@ class RdfXml implements AdapterInterface {
 			$dt = $propElem->getDatatype();
 
 			$subjectElem = $this->_peekStack(1);
-			$this->_addStatement($subjectElem->getResource(), $propElem->getUri(), trim($this->_currentCharData), 'literal',
+			$this->_addStatement($subjectElem->getResource(), $propElem->getIri(), trim($this->_currentCharData), 'literal',
 								 $this->_currentXmlLang, $dt);
 
 			$this->_handleReification(trim($this->_currentCharData));
@@ -381,7 +381,7 @@ class RdfXml implements AdapterInterface {
 
 				if (null === $lastListResource) {
 					// This is the first element in the list.
-					$this->_addStatement($subject->getResource(), $predicate->getUri(), $newListResource);
+					$this->_addStatement($subject->getResource(), $predicate->getIri(), $newListResource);
 					$this->_handleReification($newListResource);
 				} else {
 					// Not the first element in the list.
@@ -391,20 +391,20 @@ class RdfXml implements AdapterInterface {
 				$this->_addStatement($newListResource, EF_RDF_FIRST, $nodeResource);
 				$predicate->setLastListResource($newListResource);
 			} else {
-				$this->_addStatement($subject->getResource(), $predicate->getUri(), $nodeResource);
+				$this->_addStatement($subject->getResource(), $predicate->getIri(), $nodeResource);
 				$this->_handleReification($nodeResource);
 			}
 		}
 
 		if ($name !== EF_RDF_NS . 'Description') {
-			// Element name is the type of the uri.
-			$this->_addStatement($nodeResource, EF_RDF_TYPE, $name, 'uri');
+			// Element name is the type of the iri.
+			$this->_addStatement($nodeResource, EF_RDF_TYPE, $name, 'iri');
 		}
 
 		$type = $this->_removeAttribute($attrs, EF_RDF_TYPE);
 		if (null !== $type) {
-			$className = $this->_resolveUri($type);
-			$this->_addStatement($nodeResource, EF_RDF_TYPE, $className, 'uri');
+			$className = $this->_resolveIri($type);
+			$this->_addStatement($nodeResource, EF_RDF_TYPE, $className, 'iri');
 		}
 
 		// Process all remaining attributes of this element.
@@ -416,23 +416,23 @@ class RdfXml implements AdapterInterface {
 	}
 
 	protected function _processProperty($name, &$attrs) {
-		$propUri = $name;
+		$propIri = $name;
 
 		// List expansion rule
-		if ($propUri === EF_RDF_NS . 'li') {
+		if ($propIri === EF_RDF_NS . 'li') {
 			$subject = $this->_peekStack(0);
-			$propUri = EF_RDF_NS . '_' . $subject->getNextLiCounter();
+			$propIri = EF_RDF_NS . '_' . $subject->getNextLiCounter();
 		}
 
 		// Push the property on the stack.
-		$predicate = new RdfXml\PropertyElement($propUri);
+		$predicate = new RdfXml\PropertyElement($propIri);
 		$this->_elementStack[] = $predicate;
 
 		// Check, whether the prop has a reification id.
 		$id = $this->_removeAttribute($attrs, EF_RDF_NS . 'ID');
 		if (null !== $id) {
-			$uri = $this->_buildUriFromId($id);
-			$predicate->setReificationUri($uri);
+			$iri = $this->_buildIriFromId($id);
+			$predicate->setReificationIri($iri);
 		}
 
 		// Check for rdf:parseType attribute.
@@ -443,7 +443,7 @@ class RdfXml implements AdapterInterface {
 					$objectResource = $this->_createBNode();
 					$subject = $this->_peekStack(1);
 
-					$this->_addStatement($subject->getResource(), $propUri, $objectResource, 'bnode');
+					$this->_addStatement($subject->getResource(), $propIri, $objectResource, 'bnode');
 
 					if ($this->_currentElementIsEmpty) {
 						$this->_handleReification($objectResource);
@@ -457,7 +457,7 @@ class RdfXml implements AdapterInterface {
 				case 'Collection':
 					if ($this->_currentElementIsEmpty) {
 						$subject = $this->_peekStack(1);
-						$this->_addStatement($subject->getResource(), $propUri, EF_RDF_NIL, 'uri');
+						$this->_addStatement($subject->getResource(), $propIri, EF_RDF_NIL, 'iri');
 						$this->_handleReification(EF_RDF_NIL);
 					} else {
 						$predicate->setParseAsCollection(true);
@@ -468,7 +468,7 @@ class RdfXml implements AdapterInterface {
 				case 'Literal':
 					if ($this->_currentElementIsEmpty) {
 						$subject = $this->_peekStack(1);
-						$this->_addStatement($subject->getResource(), $propUri,
+						$this->_addStatement($subject->getResource(), $propIri,
 											 '', 'literal', null, EF_RDF_NS . 'XmlLiteral');
 						$this->_handleReification('');
 					} else {
@@ -491,7 +491,7 @@ class RdfXml implements AdapterInterface {
 						$dt = $attrs[EF_RDF_NS . 'datatype'];
 					}
 
-					$this->_addStatement($subject->getResource(), $propUri, '', 'literal', $this->_currentXmlLang, $dt);
+					$this->_addStatement($subject->getResource(), $propIri, '', 'literal', $this->_currentXmlLang, $dt);
 					$this->_handleReification('');
 				} else {
 					$resourceRes = $this->_getPropertyResource($attrs);
@@ -502,12 +502,12 @@ class RdfXml implements AdapterInterface {
 
 					$subject = $this->_peekStack(1);
 
-					$this->_addStatement($subject->getResource(), $propUri, $resourceRes);
+					$this->_addStatement($subject->getResource(), $propIri, $resourceRes);
 					$this->_handleReification($resourceRes);
 
 					$type = $this->_removeAttribute($attrs, EF_RDF_TYPE);
 					if (null !== $type) {
-						$className = $this->_resolveUri($type);
+						$className = $this->_resolveIri($type);
 
 						$this->_addStatement($resourceRes, EF_RDF_TYPE, $className);
 					}
@@ -525,10 +525,10 @@ class RdfXml implements AdapterInterface {
 				// Check for about attribute
 				#$about = $this->_removeAttribute($attrs, EF_RDF_NS.'about');
 				#if (null !== $about) {
-				#    $aboutUri = $this->_resolveUri($about);
-				#    $this->_addStatement($aboutUri, EF_RDF_TYPE, $predicate, 'uri');
+				#    $aboutIri = $this->_resolveIri($about);
+				#    $this->_addStatement($aboutIri, EF_RDF_TYPE, $predicate, 'iri');
 				// TODO phil    #
-				#    $this->_processSubjectAttributes($aboutUri, $attrs);
+				#    $this->_processSubjectAttributes($aboutIri, $attrs);
 				#}
 			}
 		}
@@ -543,7 +543,7 @@ class RdfXml implements AdapterInterface {
 		$nodeId = $this->_removeAttribute($attrs, EF_RDF_NS . 'nodeID');
 
 		if (null !== $resource) {
-			return $this->_resolveUri($resource);
+			return $this->_resolveIri($resource);
 		} else {
 			if (null !== $nodeId) {
 				return $this->_createBNode($nodeId);
@@ -571,7 +571,7 @@ class RdfXml implements AdapterInterface {
 			if (substr($o, 0, 2) === '_:') {
 				$oType = 'bnode';
 			} else {
-				$oType = 'uri';
+				$oType = 'iri';
 			}
 		}
 
@@ -599,15 +599,15 @@ class RdfXml implements AdapterInterface {
 	}
 
 	protected function _writeStatementsToStore() {
-		// Check whether model exists.
+		// Check whether graph exists.
 		$store = $this->knowledgeBase->getStore();
 
-		if (!$store->isModelAvailable($this->_graphUri, $this->_useAc)) {
-			throw new \Exception('Model with uri ' . $this->_graphUri . ' not available.');
+		if (!$store->isGraphAvailable($this->_graphIri, $this->_useAc)) {
+			throw new \Exception('Graph with iri ' . $this->_graphIri . ' not available.');
 		}
 
 		if (count($this->_statements) > 0) {
-			$store->addMultipleStatements($this->_graphUri, $this->_statements, $this->_useAc);
+			$store->addMultipleStatements($this->_graphIri, $this->_statements, $this->_useAc);
 			$this->_statements = array();
 			$this->_stmtCounter = 0;
 		}
@@ -618,8 +618,8 @@ class RdfXml implements AdapterInterface {
 
 		if ($predicate->isReified()) {
 			$subject = $this->_peekStack(1);
-			$reifRes = $predicate->getReificationUri();
-			$this->_reifyStatement($reifRes, $subject->getResource(), $predicate->getUri(), $value);
+			$reifRes = $predicate->getReificationIri();
+			$this->_reifyStatement($reifRes, $subject->getResource(), $predicate->getIri(), $value);
 		}
 	}
 
@@ -642,10 +642,10 @@ class RdfXml implements AdapterInterface {
 		// first given.
 
 		if (null !== $id) {
-			return $this->_buildUriFromId($id);
+			return $this->_buildIriFromId($id);
 		} else {
 			if (null !== $about) {
-				return $this->_resolveUri($about);
+				return $this->_resolveIri($about);
 			} else {
 				if (null !== $nodeId) {
 					return $this->_createBNode($nodeId);
@@ -667,33 +667,33 @@ class RdfXml implements AdapterInterface {
 		}
 	}
 
-	protected function _buildUriFromId($id) {
-		return $this->_resolveUri('#' . $id);
+	protected function _buildIriFromId($id) {
+		return $this->_resolveIri('#' . $id);
 	}
 
-	protected function _resolveUri($about) {
+	protected function _resolveIri($about) {
 		if ($this->_checkSchemas($about)) {
 			return $about;
 		}
 
-		// TODO Handle all relative URIs the right way...
+		// TODO Handle all relative IRIs the right way...
 		if (substr($about, 0, 1) === '#' || $about === '' || strpos($about, '/') === false) {
-			// Relative URI... Resolve against the base URI.
-			if ($this->_getBaseUri()) {
+			// Relative IRI... Resolve against the base IRI.
+			if ($this->_getBaseIri()) {
 				// prevent double hash (e.g. http://www.w3.org/TR/owl-guide/wine.rdf Issue 604)
-				if (substr($about, 0, 1) === '#' && substr($this->_getBaseUri(), -1) === '#') {
+				if (substr($about, 0, 1) === '#' && substr($this->_getBaseIri(), -1) === '#') {
 					$about = substr($about, 1);
 				}
-				return $this->_getBaseUri() . $about;
+				return $this->_getBaseIri() . $about;
 			}
 		}
 
-		// Absolute URI... Return it.
+		// Absolute IRI... Return it.
 		return $about;
 	}
 
 	protected function _checkSchemas($about) {
-		$schemataArray = $this->knowledgeBase->getUriConfiguration()->schemata->toArray();
+		$schemataArray = $this->knowledgeBase->getIriConfiguration()->schemata->toArray();
 
 		$regExp = '/^(' . implode(':|', $schemataArray) . ').*$/';
 		if (preg_match($regExp, $about)) {
@@ -719,9 +719,9 @@ class RdfXml implements AdapterInterface {
 		return '_:' . $id;
 	}
 
-	protected function _getBaseUri() {
-		if (null !== $this->_baseUri) {
-			return $this->_baseUri;
+	protected function _getBaseIri() {
+		if (null !== $this->_baseIri) {
+			return $this->_baseIri;
 		} else {
 			return false;
 		}
@@ -756,7 +756,7 @@ class RdfXml implements AdapterInterface {
 		if (null === $this->_xmlParser) {
 			$this->_xmlParser = xml_parser_create_ns(null, '');
 
-			// Disable case folding, for we need the uris.
+			// Disable case folding, for we need the iris.
 			xml_parser_set_option($this->_xmlParser, XML_OPTION_CASE_FOLDING, 0);
 
 			xml_parser_set_option($this->_xmlParser, XML_OPTION_SKIP_WHITE, 1);
@@ -793,13 +793,13 @@ class RdfXml implements AdapterInterface {
 		//var_dump($data);
 	}
 
-	protected function _handleNamespaceDeclaration($parser, $prefix, $uri) {
+	protected function _handleNamespaceDeclaration($parser, $prefix, $iri) {
 		$prefix = (string)$prefix;
-		$uri = (string)$uri;
+		$iri = (string)$iri;
 
 		if (!$this->_rdfElementParsed) {
-			if ($prefix != '' && $uri != '') {
-				$this->_namespaces[$uri] = $prefix;
+			if ($prefix != '' && $iri != '') {
+				$this->_namespaces[$iri] = $prefix;
 			}
 		}
 	}

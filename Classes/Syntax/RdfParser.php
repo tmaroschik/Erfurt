@@ -118,7 +118,7 @@ class RdfParser {
 	 * @param int One of the supported pointer types.
 	 * @return array Returns an RDF/PHP array.
 	 */
-	public function parse($dataPointer, $pointerType, $baseUri = null) {
+	public function parse($dataPointer, $pointerType, $baseIri = null) {
 		if ($pointerType === self::LOCATOR_URL) {
 			$result = $this->parserAdapter->parseFromUrl($dataPointer);
 		} else {
@@ -126,7 +126,7 @@ class RdfParser {
 				$result = $this->parserAdapter->parseFromFilename($dataPointer);
 			} else {
 				if ($pointerType === self::LOCATOR_DATASTRING) {
-					$result = $this->parserAdapter->parseFromDataString($dataPointer, $baseUri);
+					$result = $this->parserAdapter->parseFromDataString($dataPointer, $baseIri);
 				} else {
 					throw new RdfParserException('Type of data pointer not valid.');
 				}
@@ -168,15 +168,15 @@ class RdfParser {
 		return $result;
 	}
 
-	public function parseToStore($dataPointer, $pointerType, $modelUri, $useAc = true, $baseUri = null) {
+	public function parseToStore($dataPointer, $pointerType, $graphIri, $useAc = true, $baseIri = null) {
 		if ($pointerType === self::LOCATOR_URL) {
-			$result = $this->parserAdapter->parseFromUrlToStore($dataPointer, $modelUri, $useAc);
+			$result = $this->parserAdapter->parseFromUrlToStore($dataPointer, $graphIri, $useAc);
 		} else {
 			if ($pointerType === self::LOCATOR_FILE) {
-				$result = $this->parserAdapter->parseFromFilenameToStore($dataPointer, $modelUri, $useAc);
+				$result = $this->parserAdapter->parseFromFilenameToStore($dataPointer, $graphIri, $useAc);
 			} else {
 				if ($pointerType === self::LOCATOR_DATASTRING) {
-					$result = $this->parserAdapter->parseFromDataStringToStore($dataPointer, $modelUri, $useAc, $baseUri);
+					$result = $this->parserAdapter->parseFromDataStringToStore($dataPointer, $graphIri, $useAc, $baseIri);
 				} else {
 					throw new RdfParserException('Type of data pointer not valid.');
 				}

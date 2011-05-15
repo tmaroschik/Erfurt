@@ -194,14 +194,14 @@ class Erfurt_Store_Adapter_Virtuoso implements Erfurt_Store_Adapter_Interface, E
      * @param string $baseUri
      * @return boolean
      */
-    public function createModel($graphUri, $type = Erfurt_Store::MODEL_TYPE_OWL)
+    public function createModel($graphUri, $type = Erfurt_Store::GRAPH_TYPE_OWL)
     {
         // create empty graph
         $createQuery = "CREATE SILENT GRAPH <$graphUri>";
         $this->_execSparql($createQuery);
         
         require_once 'Erfurt/Store.php';
-        if ($type === Erfurt_Store::MODEL_TYPE_OWL) {
+        if ($type === Erfurt_Store::GRAPH_TYPE_OWL) {
             // add statement <graph> a owl:Ontology
             $owlInsert = sprintf('INSERT INTO GRAPH <%s> {<%s> a <%s>.}', $graphUri, $graphUri, EF_OWL_ONTOLOGY);
             $this->_execSparql($owlInsert);
@@ -362,7 +362,7 @@ class Erfurt_Store_Adapter_Virtuoso implements Erfurt_Store_Adapter_Interface, E
                 $graphs = $this->_odbcResultToArray($rid, false, 'GRAPH');
                 $this->_graphs = array();
                 foreach ($graphs as $graph) {
-                    $this->_graphs[$graph] = array('modelIri' => $graph);
+                    $this->_graphs[$graph] = array('graphIri' => $graph);
                 }
             }          
         }

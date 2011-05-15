@@ -35,7 +35,7 @@ namespace Erfurt\Authentication\Adapter;
  * supports a form of auth delegation, i.e. if another Erfurt application connects via
  * SSL/TLS and this application can be authenticated with FOAF+SSL and the application
  * provides a FOAF+SSL auth header (non-standard!) with a valid WebID and the dereferenced
- * FOAF file contains the URI of the agent, then the user is authenticated...
+ * FOAF file contains the IRI of the agent, then the user is authenticated...
  *
  * @package $PACKAGE$
  * @subpackage $SUBPACKAGE$
@@ -49,7 +49,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	 */
 	const TIMESTAMP_VALIDITY = 1000;
 
-	/* Property URIs */
+	/* Property IRIs */
 	const PUBLIC_KEY_PROPERTY = 'http://www.w3.org/ns/auth/rsa#RSAPublicKey';
 	const IDENTITY_PROP = 'http://www.w3.org/ns/auth/cert#identity';
 	const EXPONENT_PROP = 'http://www.w3.org/ns/auth/rsa#public_exponent';
@@ -62,46 +62,46 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	// ------------------------------------------------------------------------
 
 	/**
-	 * Contains the URI of the graph used for ac and auth.
+	 * Contains the IRI of the graph used for ac and auth.
 	 *
 	 * @var string
 	 */
-	protected $_acModelUri = null;
+	protected $accessControlGraphIri = null;
 
 	/**
 	 * Contains the config object.
 	 *
 	 * @var array
 	 */
-	protected $_config = null;
+	protected $configuration = null;
 
 	/**
 	 * Contains fetched FOAF data if dereferencing was succesfull.
 	 *
 	 * @var array
 	 */
-	protected $_foafData = array();
+	protected $foafData = array();
 
 	/**
 	 * GET of the request if we use a remote idp.
 	 *
 	 * @var array|null
 	 */
-	protected $_get = null;
+	protected $get = null;
 
 	/**
 	 * URL of the idp iff set.
 	 *
 	 * @var string|null
 	 */
-	protected $_idpServiceUrl = null;
+	protected $idpServiceUrl = null;
 
 	/**
 	 * Contains the public key of the idp iff configured.
 	 *
 	 * @var string|null
 	 */
-	protected $_publicKey = null;
+	protected $publicKey = null;
 
 	/**
 	 * An optional redirect URL, that is used in combination with a remote idp only.
@@ -109,40 +109,36 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	 *
 	 * @var string|null
 	 */
-	protected $_redirectUrl = null;
+	protected $redirectUrl = null;
 
 	/**
 	 * Contains a reference to the store object in order to do SPARQL.
 	 *
 	 * @var Erfurt_Store
 	 */
-	protected $_store = null;
+	protected $store = null;
 
 	/**
-	 * Contains the URIs used for modeling users and rights in RDF.
-	 * This URIs are loaded from the config file.
+	 * Contains the IRIs used for modeling users and rights in RDF.
+	 * This IRIs are loaded from the config file.
 	 *
 	 * @var array
 	 */
-	protected $_uris = array();
+	protected $iris = array();
 
 	/**
 	 * Whether to verify signature of idp result.
 	 *
 	 * @var bool
 	 */
-	protected $_verifySignature = true;
+	protected $verifySignature = true;
 
 	/**
 	 * Whether to check timestamp of idp result.
 	 *
 	 * @var bool
 	 */
-	protected $_verifyTimestamp = true;
-
-	// ------------------------------------------------------------------------
-	// --- Magic methods ------------------------------------------------------
-	// ------------------------------------------------------------------------
+	protected $verifyTimestamp = true;
 
 	/**
 	 * If SSL/TLS is used the parameters can be left out. If a remote idp is
@@ -152,31 +148,31 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	 * @param string $redirectUrl
 	 */
 	public function __construct(array $get = null, $redirectUrl = null) {
-		$this->_get = $get;
-		$this->_redirectUrl = $redirectUrl;
+		$this->get = $get;
+		$this->redirectUrl = $redirectUrl;
 
 		$app = Erfurt_App::getInstance();
-		$this->_store = $app->getStore();
+		$this->store = $app->getStore();
 
 		$config = $app->getConfig();
-		$this->_config = $config;
-		$this->_acModelUri = $config->ac->modelUri;
+		$this->configuration = $config;
+		$this->accessControlGraphIri = $config->ac->graphIri;
 		if (isset($config->auth->foafssl->idp->serviceUrl)) {
-			$this->_idpServiceUrl = $config->auth->foafssl->idp->serviceUrl;
+			$this->idpServiceUrl = $config->auth->foafssl->idp->serviceUrl;
 		}
 		if (isset($config->auth->foafssl->idp->verifyTimestamp)) {
-			$this->_verifyTimestamp = (bool)$config->auth->foafssl->idp->verifyTimestamp;
+			$this->verifyTimestamp = (bool)$config->auth->foafssl->idp->verifyTimestamp;
 		}
 		if (isset($config->auth->foafssl->idp->verifySignature)) {
-			$this->_verifySignature = (bool)$config->auth->foafssl->idp->verifySignature;
+			$this->verifySignature = (bool)$config->auth->foafssl->idp->verifySignature;
 
 			if (isset($config->auth->foafssl->idp->publicKey)) {
-				$this->_publicKey = $config->auth->foafssl->idp->publicKey;
+				$this->publicKey = $config->auth->foafssl->idp->publicKey;
 			}
 		}
 
-		// load URIs from config
-		$this->_uris = array(
+		// load IRIs from config
+		$this->iris = array(
 			'user_class' => $config->ac->user->class,
 			'user_username' => $config->ac->user->name,
 			'user_password' => $config->ac->user->pass,
@@ -255,7 +251,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 		$dn .= PHP_EOL . 'countryName=' . $country;
 
 		// Subject alternate name...
-		$san = 'URI:' . $webId;
+		$san = 'IRI:' . $webId;
 		putenv('SAN=' . $san);
 
 		$fhandle = fopen($spkacFilename, 'w');
@@ -321,35 +317,35 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 			return false;
 		}
 		$san = $instance->_getSubjectAlternativeNames();
-		if ($san === false || !isset($san['uri'])) {
+		if ($san === false || !isset($san['iri'])) {
 			return false;
 		}
 
-		$foafPublicKey = $instance->_getFoafRsaPublicKey($san['uri']);
+		$foafPublicKey = $instance->_getFoafRsaPublicKey($san['iri']);
 		if ($foafPublicKey === false) {
 			return array(
 				'certPublicKey' => $rsaPublicKey,
-				'webId' => $san['uri']
+				'webId' => $san['iri']
 			);
 		} else {
 			return array(
 				'certPublicKey' => $rsaPublicKey,
-				'webId' => $san['uri'],
+				'webId' => $san['iri'],
 				'foafPublicKey' => $foafPublicKey
 			);
 		}
 	}
 
 	/**
-	 * Returns FOAF data for a given FOAF URI iff available.
+	 * Returns FOAF data for a given FOAF IRI iff available.
 	 * Returns false else.
 	 *
-	 * @param string $foafUri
+	 * @param string $foafIri
 	 * @return array|bool
 	 *
 	 */
-	public static function getFoafData($foafUri) {
-		$client = Erfurt_App::getInstance()->getHttpClient($foafUri, array(
+	public static function getFoafData($foafIri) {
+		$client = Erfurt_App::getInstance()->getHttpClient($foafIri, array(
 																		  'maxredirects' => 3,
 																		  'timeout' => 30
 																	 ));
@@ -360,10 +356,10 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 			require_once 'Erfurt/Syntax/RdfParser.php';
 			$parser = Erfurt_Syntax_RdfParser::rdfParserWithFormat('rdfxml');
 
-			if ($idx = strrpos($foafUri, '#')) {
-				$base = substr($foafUri, 0, $idx);
+			if ($idx = strrpos($foafIri, '#')) {
+				$base = substr($foafIri, 0, $idx);
 			} else {
-				$base = $foafUri;
+				$base = $foafIri;
 			}
 
 			try {
@@ -389,8 +385,8 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	 * @param $webId
 	 */
 	public function addUser($webId) {
-		$acModelUri = $this->_acModelUri;
-		$store = $this->_store;
+		$acGraphIri = $this->accessControlGraphIri;
+		$store = $this->store;
 
 		// Only add the user if allowed...
 		if (!Erfurt_App::getInstance()->getAc()->isActionAllowed('RegisterNewUser')) {
@@ -424,14 +420,14 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 			}
 		}
 
-		// uri rdf:type sioc:User
+		// iri rdf:type sioc:User
 		$store->addStatement(
-			$acModelUri,
+			$acGraphIri,
 			$webId,
 			EF_RDF_TYPE,
 			array(
-				 'value' => $this->_uris['user_class'],
-				 'type' => 'uri'
+				 'value' => $this->iris['user_class'],
+				 'type' => 'iri'
 			),
 			false
 		);
@@ -442,24 +438,24 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 				$email = 'mailto:' . $email;
 			}
 
-			// uri sioc:mailbox email
+			// iri sioc:mailbox email
 			$store->addStatement(
-				$acModelUri,
-				$userUri,
-				$this->_config->ac->user->mail,
+				$acGraphIri,
+				$userIri,
+				$this->configuration->ac->user->mail,
 				array(
 					 'value' => $email,
-					 'type' => 'uri'
+					 'type' => 'iri'
 				),
 				false
 			);
 		}
 
 		if (!empty($label)) {
-			// uri rdfs:label $label
+			// iri rdfs:label $label
 			$store->addStatement(
-				$acModelUri,
-				$userUri,
+				$acGraphIri,
+				$userIri,
 				EF_RDFS_LABEL,
 				array(
 					 'value' => $label,
@@ -471,12 +467,12 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 
 		if (isset($actionConfig['defaultGroup'])) {
 			$store->addStatement(
-				$acModelUri,
+				$acGraphIri,
 				$actionConfig['defaultGroup'],
-				$this->_uris['group_membership'],
+				$this->iris['group_membership'],
 				array(
 					 'value' => $webId,
-					 'type' => 'uri'
+					 'type' => 'iri'
 				),
 				false
 			);
@@ -489,7 +485,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	 * @return Zend_Auth_Result
 	 */
 	public function authenticate() {
-		if (null === $this->_get) {
+		if (null === $this->get) {
 			// Check if we can get the webid by ourself (https+openssl)
 			if ($this->_isSelfCheckPossible()) {
 				$webId = $this->_getAndCheckWebId();
@@ -498,7 +494,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 					// Auth...
 					$userResult = $this->_checkWebId($webId);
 
-					if ($userResult['userUri'] === false) {
+					if ($userResult['userIri'] === false) {
 						// Add the user automatically...
 						$this->addUser($webId);
 						$userResult = $this->_checkWebId($webId);
@@ -514,7 +510,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 					return new Zend_Auth_Result(Zend_Auth_Result::FAILURE_IDENTITY_NOT_FOUND, null, array($msg));
 				}
 			} else {
-				if (null === $this->_idpServiceUrl) {
+				if (null === $this->idpServiceUrl) {
 					// Currently we need an external service for that...
 					$result = false;
 					$msg = 'No IdP configured.';
@@ -524,27 +520,27 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 				}
 
 				// First we fetch the webid in a secure manner...
-				$url = $this->_idpServiceUrl . '?authreqissuer=' . urlencode($this->_redirectUrl);
+				$url = $this->idpServiceUrl . '?authreqissuer=' . urlencode($this->redirectUrl);
 				header('Location: ' . $url);
 				exit;
 			}
 		} else {
 			// First we need to verify the idp result!
-			if (!$this->verifyIdpResult($this->_get)) {
+			if (!$this->verifyIdpResult($this->get)) {
 				// Corrupt result
-				$msg = $this->_getErrorMessage($this->_get);
+				$msg = $this->_getErrorMessage($this->get);
 				$result = false;
 
 				require_once 'Zend/Auth/Result.php';
 				return new Zend_Auth_Result($result, null, array($msg));
 			} else {
 				// Result is OK, so we have a valid WebId now. We now know, that the user is really the user...
-				// Now check against the local ac model...
+				// Now check against the local ac graph...
 				// Auth...
-				$webId = $this->_get['webid'];
+				$webId = $this->get['webid'];
 				$userResult = $this->_checkWebId($webId);
 
-				if ($userResult['userUri'] === false) {
+				if ($userResult['userIri'] === false) {
 					// Add the user automatically...
 					$this->addUser($webId);
 					$userResult = $this->_checkWebId($webId);
@@ -556,7 +552,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	}
 
 	/**
-	 * This method authenticates a user uri that is given via auth header FOAF+SSL.
+	 * This method authenticates a user iri that is given via auth header FOAF+SSL.
 	 * Therefore the requesting agent needs to be connected via SSL/TLS and the users
 	 * FOAF needs to be connected to the agent...
 	 *
@@ -624,7 +620,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	 */
 	public function fetchWebId() {
 		// First we fetch the webid in a secure manner...
-		$url = $this->_idpServiceUrl . '?authreqissuer=' . urlencode($this->_redirectUrl);
+		$url = $this->idpServiceUrl . '?authreqissuer=' . urlencode($this->redirectUrl);
 
 		header('Location: ' . $url);
 		exit;
@@ -644,23 +640,23 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 			$sig = $get['sig'];
 
 			// TODO How to verify that in the right way? (time diffs between local server and remote server)
-			if ($this->_verifyTimestamp) {
+			if ($this->verifyTimestamp) {
 				if ((time() - $ts) > self::TIMESTAMP_VALIDITY) {
 					return false;
 				}
 			}
 
 			// TODO Does not work yet...?!
-			if ($this->_verifySignature) {
-				if ((null === $this->_publicKey) || !extension_loaded('openssl')) {
+			if ($this->verifySignature) {
+				if ((null === $this->publicKey) || !extension_loaded('openssl')) {
 					return false;
 				}
 				//$this->_publicKey = str_replace(str_split(" \t\n\r\0\x0B"), '', $this->_publicKey);
 				$schema = (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'])) ? 'https://' : 'http://';
-				$url = $schema . $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'];
+				$url = $schema . $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_IRI'];
 
 				$data = substr($url, 0, strpos($url, '&sig='));
-				$publicKeyId = openssl_pkey_get_public($this->_publicKey);
+				$publicKeyId = openssl_pkey_get_public($this->publicKey);
 				$result = openssl_verify($data, $sig, $publicKeyId);
 				openssl_free_key($publicKeyId);
 
@@ -684,7 +680,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	 */
 	protected function _checkWebId($webId) {
 		$retVal = array(
-			'userUri' => false,
+			'userIri' => false,
 			'denyLogin' => false
 		);
 
@@ -692,36 +688,36 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 		require_once 'Erfurt/Sparql/SimpleQuery.php';
 		$query = new Erfurt_Sparql_SimpleQuery();
 		$query->setProloguePart('SELECT ?s ?p ?o');
-		$query->addFrom($this->_acModelUri);
+		$query->addFrom($this->accessControlGraphIri);
 		$where = 'WHERE {
                             ?s ?p ?o .
-                            ?s <' . EF_RDF_TYPE . '> <' . $this->_uris['user_class'] . "> .
+                            ?s <' . EF_RDF_TYPE . '> <' . $this->iris['user_class'] . "> .
                             FILTER (sameTerm(?s, <$webId>))
                         }";
 		$query->setWherePart($where);
-		$result = $this->_store->sparqlQuery($query, array('use_ac' => false));
+		$result = $this->store->sparqlQuery($query, array('use_ac' => false));
 
 		foreach ((array)$result as $row) {
-			// Set user URI
-			if (($retVal['userUri']) === false) {
-				$retVal['userUri'] = $row['s'];
+			// Set user IRI
+			if (($retVal['userIri']) === false) {
+				$retVal['userIri'] = $row['s'];
 			}
 
 			// Check predicates, whether needed.
 			switch ($row['p']) {
-				case $this->_uris['action_deny']:
+				case $this->iris['action_deny']:
 					// if login is disallowed
-					if ($row['o'] === $this->_uris['action_login']) {
+					if ($row['o'] === $this->iris['action_login']) {
 						$retVal['denyLogin'] = true;
 					}
 					break;
 				case EF_RDFS_LABEL:
 					$retVal['userLabel'] = $row['o'];
 					break;
-				case $this->_uris['user_username']:
+				case $this->iris['user_username']:
 					$retVal['username'] = $row['o'];
 					break;
-				case $this->_uris['user_mail'];
+				case $this->iris['user_mail'];
 					$retVal['email'] = $row['o'];
 				default:
 					// Ignore all other statements.
@@ -756,14 +752,14 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 			return false;
 		}
 
-		// Extract the subject alternate name of the cert (URI)
+		// Extract the subject alternate name of the cert (IRI)
 		$subjectAlternateNames = $this->_getSubjectAlternativeNames();
 		if (!$subjectAlternateNames) {
 			// Certificate contains subject alternate name.
 			return false;
 		}
 
-		$foafRsaPublicKey = $this->_getFoafRsaPublicKey($subjectAlternateNames['uri']);
+		$foafRsaPublicKey = $this->_getFoafRsaPublicKey($subjectAlternateNames['iri']);
 		if (!$foafRsaPublicKey) {
 			return false;
 		}
@@ -772,7 +768,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 		if ((int)$certRsaPublicKey['exponent'] === (int)$foafRsaPublicKey['exponent'] &&
 			$certRsaPublicKey['modulus'] === $foafRsaPublicKey['modulus']) {
 
-			return $subjectAlternateNames['uri'];
+			return $subjectAlternateNames['iri'];
 		} else {
 			return false;
 		}
@@ -786,7 +782,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	 * @return Zend_Auth_Result
 	 */
 	protected function _getAuthResult($userResult) {
-		if ($userResult['userUri'] === false) {
+		if ($userResult['userIri'] === false) {
 			$result = false;
 			$msg = 'User does not exist!';
 
@@ -803,7 +799,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 
 		// Create the identity object and return it...
 		$identity = array(
-			'uri' => $userResult['userUri'],
+			'iri' => $userResult['userIri'],
 			'dbuser' => false,
 			'anonymous' => false,
 			'is_webid_user' => true
@@ -885,16 +881,16 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	}
 
 	/**
-	 * Returns the FOAF data for a given URI.
+	 * Returns the FOAF data for a given IRI.
 	 *
 	 * @return array|false
 	 */
-	protected function _getFoafData($foafUri) {
-		if (!isset($this->_foafData[$foafUri])) {
-			$this->_foafData[$foafUri] = self::getFoafData($foafUri);
+	protected function _getFoafData($foafIri) {
+		if (!isset($this->foafData[$foafIri])) {
+			$this->foafData[$foafIri] = self::getFoafData($foafIri);
 		}
 
-		return $this->_foafData[$foafUri];
+		return $this->foafData[$foafIri];
 	}
 
 	/**
@@ -902,8 +898,8 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 	 *
 	 * @return array|bool
 	 */
-	protected function _getFoafRsaPublicKey($foafUri) {
-		$foafData = $this->_getFoafData($foafUri);
+	protected function _getFoafRsaPublicKey($foafIri) {
+		$foafData = $this->_getFoafData($foafIri);
 		if ($foafData === false) {
 			return false;
 		}
@@ -913,12 +909,12 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 			foreach ($pArray as $p => $oArray) {
 				if ($p === EF_RDF_TYPE) {
 					foreach ($oArray as $o) {
-						if ($o['type'] === 'uri' && $o['value'] === self::PUBLIC_KEY_PROPERTY) {
-							// This is a public key... Now check whether it belongs to the uri...
+						if ($o['type'] === 'iri' && $o['value'] === self::PUBLIC_KEY_PROPERTY) {
+							// This is a public key... Now check whether it belongs to the iri...
 							if (isset($foafData[$s][self::IDENTITY_PROP])) {
 								$values = $foafData[$s][self::IDENTITY_PROP];
 								foreach ($values as $v) {
-									if ($v['type'] === 'uri' && $v['value'] === $foafUri) {
+									if ($v['type'] === 'iri' && $v['value'] === $foafIri) {
 										// Match... We can use this Key and stop searching
 										$pubKeyId = $s;
 										break 4;
@@ -959,12 +955,12 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 			$x509Cert = openssl_x509_parse($_SERVER['SSL_CLIENT_CERT']);
 
 			if (isset($x509Cert['extensions']['subjectAltName'])) {
-				$uriList = explode(',', $x509Cert['extensions']['subjectAltName']);
+				$iriList = explode(',', $x509Cert['extensions']['subjectAltName']);
 				$retVal = array();
 
-				foreach ($uriList as $uri) {
-					$key = strtolower(trim(substr($uri, 0, strpos($uri, ':'))));
-					$val = trim(substr($uri, strpos($uri, ':') + 1));
+				foreach ($iriList as $iri) {
+					$key = strtolower(trim(substr($iri, 0, strpos($iri, ':'))));
+					$val = trim(substr($iri, strpos($iri, ':') + 1));
 					$retVal[$key] = $val;
 				}
 

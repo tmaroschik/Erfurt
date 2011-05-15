@@ -31,8 +31,8 @@ namespace Erfurt\Versioning;
  * database tables:
  * CREATE TABLE tx_semantic_versioning_actions(
  *   id             INT NOT NULL AUTO_INCREMENT,
- *   model          VARCHAR(255) NOT NULL,
- *   useruri        VARCHAR(255) NOT NULL,
+ *   graph          VARCHAR(255) NOT NULL,
+ *   useriri        VARCHAR(255) NOT NULL,
  *   resource       VARCHAR(255),
  *   tstamp         INT NOT NULL,
  *   action_type    INT NOT NULL,
@@ -61,7 +61,7 @@ namespace Erfurt\Versioning;
 class Versioning implements \Erfurt\Singleton {
 
 	// standard constants for given actions
-	const MODEL_IMPORTED = 10;
+	const GRAPH_IMPORTED = 10;
 	const STATEMENT_ADDED = 20;
 	const STATEMENT_CHANGED = 21;
 	const STATEMENT_REMOVED = 22;
@@ -174,10 +174,10 @@ class Versioning implements \Erfurt\Singleton {
 	/**
 	 * Probably shortcut?
 	 */
-	public function getLastModifiedForResource($resourceUri, $graphUri) {
+	public function getLastModifiedForResource($resourceIri, $graphIri) {
 		$this->checkSetup();
 
-		$history = $this->getHistoryForResource($resourceUri, $graphUri);
+		$history = $this->getHistoryForResource($resourceIri, $graphIri);
 
 		if (is_array($history) && count($history) > 0) {
 			return $history[0];
@@ -187,17 +187,17 @@ class Versioning implements \Erfurt\Singleton {
 	}
 
 	/**
-	 * get the versioning actions for a specific model
+	 * get the versioning actions for a specific graph
 	 *
-	 * @param string $graphUri the URI of the knowledge base
+	 * @param string $graphIri the IRI of the knowledge base
 	 * @param page
 	 */
-	public function getHistoryForGraph($graphUri, $page = 1) {
+	public function getHistoryForGraph($graphIri, $page = 1) {
 		$this->checkSetup();
 
-		$sql = 'SELECT id, useruri, resource, tstamp, action_type ' .
+		$sql = 'SELECT id, useriri, resource, tstamp, action_type ' .
 			   'FROM tx_semantic_versioning_actions WHERE
-                model = \'' . $graphUri . '\'
+                graph = \'' . $graphIri . '\'
                 ORDER BY tstamp DESC';
 
 		$result = $this->sqlQuery(
@@ -214,14 +214,14 @@ class Versioning implements \Erfurt\Singleton {
 	 * actions but the last changed resources
 	 * TODO: Make this query more useful (count, with timestamp)
 	 *
-	 * @param string $graphUri the URI of the knowledge base
+	 * @param string $graphIri the IRI of the knowledge base
 	 */
-	public function getConciseHistoryForGraph($graphUri, $page = 1) {
+	public function getConciseHistoryForGraph($graphIri, $page = 1) {
 		$this->checkSetup();
 
-		$sql = 'SELECT useruri, resource, MAX(tstamp) FROM tx_semantic_versioning_actions WHERE
-                model = \'' . $graphUri . '\'
-                GROUP BY useruri, resource
+		$sql = 'SELECT useriri, resource, MAX(tstamp) FROM tx_semantic_versioning_actions WHERE
+                graph = \'' . $graphIri . '\'
+                GROUP BY useriri, resource
                 ORDER BY 3 DESC';
 
 		$result = $this->sqlQuery(
@@ -234,18 +234,18 @@ class Versioning implements \Erfurt\Singleton {
 	}
 
 	/**
-	 * This method returns a distinct query result array of resource URIs which
+	 * This method returns a distinct query result array of resource IRIs which
 	 * are modified since a certain timestamp on a given Knowledge Base
 	 *
-	 * @param string $graphUri the knowledge base (a URI string)
+	 * @param string $graphIri the knowledge base (a IRI string)
 	 * @param integer $ts the Timestamp (as int!)
 	 */
-	public function getModifiedResources($graphUri, $timestamp = 0) {
+	public function getModifiedResources($graphIri, $timestamp = 0) {
 		$this->checkSetup();
 
 		$sql = 'SELECT DISTINCT resource ' .
 			   'FROM tx_semantic_versioning_actions WHERE
-                model = \'' . $graphUri . '\' AND
+                graph = \'' . $graphIri . '\' AND
                 tstamp >= \'' . $timestamp . '\'
                 ORDER BY tstamp DESC';
 
@@ -256,27 +256,27 @@ class Versioning implements \Erfurt\Singleton {
 
 
 	/**
-	 * get the versioning actions for a specific resource of a model
+	 * get the versioning actions for a specific resource of a graph
 	 *
-	 * @param string $resourceUri the URI of the resource
-	 * @param string $graphUri the URI of the knowledge base
+	 * @param string $resourceIri the IRI of the resource
+	 * @param string $graphIri the IRI of the knowledge base
 	 * @param page
 	 */
-	public function getHistoryForResource($resourceUri, $graphUri, $page = 1) {
+	public function getHistoryForResource($resourceIri, $graphIri, $page = 1) {
 		$this->checkSetup();
 
-		$sql = 'SELECT v2.id,  v2.useruri, v2.tstamp, v2.action_type
+		$sql = 'SELECT v2.id,  v2.useriri, v2.tstamp, v2.action_type
                 FROM tx_semantic_versioning_actions AS v1, tx_semantic_versioning_actions AS v2
                 WHERE
-                v1.model = \'' . $graphUri . '\' AND
-                v1.resource = \'' . $resourceUri . '\' AND
+                v1.graph = \'' . $graphIri . '\' AND
+                v1.resource = \'' . $resourceIri . '\' AND
                 v2.id = v1.parent
                 UNION
-                SELECT id, useruri, tstamp, action_type
+                SELECT id, useriri, tstamp, action_type
                 FROM tx_semantic_versioning_actions
                 WHERE
-                model = \'' . $graphUri . '\' AND
-                resource = \'' . $resourceUri . '\' AND
+                graph = \'' . $graphIri . '\' AND
+                resource = \'' . $resourceIri . '\' AND
                 parent IS NULL
                 ORDER BY tstamp DESC';
 
@@ -289,12 +289,12 @@ class Versioning implements \Erfurt\Singleton {
 		return $result;
 	}
 
-	public function getHistoryForResourceList($resources, $graphUri, $page = 1) {
+	public function getHistoryForResourceList($resources, $graphIri, $page = 1) {
 		$this->checkSetup();
 
-		$sql = 'SELECT id, resource, useruri, tstamp, action_type ' .
+		$sql = 'SELECT id, resource, useriri, tstamp, action_type ' .
 			   'FROM tx_semantic_versioning_actions WHERE
-                model = \'' . $graphUri . '\' AND ( resource = \'' . implode('\' OR resource = \'', $resources) . '\' )
+                graph = \'' . $graphIri . '\' AND ( resource = \'' . implode('\' OR resource = \'', $resources) . '\' )
                 AND parent IS NULL
                 ORDER BY tstamp DESC';
 
@@ -307,12 +307,12 @@ class Versioning implements \Erfurt\Singleton {
 		return $result;
 	}
 
-	public function getHistoryForUser($userUri, $page = 1) {
+	public function getHistoryForUser($userIri, $page = 1) {
 		$this->checkSetup();
 
 		$sql = 'SELECT id, resource, tstamp, action_type ' .
 			   'FROM tx_semantic_versioning_actions WHERE
-                useruri = \'' . $userUri . '\'
+                useriri = \'' . $userIri . '\'
                 ORDER BY tstamp DESC';
 
 		$result = $this->sqlQuery(
@@ -327,12 +327,12 @@ class Versioning implements \Erfurt\Singleton {
 	/*
 	 * Gets latest changes for user on all resources for dashboard
 	 */
-	public function getHistoryForUserDash($userUri) {
+	public function getHistoryForUserDash($userIri) {
 		$this->checkSetup();
 
 		$sql = 'SELECT DISTINCT resource ' .
 			   'FROM tx_semantic_versioning_actions WHERE
-                useruri = \'' . $userUri . '\'
+                useriri = \'' . $userIri . '\'
                 ORDER BY tstamp DESC';
 
 		$result = $this->sqlQuery(
@@ -391,7 +391,7 @@ class Versioning implements \Erfurt\Singleton {
 
 			$payloadId = $this->_execAddPayload($payload);
 			$resource = $event->statement['subject'];
-			$this->execAddAction($event->graphUri, $resource, self::STATEMENT_ADDED, $payloadId);
+			$this->execAddAction($event->graphIri, $resource, self::STATEMENT_ADDED, $payloadId);
 		} else {
 			// do nothing
 		}
@@ -401,9 +401,9 @@ class Versioning implements \Erfurt\Singleton {
 		$this->checkSetup();
 
 		if ($this->isVersioningEnabled() && is_array($event->statements)) {
-			$graphUri = $event->graphUri;
+			$graphIri = $event->graphIri;
 
-			$this->execAddPayloadsAndActions($graphUri, self::STATEMENT_ADDED, $event->statements);
+			$this->execAddPayloadsAndActions($graphIri, self::STATEMENT_ADDED, $event->statements);
 		} else {
 			// do nothing
 		}
@@ -413,13 +413,13 @@ class Versioning implements \Erfurt\Singleton {
 		$this->checkSetup();
 
 		if ($this->isversioningEnabled()) {
-			$graphUri = $event->graphUri;
+			$graphIri = $event->graphIri;
 
 			if (isset($event->statements)) {
-				$this->execAddPayloadsAndActions($graphUri, self::STATEMENT_REMOVED, $event->statements);
+				$this->execAddPayloadsAndActions($graphIri, self::STATEMENT_REMOVED, $event->statements);
 			} else {
 				// In this case, we have no payload. Just add a action without a payload (no rollback possible).
-				$this->execAddAction($graphUri, $event->resource, self::STATEMENT_REMOVED);
+				$this->execAddAction($graphIri, $event->resource, self::STATEMENT_REMOVED);
 			}
 		} else {
 			// do nothing
@@ -430,9 +430,9 @@ class Versioning implements \Erfurt\Singleton {
 		$this->checkSetup();
 
 		if ($this->isVersioningEnabled()) {
-			$graphUri = $event->graphUri;
+			$graphIri = $event->graphIri;
 
-			$this->execAddPayloadsAndActions($graphUri, self::STATEMENT_REMOVED, $event->statements);
+			$this->execAddPayloadsAndActions($graphIri, self::STATEMENT_REMOVED, $event->statements);
 		} else {
 			// do nothing
 		}
@@ -452,7 +452,7 @@ class Versioning implements \Erfurt\Singleton {
 	public function rollbackAction($actionId) {
 		$this->checkSetup();
 
-		$actionsSql = 'SELECT action_type, payload_id, model, parent FROM tx_semantic_versioning_actions WHERE ' .
+		$actionsSql = 'SELECT action_type, payload_id, graph, parent FROM tx_semantic_versioning_actions WHERE ' .
 					  '( id = ' . ((int)$actionId) . ' OR parent = ' . ((int)$actionId) . ' ) ' .
 					  'AND payload_id IS NOT NULL';
 
@@ -470,7 +470,7 @@ class Versioning implements \Erfurt\Singleton {
 			foreach ($result as $i) {
 
 				$type = (int)$i['action_type'];
-				$modelUri = isset($i['model']) ? $i['model'] : null;
+				$graphIri = isset($i['graph']) ? $i['graph'] : null;
 				$payloadID = (int)$i['payload_id'];
 
 				$payloadsSql = 'SELECT statement_hash FROM tx_semantic_versioning_payloads WHERE id = ' .
@@ -495,10 +495,10 @@ class Versioning implements \Erfurt\Singleton {
 
 
 					if ($type === self::STATEMENT_ADDED) {
-						$this->getStore()->deleteMultipleStatements($modelUri, $payload);
+						$this->getStore()->deleteMultipleStatements($graphIri, $payload);
 					} else {
 						if ($type === self::STATEMENT_REMOVED) {
-							$this->getStore()->addMultipleStatements($modelUri, $payload);
+							$this->getStore()->addMultipleStatements($graphIri, $payload);
 						} else {
 							// do nothing
 						}
@@ -516,7 +516,7 @@ class Versioning implements \Erfurt\Singleton {
 	/**
 	 * Starts a log action to which subsequent statement modifications are added.
 	 *
-	 * @param $actionSpec array with keys type, modeluri, resourceuri
+	 * @param $actionSpec array with keys type, graphiri, resourceiri
 	 * @return
 	 */
 	public function startAction($actionSpec) {
@@ -527,17 +527,17 @@ class Versioning implements \Erfurt\Singleton {
 			throw new \Exception('Action already started');
 		} elseif ($this->isVersioningEnabled()) {
 			$actionType = $actionSpec['type'];
-			$graphUri = $actionSpec['modeluri'];
-			$resource = $actionSpec['resourceuri'];
+			$graphIri = $actionSpec['graphiri'];
+			$resource = $actionSpec['resourceiri'];
 			$this->currentAction = $actionSpec;
-			$this->currentActionParent = $this->execAddAction($graphUri, $resource, $actionType);
+			$this->currentActionParent = $this->execAddAction($graphIri, $resource, $actionType);
 		} else {
 			// do nothing
 		}
 	}
 
-	public function setUserUri($uri) {
-		$this->user = $uri;
+	public function setUserIri($iri) {
+		$this->user = $iri;
 	}
 
 	/**
@@ -563,16 +563,16 @@ class Versioning implements \Erfurt\Singleton {
 	}
 
 	/**
-	 * Deletes all history information on a specific model
+	 * Deletes all history information on a specific graph
 	 * use with caution
 	 */
-	public function deleteHistoryForModel($graphUri) {
+	public function deleteHistoryForGraph($graphIri) {
 		$this->checkSetup();
 
 		$sql = 'SELECT DISTINCT ac.payload_id
                 FROM tx_semantic_versioning_actions AS ac
                 WHERE
-                ( ac.model      = \'' . $graphUri . '\' OR  ac.resource   = \'' . $graphUri . '\' )
+                ( ac.graph      = \'' . $graphIri . '\' OR  ac.resource   = \'' . $graphIri . '\' )
                 AND   ac.payload_id IS NOT NULL';
 
 		$result = $this->sqlQuery($sql);
@@ -631,20 +631,20 @@ class Versioning implements \Erfurt\Singleton {
 
 		// finally delete actions
 		$sqldeleteAction = 'DELETE FROM tx_semantic_versioning_actions WHERE
-                            model = \'' . $graphUri . '\' OR resource = \'' . $graphUri . '\'';
+                            graph = \'' . $graphIri . '\' OR resource = \'' . $graphIri . '\'';
 
 		$resultAction = $this->sqlQuery($sqldeleteAction);
 
 
 	}
 
-	private function execAddAction($graphUri, $resource, $actionType, $payloadId = null) {
+	private function execAddAction($graphIri, $resource, $actionType, $payloadId = null) {
 		if ($this->user === null) {
-			$this->user = $this->getAuthentication()->getIdentity()->getUri();
+			$this->user = $this->getAuthentication()->getIdentity()->getIri();
 		}
-		$userUri = $this->user;
+		$userIri = $this->user;
 
-		$actionsSql = 'INSERT INTO tx_semantic_versioning_actions (model, useruri, resource, tstamp, action_type, parent';
+		$actionsSql = 'INSERT INTO tx_semantic_versioning_actions (graph, useriri, resource, tstamp, action_type, parent';
 
 		if (null !== $payloadId) {
 			$actionsSql .= ', payload_id)';
@@ -659,8 +659,8 @@ class Versioning implements \Erfurt\Singleton {
 		}
 
 		$actionsSql .= ' VALUES (\'' .
-					   addslashes($graphUri) . '\', \'' .
-					   addslashes($userUri) . '\', \'' .
+					   addslashes($graphIri) . '\', \'' .
+					   addslashes($userIri) . '\', \'' .
 					   addslashes($resource) . '\', \'' . time() . '\', ' .
 					   addslashes($actionType) . ', ' . $actionParent;
 
@@ -688,7 +688,7 @@ class Versioning implements \Erfurt\Singleton {
 		return $payloadId;
 	}
 
-	private function execAddPayloadsAndActions($graphUri, $actionType, $statements) {
+	private function execAddPayloadsAndActions($graphIri, $actionType, $statements) {
 		foreach ($statements as $s => $poArray) {
 			foreach ($poArray as $p => $oArray) {
 				foreach ($oArray as $i => $oSpec) {
@@ -696,7 +696,7 @@ class Versioning implements \Erfurt\Singleton {
 
 					$payloadId = $this->_execAddPayload($statement);
 
-					$this->execAddAction($graphUri, $s, $actionType, $payloadId);
+					$this->execAddAction($graphIri, $s, $actionType, $payloadId);
 				}
 			}
 		}
@@ -728,8 +728,8 @@ class Versioning implements \Erfurt\Singleton {
 		if (!in_array('tx_semantic_versioning_actions', $existingTableNames)) {
 			$columnSpec = array(
 				'id' => 'INT PRIMARY KEY AUTO_INCREMENT',
-				'model' => 'VARCHAR(255) NOT NULL',
-				'useruri' => 'VARCHAR(255) NOT NULL',
+				'graph' => 'VARCHAR(255) NOT NULL',
+				'useriri' => 'VARCHAR(255) NOT NULL',
 				'resource' => 'VARCHAR(255)',
 				'tstamp' => 'INT NOT NULL',
 				'action_type' => 'INT NOT NULL',

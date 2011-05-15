@@ -226,10 +226,10 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
     }
     
     /** @see Erfurt_Store_Adapter_Interface */
-    public function addStatement($modelIri, $subject, $predicate, $object, 
+    public function addStatement($graphIri, $subject, $predicate, $object, 
             $options = array('subject_type' => Erfurt_Store::TYPE_IRI, 'object_type' => Erfurt_Store::TYPE_IRI))
     {
-        $modelId = $this->_modelInfoCache[$modelIri]['modelId'];
+        $modelId = $this->_modelInfoCache[$graphIri]['modelId'];
         $subjectType = ($options['subject_type'] === Erfurt_Store::TYPE_IRI) ? 'r' : 'b';
         $objectType = ($options['object_type'] === Erfurt_Store::TYPE_IRI) ? 'r' : 
                         (($options['object_type'] === Erfurt_Store::TYPE_LITERAL) ? 'l' : 'b');
@@ -275,9 +275,9 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
     }
     
     /** @see Erfurt_Store_Adapter_Interface */
-    public function deleteMatchingStatements($modelIri, $subject, $predicate, $object, $options = array())
+    public function deleteMatchingStatements($graphIri, $subject, $predicate, $object, $options = array())
     {
-        $modelId = $this->_modelInfoCache[$modelIri]['modelId'];
+        $modelId = $this->_modelInfoCache[$graphIri]['modelId'];
         
         $whereString = '1';
         
@@ -376,9 +376,9 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
     }
     
     /** @see Erfurt_Store_Adapter_Interface */
-    public function deleteModel($modelIri) 
+    public function deleteModel($graphIri) 
     {
-        $whereString = 'modelID = ' . $this->_modelInfoCache[$modelIri]['modelId'];
+        $whereString = 'modelID = ' . $this->_modelInfoCache[$graphIri]['modelId'];
         
         // remove all rows with the specified modelID from the models, statements and namespaces tables
         $this->_dbConn->delete('models', $whereString);
@@ -388,13 +388,13 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
         // invalidate the cache and fetch model infos again
         require_once 'Erfurt/App.php';
         $cache = Erfurt_App::getInstance()->getCache();
-        $tags =  array('model_info', $this->_modelInfoCache[$modelIri]['modelId']);
+        $tags =  array('model_info', $this->_modelInfoCache[$graphIri]['modelId']);
         #$cache->clean(Zend_Cache::CLEANING_MODE_MATCHING_TAG, $tags);
         $this->_fetchModelInfos();
     }
     
     /** @see Erfurt_Store_Adapter_Interface */
-    public function exportRdf($modelIri, $serializationType = 'xml', $filename = false)
+    public function exportRdf($graphIri, $serializationType = 'xml', $filename = false)
     {
         throw new Exception('Not implemented yet.');
     }
@@ -405,7 +405,7 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
         $models = array();
         foreach ($this->_modelInfoCache as $mInfo) {
             $m = array(
-                'modelIri'  => $mInfo['modelIri'],
+                'graphIri'  => $mInfo['graphIri'],
             );
                 
             if ($withTitle === true) {
@@ -415,7 +415,7 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
                 }
             }
                 
-            $models[$mInfo['modelIri']] = $m;   
+            $models[$mInfo['graphIri']] = $m;   
         }
         
         return $models;
@@ -428,34 +428,34 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
     }
     
     /** @see Erfurt_Store_Adapter_Interface */
-    public function getModel($modelIri) 
+    public function getModel($graphIri) 
     {
         // if model is already in cache return the cached value
-        if (isset($this->_modelCache[$modelIri])) {
-            return $this->_modelCache[$modelIri];
+        if (isset($this->_modelCache[$graphIri])) {
+            return $this->_modelCache[$graphIri];
         }
 
         // choose the right type for the model instance and instanciate it
-        if ($this->_modelInfoCache[$modelIri]['type'] === 'owl') {
+        if ($this->_modelInfoCache[$graphIri]['type'] === 'owl') {
             require_once 'Erfurt/Owl/Model.php';
-            $m = new Erfurt_Owl_Model($modelIri, $this->_modelInfoCache[$modelIri]['baseIri']);
-        } else if ($this->_modelInfoCache[$modelIri]['type'] === 'rdfs') {
+            $m = new Erfurt_Owl_Model($graphIri, $this->_modelInfoCache[$graphIri]['baseIri']);
+        } else if ($this->_modelInfoCache[$graphIri]['type'] === 'rdfs') {
             require_once 'Erfurt/Rdfs/Model.php';
-            $m = new Erfurt_Rdfs_Model($modelIri, $this->_modelInfoCache[$modelIri]['baseIri']);
+            $m = new Erfurt_Rdfs_Model($graphIri, $this->_modelInfoCache[$graphIri]['baseIri']);
         } else {
             require_once 'Erfurt/Rdf/Model.php';
-            $m = new Erfurt_Rdf_Model($modelIri, $this->_modelInfoCache[$modelIri]['baseIri']);
+            $m = new Erfurt_Rdf_Model($graphIri, $this->_modelInfoCache[$graphIri]['baseIri']);
         }
         
-        $this->_modelCache[$modelIri] = $m;
+        $this->_modelCache[$graphIri] = $m;
         return $m;
     }
     
     /** @see Erfurt_Store_Adapter_Interface */ 
-    public function getNewModel($modelIri, $baseIri = '', $type = 'owl') 
+    public function getNewModel($graphIri, $baseIri = '', $type = 'owl') 
     {    
         $data = array(
-            'modelURI'  => $modelIri,
+            'modelURI'  => $graphIri,
             'baseURI'   => $baseIri
         );
 
@@ -465,7 +465,7 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
         
 // TODO add owl:Ontology statement if we can do add
         //if ($type === 'owl') {
-        //    $mt->add(new Statement(new Resource($modelIri), new Resource(EF_RDF_TYPE), new Resource(EF_OWL_ONTOLOGY)));
+        //    $mt->add(new Statement(new Resource($graphIri), new Resource(EF_RDF_TYPE), new Resource(EF_OWL_ONTOLOGY)));
         //}
         
         // invalidate the cache and fetch model infos again
@@ -475,7 +475,7 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
         $this->_fetchModelInfos();
         
         // instanciate the model
-        $m = $this->getModel($modelIri);
+        $m = $this->getModel($graphIri);
             
         return $m;
     }
@@ -580,9 +580,9 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
     }
     
     /** @see Erfurt_Store_Adapter_Interface */
-    public function isModelAvailable($modelIri) 
+    public function isModelAvailable($graphIri) 
     {
-        if (isset($this->_modelInfoCache[$modelIri])) {
+        if (isset($this->_modelInfoCache[$graphIri])) {
             return true;
         } else {
             return false;
@@ -867,7 +867,7 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
                 foreach ($rowSet as $row) {
                     if (!isset($this->_modelInfoCache[$row['modelURI']])) {
                         $this->_modelInfoCache[$row['modelURI']]['modelId']      = $row['modelID'];
-                        $this->_modelInfoCache[$row['modelURI']]['modelIri']     = $row['modelURI'];
+                        $this->_modelInfoCache[$row['modelURI']]['graphIri']     = $row['modelURI'];
                         $this->_modelInfoCache[$row['modelURI']]['baseIri']      = $row['baseURI'];
                         $this->_modelInfoCache[$row['modelURI']]['namespaces']   = array();
                         $this->_modelInfoCache[$row['modelURI']]['imports']      = array();
@@ -915,18 +915,18 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
                     $hasChanged = false;
             
                     // test every model exists in the model table
-                    foreach ($this->_modelInfoCache as $modelIri) {
+                    foreach ($this->_modelInfoCache as $graphIri) {
                         // only owl models can import other models
-                        if ($modelIri['type'] !== 'owl') {
+                        if ($graphIri['type'] !== 'owl') {
                             continue;
                         }
-                        foreach ($modelIri['imports'] as $importsIri) {
+                        foreach ($graphIri['imports'] as $importsIri) {
                             if (isset($this->_modelInfoCache[$importsIri])) {
                                 foreach ($this->_modelInfoCache[$importsIri]['imports'] as $importsImportIri) {
-                                    if (!isset($modelIri['imports'][$importsImportIri]) && 
-                                            !($importsImportIri === $modelIri['modelIri'])) {
+                                    if (!isset($graphIri['imports'][$importsImportIri]) && 
+                                            !($importsImportIri === $graphIri['graphIri'])) {
                                     
-                                        $this->_modelInfoCache[$modelIri['modelIri']]
+                                        $this->_modelInfoCache[$graphIri['graphIri']]
                                                     ['imports'][$importsImportIri] = $importsImportIri;
                                         $hasChanged = true;
                                     }

@@ -123,11 +123,11 @@ class Database extends Backend {
 		if (!in_array('tx_semantic_cache_query_model', $existingTableNames)) {
 			$columnSpec = array(
 				'mid' => 'INT NOT NULL PRIMARY KEY AUTO_INCREMENT',
-				'modelIri' => 'VARCHAR(255) ' . $vocabulary['col_ascii_bin'] . ' NULL',
+				'graphIri' => 'VARCHAR(255) ' . $vocabulary['col_ascii_bin'] . ' NULL',
 			);
 
 			$this->store->createTable('tx_semantic_cache_query_model', $columnSpec);
-			$this->store->sqlQuery('CREATE INDEX tx_semantic_cache_query_model_mid_modelIri ON tx_semantic_cache_query_model(mid, modelIri)');
+			$this->store->sqlQuery('CREATE INDEX tx_semantic_cache_query_model_mid_graphIri ON tx_semantic_cache_query_model(mid, graphIri)');
 		}
 
 		if (!in_array('tx_semantic_cache_query_rt', $existingTableNames)) {
@@ -176,7 +176,7 @@ class Database extends Backend {
 	/**
 	 *  saving a QueryString and its Result according to its QueryHash
 	 *  Furthermore triplePatterns from given QueryString and ModelIris (from clause) will also be saved . If array of
-	 *  modelIris is empty the QueryId will be assigned to a NULL-Entry . Last But not Least the duration of the originally
+	 *  graphIris is empty the QueryId will be assigned to a NULL-Entry . Last But not Least the duration of the originally
 	 *  processed query will be saved.
 	 * @access	 public
 	 * @param	  string	$queryId		Its a hash of the QueryString
@@ -187,7 +187,7 @@ class Database extends Backend {
 	 * @param	  float	 $duration	   the duration of the originally executed Query in seconds, microseconds
 	 * @return	 boolean   $result		 returns the state of the saveprocess
 	 */
-	public function save($queryId, $queryString, $modelIris, $triplePatterns, $queryResult, $duration = 0) {
+	public function save($queryId, $queryString, $graphIris, $triplePatterns, $queryResult, $duration = 0) {
 		#check that this query isn't saved yet
 
 		if (false === $this->exists($queryId)) {
@@ -213,8 +213,8 @@ class Database extends Backend {
 			//saving triplePatterns in tripleTable
 			$this->_saveTriplePatterns($queryId, $triplePatterns);
 
-			//saving modelIris in modelTable
-			$this->_saveModelIris($queryId, $modelIris);
+			//saving graphIris in modelTable
+			$this->_saveModelIris($queryId, $graphIris);
 
 		}
 		else {
@@ -309,7 +309,7 @@ class Database extends Backend {
 	 * @param	  array   $statements	 an Array of statements in the form $statements[$subject][$predicate] = $object
 	 * @return	 int	 $count		  count of the affected cached queries
 	 */
-	public function invalidate($modelIri, $statements = array()) {
+	public function invalidate($graphIri, $statements = array()) {
 
 		if (sizeof($statements) == 0) {
 			return false;
@@ -348,7 +348,7 @@ class Database extends Backend {
 		}
 
 		if (count($clauses) > 20) {
-			return $this->invalidateWithModelIri($modelIri);
+			return $this->invalidateWithModelIri($graphIri);
 		}
 
 		$clauseString = implode(" OR ", $clauses);
@@ -364,7 +364,7 @@ class Database extends Backend {
                         (
                             SELECT qid qid2
                             FROM tx_semantic_cache_query_rm JOIN tx_semantic_cache_query_model ON tx_semantic_cache_query_rm.mid = tx_semantic_cache_query_model.mid
-                            WHERE ( tx_semantic_cache_query_model.modelIri = '" . $modelIri . "' OR tx_semantic_cache_query_model.modelIri IS NULL )
+                            WHERE ( tx_semantic_cache_query_model.graphIri = '" . $graphIri . "' OR tx_semantic_cache_query_model.graphIri IS NULL )
                         ) second
                         ON first.qid1 = second.qid2
                     JOIN
@@ -391,7 +391,7 @@ class Database extends Backend {
                         (
                             SELECT DISTINCT (qid)
                             FROM tx_semantic_cache_query_rm JOIN tx_semantic_cache_query_model ON tx_semantic_cache_query_rm.mid = tx_semantic_cache_query_model.mid
-                            WHERE ( tx_semantic_cache_query_model.modelIri = '" . $modelIri . "' OR tx_semantic_cache_query_model.modelIri IS NULL )
+                            WHERE ( tx_semantic_cache_query_model.graphIri = '" . $graphIri . "' OR tx_semantic_cache_query_model.graphIri IS NULL )
 
                         )
                     )";
@@ -403,13 +403,13 @@ class Database extends Backend {
 	/**
 	 *  invalidating all cached Query Results according to a given ModelIri
 	 * @access	 public
-	 * @param	  string  $modelIri	   A ModelIri
+	 * @param	  string  $graphIri	   A ModelIri
 	 * @return	 int	 $count		  count of the affected cached queries
 	 */
-	public function invalidateWithModelIri($modelIri) {
+	public function invalidateWithModelIri($graphIri) {
 		$query = "SELECT DISTINCT (qid)
                   FROM tx_semantic_cache_query_rm JOIN tx_semantic_cache_query_model ON tx_semantic_cache_query_rm.mid = tx_semantic_cache_query_model.mid
-                  WHERE ( tx_semantic_cache_query_model.modelIri = '" . $modelIri . "' OR tx_semantic_cache_query_model.modelIri IS NULL )";
+                  WHERE ( tx_semantic_cache_query_model.graphIri = '" . $graphIri . "' OR tx_semantic_cache_query_model.graphIri IS NULL )";
 
 		$qids = $this->_query($query);
 
@@ -436,7 +436,7 @@ class Database extends Backend {
 			$this->_query("DELETE FROM tx_semantic_cache_query_rm WHERE qid = '" . $qid . "'");
 
 			//delete entries in query_model
-			$this->_query("DELETE FROM tx_semantic_cache_query_model WHERE modelIri = '" . $modelIri . "'");
+			$this->_query("DELETE FROM tx_semantic_cache_query_model WHERE graphIri = '" . $graphIri . "'");
 		}
 
 		if (isset($tids)) {
@@ -782,31 +782,31 @@ class Database extends Backend {
 
 
 	/**
-	 *  this private methode encapsulates the functionality for storing the modelIris in the model table
+	 *  this private methode encapsulates the functionality for storing the graphIris in the model table
 	 *  and assigning them to the according queryResult table via a m:n table
 	 * @access	 private
 	 * @param	  string		  $queryId		the Hash of the Query
-	 * @param	  array		   $modelIris	  the Array of modelIris
+	 * @param	  array		   $graphIris	  the Array of graphIris
 	 */
-	private function _saveModelIris($queryId, $modelIris) {
-		if (count($modelIris) == 0) {
-			$modelIris[] = 'NULL';
+	private function _saveModelIris($queryId, $graphIris) {
+		if (count($graphIris) == 0) {
+			$graphIris[] = 'NULL';
 		} else {
-			$modelIris = array_unique($modelIris);
+			$graphIris = array_unique($graphIris);
 		}
 
-		foreach ($modelIris as $modelIri) {
+		foreach ($graphIris as $graphIri) {
 			$modelId = "";
 
-			if ($modelIri != 'NULL') {
-				$modelIri = "'" . $modelIri . "'";
+			if ($graphIri != 'NULL') {
+				$graphIri = "'" . $graphIri . "'";
 			}
 
-			$query = "SELECT mid FROM tx_semantic_cache_query_model WHERE modelIri " . (($modelIri == 'NULL') ? "IS " : "= ") . $modelIri;
+			$query = "SELECT mid FROM tx_semantic_cache_query_model WHERE graphIri " . (($graphIri == 'NULL') ? "IS " : "= ") . $graphIri;
 			$result = $this->_query($query);
 
 			if (count($result) == 0) {
-				$query = "INSERT INTO tx_semantic_cache_query_model (modelIri) VALUES (" . $modelIri . ")";
+				$query = "INSERT INTO tx_semantic_cache_query_model (graphIri) VALUES (" . $graphIri . ")";
 				$ret = $this->_query($query);
 				$modelId = $this->_getLastInsertId();
 			} else {

@@ -60,7 +60,7 @@ class Erfurt_Store_Adapter_Sparql implements Erfurt_Store_Adapter_Interface
 
     }
     
-    public function createModel($graphUri, $type = Erfurt_Store::MODEL_TYPE_OWL)
+    public function createModel($graphUri, $type = Erfurt_Store::GRAPH_TYPE_OWL)
     {
         
     }

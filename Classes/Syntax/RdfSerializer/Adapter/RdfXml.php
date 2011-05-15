@@ -34,7 +34,7 @@ class RdfXml implements AdapterInterface {
 	protected $pArray = array();
 
 	protected $store;
-	protected $graphUri = null;
+	protected $graphIri = null;
 
 	protected $renderedTypes = array();
 
@@ -72,23 +72,23 @@ class RdfXml implements AdapterInterface {
 		$this->objectManager = $objectManager;
 	}
 
-	public function serializeGraphToString($graphUri, $pretty = false, $useAc = true) {
+	public function serializeGraphToString($graphIri, $pretty = false, $useAc = true) {
 
 		$xmlStringWriter = new RdfXml\StringWriterXml();
 		$this->rdfWriter = new RdfXml\RdfWriter($xmlStringWriter, $useAc);
 
 		$this->store = $this->knowledgeBase->getStore();
-		$this->graphUri = $graphUri;
-		$graph = $this->store->getModel($graphUri, $useAc);
+		$this->graphIri = $graphIri;
+		$graph = $this->store->getGraph($graphIri, $useAc);
 
-		$this->rdfWriter->setGraphUri($graphUri);
+		$this->rdfWriter->setGraphIri($graphIri);
 
-		$base = $graph->getBaseUri();
+		$base = $graph->getBaseIri();
 		$this->rdfWriter->setBase($base);
 
 		$namespaces = $this->knowledgeBase->getNamespaces();
 
-		foreach ($namespaces->getNamespacePrefixes($graphUri) as $prefix => $ns) {
+		foreach ($namespaces->getNamespacePrefixes($graphIri) as $prefix => $ns) {
 			$this->rdfWriter->addNamespacePrefix($prefix, $ns);
 		}
 
@@ -118,23 +118,23 @@ class RdfXml implements AdapterInterface {
 		return $this->rdfWriter->getContentString();
 	}
 
-	public function serializeResourceToString($resource, $graphUri, $pretty = false, $useAc = true, array $additional = array()) {
+	public function serializeResourceToString($resource, $graphIri, $pretty = false, $useAc = true, array $additional = array()) {
 
 		$xmlStringWriter = new RdfXml\StringWriterXml();
 		$this->rdfWriter = new RdfXml\RdfWriter($xmlStringWriter, $useAc);
 
 		$this->store = $this->knowledgeBase->getStore();
-		$this->graphUri = $graphUri;
-		$graph = $this->store->getModel($graphUri, $useAc);
+		$this->graphIri = $graphIri;
+		$graph = $this->store->getGraph($graphIri, $useAc);
 
-		$this->rdfWriter->setGraphUri($graphUri);
+		$this->rdfWriter->setGraphIri($graphIri);
 
-		$base = $graph->getBaseUri();
+		$base = $graph->getBaseIri();
 		$this->rdfWriter->setBase($base);
 
 		$namespaces = $this->knowledgeBase->getNamespaces();
 
-		foreach ($namespaces->getNamespacePrefixes($graphUri) as $prefix => $ns) {
+		foreach ($namespaces->getNamespacePrefixes($graphIri) as $prefix => $ns) {
 			$this->rdfWriter->addNamespacePrefix($prefix, $ns);
 		}
 
@@ -150,7 +150,7 @@ class RdfXml implements AdapterInterface {
 		foreach ($additional as $s => $pArray) {
 			foreach ($pArray as $p => $oArray) {
 				foreach ($oArray as $o) {
-					$sType = (substr($s, 0, 2) === '_:') ? 'bnode' : 'uri';
+					$sType = (substr($s, 0, 2) === '_:') ? 'bnode' : 'iri';
 					$lang = isset($o['lang']) ? $o['lang'] : null;
 					$dType = isset($o['datatype']) ? $o['datatype'] : null;
 
@@ -247,7 +247,7 @@ class RdfXml implements AdapterInterface {
 	protected function _serializeType($description, $class) {
 		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT DISTINCT ?s ?p ?o');
-		$query->addFrom($this->graphUri);
+		$query->addFrom($this->graphIri);
 		$query->setWherePart('WHERE { ?s ?p ?o . ?s <' . EF_RDF_TYPE . '> <' . $class . '> }');
 		$query->setOrderClause('?s ?p ?o');
 		$query->setLimit(1000);
@@ -293,7 +293,7 @@ class RdfXml implements AdapterInterface {
 	protected function serializeRest($description) {
 		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT DISTINCT ?s ?p ?o');
-		$query->addFrom($this->graphUri);
+		$query->addFrom($this->graphIri);
 
 		$where = 'WHERE
 		          { ?s ?p ?o .
@@ -355,7 +355,7 @@ class RdfXml implements AdapterInterface {
 
 		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT ?s ?p ?o');
-		$query->addFrom($this->graphUri);
+		$query->addFrom($this->graphIri);
 		$query->setWherePart('WHERE { ?s ?p ?o . FILTER (sameTerm(?s, <' . $resource . '>))}');
 		$query->setOrderClause('?s');
 		$query->setLimit(1000);
@@ -413,7 +413,7 @@ class RdfXml implements AdapterInterface {
 
 		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT ?s ?p ?o');
-		$query->addFrom($this->graphUri);
+		$query->addFrom($this->graphIri);
 		$query->setWherePart('WHERE { ?s ?p ?o . ?s ?p2 ?o2 . FILTER (sameTerm(?o2, <' . $resource . '>)) }');
 		$query->setOrderClause('?s');
 		$query->setLimit(1000);

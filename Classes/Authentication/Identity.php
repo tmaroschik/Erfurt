@@ -44,7 +44,7 @@ class Identity {
 	/**
 	 * @var string
 	 */
-	protected $uri;
+	protected $iri;
 
 	/**
 	 * @var bool
@@ -69,7 +69,7 @@ class Identity {
 	/**
 	 * @var array
 	 */
-	protected $propertyUris = array();
+	protected $propertyIris = array();
 
 	/**
 	 * @var array
@@ -104,11 +104,11 @@ class Identity {
 	 * @return void
 	 */
 	public function initializeObject() {
-		$this->propertyUris['username'] = $this->knowledgeBase->getAccessControlConfiguration()->user->name;
-		$this->propertyUris['email'] = $this->knowledgeBase->getAccessControlConfiguration()->user->mail;
-		$this->propertyUris['label'] = EF_RDFS_LABEL;
+		$this->propertyIris['username'] = $this->knowledgeBase->getAccessControlConfiguration()->user->name;
+		$this->propertyIris['email'] = $this->knowledgeBase->getAccessControlConfiguration()->user->mail;
+		$this->propertyIris['label'] = EF_RDFS_LABEL;
 
-		$this->uri = $this->userSpec['uri'];
+		$this->iri = $this->userSpec['iri'];
 
 		if (isset($this->userSpec['dbuser'])) {
 			$this->isDatabaseUser = $this->userSpec['dbuser'];
@@ -124,25 +124,25 @@ class Identity {
 
 
 		if (isset($this->userSpec['username'])) {
-			$this->userData[$this->propertyUris['username']] = $this->userSpec['username'];
+			$this->userData[$this->propertyIris['username']] = $this->userSpec['username'];
 		} else {
-			$this->userData[$this->propertyUris['username']] = '';
+			$this->userData[$this->propertyIris['username']] = '';
 		}
 
 		if (isset($this->userSpec['email'])) {
 			if (substr($this->userSpec['email'], 0, 7) === 'mailto:') {
-				$this->userData[$this->propertyUris['email']] = substr($this->userSpec['email'], 7);
+				$this->userData[$this->propertyIris['email']] = substr($this->userSpec['email'], 7);
 			} else {
-				$this->userData[$this->propertyUris['email']] = $this->userSpec['email'];
+				$this->userData[$this->propertyIris['email']] = $this->userSpec['email'];
 			}
 		} else {
-			$this->userData[$this->propertyUris['email']] = '';
+			$this->userData[$this->propertyIris['email']] = '';
 		}
 
 		if (isset($this->userSpec['label'])) {
-			$this->userData[$this->propertyUris['label']] = $this->userSpec['label'];
+			$this->userData[$this->propertyIris['label']] = $this->userSpec['label'];
 		} else {
-			$this->userData[$this->propertyUris['label']] = '';
+			$this->userData[$this->propertyIris['label']] = '';
 		}
 
 		if (isset($this->userSpec['is_openid_user'])) {
@@ -158,20 +158,20 @@ class Identity {
 		}
 	}
 
-	public function getUri() {
-		return $this->uri;
+	public function getIri() {
+		return $this->iri;
 	}
 
 	public function getUsername() {
-		return $this->userData[$this->propertyUris['username']];
+		return $this->userData[$this->propertyIris['username']];
 	}
 
 	public function getEmail() {
-		return $this->userData[$this->propertyUris['email']];
+		return $this->userData[$this->propertyIris['email']];
 	}
 
 	public function getLabel() {
-		return $this->userData[$this->propertyUris['label']];
+		return $this->userData[$this->propertyIris['label']];
 	}
 
 	public function isOpenId() {
@@ -202,7 +202,7 @@ class Identity {
 			// Username has changed
 
 			$registeredUsernames = array();
-			foreach ($this->knowledgeBase->getUsers() as $userUri => $userArray) {
+			foreach ($this->knowledgeBase->getUsers() as $userIri => $userArray) {
 				if (array_key_exists('userName', $userArray)) {
 					$registeredUsernames[] = $userArray['userName'];
 				}
@@ -210,18 +210,18 @@ class Identity {
 
 			$store = $this->knowledgeBase->getStore();
 
-			if (in_array($newUsername, $registeredUsernames) || ($newUsername === $store->getDbUser())
+			if (in_array($newUsername, $registeredUsernames) || ($newUsername === $store->getDatabaseUser())
 				|| ($newUsername === 'Anonymous')
 				|| ($newUsername === 'Admin')
 				|| ($newUsername === 'SuperAdmin')) {
 				throw new Identity\Exception('Username already registered.', 1303220617);
 			} else {
 				// Set the new username.
-				$sysModelUri = $this->knowledgeBase->getSystemOntologyConfiguration()->modelUri;
+				$sysModelIri = $this->knowledgeBase->getSystemOntologyConfiguration()->graphIri;
 
 				$store->deleteMatchingStatements(
-					$sysModelUri,
-					$this->getUri(),
+					$sysModelIri,
+					$this->getIri(),
 					$this->knowledgeBase->getAccessControlConfiguration()->user->name,
 					null,
 					array('use_ac' => false)
@@ -229,8 +229,8 @@ class Identity {
 
 				if ($newUsername !== '') {
 					$store->addStatement(
-						$sysModelUri,
-						$this->getUri(),
+						$sysModelIri,
+						$this->getIri(),
 						$this->knowledgeBase->getAccessControlConfiguration()->user->name,
 						array(
 							 'type' => 'literal',
@@ -242,8 +242,8 @@ class Identity {
 				} else {
 					// Also delete password iff set!
 					$store->deleteMatchingStatements(
-						$sysModelUri,
-						$this->getUri(),
+						$sysModelIri,
+						$this->getIri(),
 						$this->knowledgeBase->getAccessControlConfiguration()->user->pass,
 						null,
 						array('use_ac' => false)
@@ -252,12 +252,12 @@ class Identity {
 			}
 		}
 
-		$this->userData[$this->propertyUris['username']] = $newUsername;
+		$this->userData[$this->propertyIris['username']] = $newUsername;
 		return true;
 	}
 
 	public function setEmail($newEmail) {
-		// We save mail uris with mailto: prefix.
+		// We save mail iris with mailto: prefix.
 		if (substr($newEmail, 0, 7) !== 'mailto:') {
 			$newEmailWithMailto = 'mailto:' . $newEmail;
 		} else {
@@ -275,7 +275,7 @@ class Identity {
 			}
 
 			$registeredEmailAddresses = array();
-			foreach ($this->knowledgeBase->getUsers() as $userUri => $userArray) {
+			foreach ($this->knowledgeBase->getUsers() as $userIri => $userArray) {
 				if (array_key_exists('userEmail', $userArray)) {
 					$registeredEmailAddresses[] = $userArray['userEmail'];
 				}
@@ -293,22 +293,22 @@ class Identity {
 				} else {
 					// Set new mail address
 					$store = $this->knowledgeBase->getStore();
-					$sysModelUri = $this->knowledgeBase->getSystemOntologyConfiguration()->modelUri;
+					$sysModelIri = $this->knowledgeBase->getSystemOntologyConfiguration()->graphIri;
 
 					$store->deleteMatchingStatements(
-						$sysModelUri,
-						$this->getUri(),
+						$sysModelIri,
+						$this->getIri(),
 						$this->knowledgeBase->getAccessControlConfiguration()->user->mail,
 						null,
 						array('use_ac' => false)
 					);
 
 					$store->addStatement(
-						$sysModelUri,
-						$this->getUri(),
+						$sysModelIri,
+						$this->getIri(),
 						$this->knowledgeBase->getAccessControlConfiguration()->user->mail,
 						array(
-							 'type' => 'uri',
+							 'type' => 'iri',
 							 'value' => $newEmailWithMailto
 						),
 						false
@@ -317,7 +317,7 @@ class Identity {
 			}
 		}
 
-		$this->userData[$this->propertyUris['email']] = $newEmail;
+		$this->userData[$this->propertyIris['email']] = $newEmail;
 		return true;
 	}
 
@@ -339,19 +339,19 @@ class Identity {
 				} else {
 					// Set new password.
 					$store = $this->knowledgeBase->getStore();
-					$sysModelUri = $this->knowledgeBase->getSystemOntologyConfiguration()->modelUri;
+					$sysModelIri = $this->knowledgeBase->getSystemOntologyConfiguration()->graphIri;
 
 					$store->deleteMatchingStatements(
-						$sysModelUri,
-						$this->getUri(),
+						$sysModelIri,
+						$this->getIri(),
 						$this->knowledgeBase->getAccessControlConfiguration()->user->pass,
 						null,
 						array('use_ac' => false)
 					);
 
 					$store->addStatement(
-						$sysModelUri,
-						$this->getUri(),
+						$sysModelIri,
+						$this->getIri(),
 						$this->knowledgeBase->getAccessControlConfiguration()->user->pass,
 						array(
 							 'value' => sha1($newPassword),
@@ -368,11 +368,11 @@ class Identity {
 		return true;
 	}
 
-	public function get($propertyUri) {
+	public function get($propertyIri) {
 		// TODO later
 	}
 
-	public function set($propertyUri, $value) {
+	public function set($propertyIri, $value) {
 		// TODO later
 	}
 

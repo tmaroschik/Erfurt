@@ -53,22 +53,17 @@ class ResourceFactory implements \Erfurt\Singleton {
 		$this->objectManager = $objectManager;
 	}
 
-	public function createFromIri($iri) {
+	public function buildFromIri($iri) {
 		$resource = $this->objectManager->create('\Erfurt\Rdf\Resource', $iri);
 		return $resource;
 	}
 
-	public function createFromUri($uri) {
-		$resource = $this->objectManager->create('\Erfurt\Rdf\Resource', $uri);
-		return $resource;
-	}
-
-	public function createFromNamespaceAndLocalName($namespace, $local) {
+	public function buildFromNamespaceAndLocalName($namespace, $local) {
 		$resource = $this->objectManager->create('\Erfurt\Rdf\Resource', $namespace . $local);
 		return $resource;
 	}
 
-	public function createFromBlankNode($id) {
+	public function buildFromBlankNode($id) {
 		$resource = $this->objectManager->create('\Erfurt\Rdf\Resource', $id);
 		$resource->isBlankNode = true;
 		return $resource;

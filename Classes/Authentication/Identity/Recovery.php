@@ -73,7 +73,7 @@ class Recovery {
 		$store = Erfurt_App::getInstance()->getStore();
 
 		$query = new Erfurt_Sparql_SimpleQuery();
-		$query->addFrom($config->ac->modelUri);
+		$query->addFrom($config->ac->graphIri);
 		$query->setProloguePart('SELECT *');
 		$query->setWherePart(
 			'{ ?user <' . $config->ac->user->name . '> "' . $identity . '" .
@@ -83,7 +83,7 @@ class Recovery {
 		$resultUser = $store->sparqlQuery($query, array('use_ac' => false));
 
 		$query = new Erfurt_Sparql_SimpleQuery();
-		$query->addFrom($config->ac->modelUri);
+		$query->addFrom($config->ac->graphIri);
 		$query->setProloguePart('SELECT *');
 		$query->setWherePart(
 			'{ ?user <' . $config->ac->user->mail . '> <mailto:' . $identity . '> .
@@ -93,11 +93,11 @@ class Recovery {
 		$resultMail = $store->sparqlQuery($query, array('use_ac' => false));
 
 		if (!empty($resultUser)) {
-			$userUri = $resultUser[0]['user'];
+			$userIri = $resultUser[0]['user'];
 			$username = $identity;
 			$mailAddr = substr($resultUser[0]['mail'], 7);
 		} elseif (!empty($resultMail)) {
-			$userUri = $resultMail[0]['user'];
+			$userIri = $resultMail[0]['user'];
 			$username = $resultMail[0]['name'];
 			$mailAddr = $identity;
 		} else {
@@ -105,10 +105,10 @@ class Recovery {
 			throw new Erfurt_Auth_Identity_Exception('Unknown user identifier.');
 		}
 
-		$hash = $this->generateHash($userUri);
+		$hash = $this->generateHash($userIri);
 
 		$this->template = array(
-			'userUri' => $userUri,
+			'userIri' => $userIri,
 			'hash' => $hash,
 			$config->ac->user->name => $username,
 			$config->ac->user->mail => $mailAddr
@@ -170,24 +170,24 @@ class Recovery {
 	/**
 	 *
 	 */
-	private function generateHash($userUri = '') {
+	private function generateHash($userIri = '') {
 		$config = Erfurt_App::getInstance()->getConfig();
 		$store = Erfurt_App::getInstance()->getStore();
 
-		$hash = md5($userUri . time() . rand());
-		$acModel = Erfurt_App::getInstance()->getAcModel();
+		$hash = md5($userIri . time() . rand());
+		$acGraph = Erfurt_App::getInstance()->getAcGraph();
 		// delete previous hash(es)
 		$store->deleteMatchingStatements(
-			$config->ac->modelUri,
-			$userUri,
+			$config->ac->graphIri,
+			$userIri,
 			$config->ac->user->recoveryHash,
 			null,
 			array('useAc' => false)
 		);
 		// create new hash statement
 		$store->addStatement(
-			$config->ac->modelUri,
-			$userUri,
+			$config->ac->graphIri,
+			$userIri,
 			$config->ac->user->recoveryHash,
 			array('value' => $hash, 'type' => 'literal'),
 			false
@@ -204,7 +204,7 @@ class Recovery {
 		$store = Erfurt_App::getInstance()->getStore();
 
 		$query = new Erfurt_Sparql_SimpleQuery();
-		$query->addFrom($config->ac->modelUri);
+		$query->addFrom($config->ac->graphIri);
 		$query->setProloguePart('SELECT ?user');
 		$query->setWherePart('{ ?user <' . $config->ac->user->recoveryHash . '> "' . $hash . '" . }');
 
@@ -228,7 +228,7 @@ class Recovery {
 		$store = Erfurt_App::getInstance()->getStore();
 		$actionConfig = Erfurt_App::getInstance()->getActionConfig('RegisterNewUser');
 
-		$userUri = $this->validateHash($hash);
+		$userIri = $this->validateHash($hash);
 
 		$ret = false;
 
@@ -251,16 +251,16 @@ class Recovery {
 					// Set new password.
 
 					$store->deleteMatchingStatements(
-						$config->ac->modelUri,
-						$userUri,
+						$config->ac->graphIri,
+						$userIri,
 						$config->ac->user->pass,
 						null,
 						array('use_ac' => false)
 					);
 
 					$store->addStatement(
-						$config->ac->modelUri,
-						$userUri,
+						$config->ac->graphIri,
+						$userIri,
 						$config->ac->user->pass,
 						array(
 							 'value' => sha1($password1),
@@ -271,8 +271,8 @@ class Recovery {
 
 					// delete hash(es)
 					$store->deleteMatchingStatements(
-						$config->ac->modelUri,
-						$userUri,
+						$config->ac->graphIri,
+						$userIri,
 						$config->ac->user->recoveryHash,
 						null,
 						array('useAc' => false)

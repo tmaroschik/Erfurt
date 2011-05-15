@@ -48,7 +48,7 @@ class Extended implements EngineDb\ResultRenderer {
 	protected $engine = null;
 	protected $vars = null;
 
-	protected $uriValues = array();
+	protected $iriValues = array();
 	protected $literalValues = array();
 
 	// ------------------------------------------------------------------------
@@ -151,7 +151,7 @@ class Extended implements EngineDb\ResultRenderer {
 					$result = $this->_createResource($row[$this->vars[$strVarName]['sql_value']]);
 				} else {
 					$result = $this->_createResource(
-						$this->uriValues[$row[$this->vars[$strVarName]['sql_ref']]]);
+						$this->iriValues[$row[$this->vars[$strVarName]['sql_ref']]]);
 				}
 				break;
 			case 1:
@@ -159,7 +159,7 @@ class Extended implements EngineDb\ResultRenderer {
 					$result = $this->_createBlankNode($row[$this->vars[$strVarName]['sql_value']]);
 				} else {
 					$result = $this->_createBlankNode(
-						$this->uriValues[$row[$this->vars[$strVarName]['sql_ref']]]);
+						$this->iriValues[$row[$this->vars[$strVarName]['sql_ref']]]);
 				}
 				break;
 			default:
@@ -176,7 +176,7 @@ class Extended implements EngineDb\ResultRenderer {
 						$result = $this->_createLiteral(
 							$row[$this->vars[$strVarName]['sql_value']],
 							$row[$this->vars[$strVarName]['sql_lang']],
-							$this->uriValues[$row[$this->vars[$strVarName]['sql_dt_ref']]]
+							$this->iriValues[$row[$this->vars[$strVarName]['sql_dt_ref']]]
 						);
 					}
 				} else {
@@ -192,7 +192,7 @@ class Extended implements EngineDb\ResultRenderer {
 						$result = $this->_createLiteral(
 							$this->literalValues[$row[$this->vars[$strVarName]['sql_ref']]],
 							$row[$this->vars[$strVarName]['sql_lang']],
-							$this->uriValues[$row[$this->vars[$strVarName]['sql_dt_ref']]]
+							$this->iriValues[$row[$this->vars[$strVarName]['sql_dt_ref']]]
 						);
 					}
 				}
@@ -222,7 +222,7 @@ class Extended implements EngineDb\ResultRenderer {
 		if ($row[$this->vars[$strVarName]['sql_ref']] === null) {
 			$result = $this->_createResource($row[$this->vars[$strVarName]['sql_value']]);
 		} else {
-			$result = $this->_createResource($this->uriValues[$row[$this->vars[$strVarName]['sql_ref']]]);
+			$result = $this->_createResource($this->iriValues[$row[$this->vars[$strVarName]['sql_ref']]]);
 		}
 		if ($asArray) {
 			return $result;
@@ -231,10 +231,10 @@ class Extended implements EngineDb\ResultRenderer {
 		}
 	}
 
-	protected function _createResource($uri) {
+	protected function _createResource($iri) {
 		return array(
-			'type' => 'uri',
-			'value' => $uri
+			'type' => 'iri',
+			'value' => $iri
 		);
 	}
 
@@ -257,14 +257,14 @@ class Extended implements EngineDb\ResultRenderer {
 			if ($row[$this->vars[$strVarName]['sql_ref']] === null) {
 				$result = $this->_createResource($row[$this->vars[$strVarName]['sql_value']]);
 			} else {
-				$result = $this->_createResource($this->uriValues[$row[$this->vars[$strVarName]['sql_ref']]]);
+				$result = $this->_createResource($this->iriValues[$row[$this->vars[$strVarName]['sql_ref']]]);
 			}
 		} else {
 			if ($row[$this->vars[$strVarName]['sql_ref']] === null) {
 				$result = $this->_createBlankNode($row[$this->vars[$strVarName]['sql_value']]);
 			} else {
 				$result = $this->_createBlankNode(
-					$this->uriValues[$row[$this->vars[$strVarName]['sql_ref']]]);
+					$this->iriValues[$row[$this->vars[$strVarName]['sql_ref']]]);
 			}
 		}
 		if ($asArray) {
@@ -347,32 +347,32 @@ class Extended implements EngineDb\ResultRenderer {
 
 	protected function _getVariableArrayFromRecordSets($arRecordSets, $strResultForm, $asArray = false) {
 		// First, we need to check, whether there is a need to dereference some values
-		$refVariableNamesUri = array();
+		$refVariableNamesIri = array();
 		$refVariableNamesLit = array();
 		foreach ($this->vars as $var) {
 			if ($var[1] === 'o') {
 				if (isset($var['sql_ref'])) {
 					$refVariableNamesLit[] = $var['sql_ref'];
-					$refVariableNamesUri[] = $var['sql_ref'];
+					$refVariableNamesIri[] = $var['sql_ref'];
 				}
 				if (isset($var['sql_dt_ref'])) {
-					$refVariableNamesUri[] = $var['sql_dt_ref'];
+					$refVariableNamesIri[] = $var['sql_dt_ref'];
 				}
 			} else {
 				if (isset($var['sql_ref'])) {
-					$refVariableNamesUri[] = $var['sql_ref'];
+					$refVariableNamesIri[] = $var['sql_ref'];
 				}
 			}
 		}
-		$refVariableNamesUri = array_unique($refVariableNamesUri);
+		$refVariableNamesIri = array_unique($refVariableNamesIri);
 		$refVariableNamesLit = array_unique($refVariableNamesLit);
-		$refIdsUri = array();
+		$refIdsIri = array();
 		$refIdsLit = array();
 		foreach ($arRecordSets as $dbRecordSet) {
 			foreach ($dbRecordSet as $row) {
-				foreach ($refVariableNamesUri as $name) {
+				foreach ($refVariableNamesIri as $name) {
 					if ($row["$name"] !== null) {
-						$refIdsUri[] = $row["$name"];
+						$refIdsIri[] = $row["$name"];
 					}
 				}
 				foreach ($refVariableNamesLit as $name) {
@@ -382,11 +382,11 @@ class Extended implements EngineDb\ResultRenderer {
 				}
 			}
 		}
-		if (count($refIdsUri) > 0) {
-			$sql = 'SELECT id, v FROM tx_semantic_uri WHERE id IN (' . implode(',', $refIdsUri) . ')';
+		if (count($refIdsIri) > 0) {
+			$sql = 'SELECT id, v FROM tx_semantic_iri WHERE id IN (' . implode(',', $refIdsIri) . ')';
 			$result = $this->engine->sqlQuery($sql);
 			foreach ($result as $row) {
-				$this->uriValues[$row['id']] = $row['v'];
+				$this->iriValues[$row['id']] = $row['v'];
 			}
 		}
 		if (count($refIdsLit) > 0) {

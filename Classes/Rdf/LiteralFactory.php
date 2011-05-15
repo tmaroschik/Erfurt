@@ -51,17 +51,17 @@ class LiteralFactory implements \Erfurt\Singleton {
 		$this->objectManager = $objectManager;
 	}
 
-	public function createFromLabel($label) {
+	public function buildFromLabel($label) {
 		return $this->objectManager->create('\Erfurt\Rdf\Literal', $label);
 	}
 
-	public function createFromLabelAndLanguage($label, $lang) {
+	public function buildFromLabelAndLanguage($label, $lang) {
 		$literal = $this->objectManager->create('\Erfurt\Rdf\Literal', $label);
 		$literal->setLanguage($lang);
 		return $literal;
 	}
 
-	public function createFromLabelAndDatatype($label, $datatype) {
+	public function buildFromLabelAndDatatype($label, $datatype) {
 		$literal = $this->objectManager->create('\Erfurt\Rdf\Literal', $label);
 		$literal->setDatatype($datatype);
 		return $literal;

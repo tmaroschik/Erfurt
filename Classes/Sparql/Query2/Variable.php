@@ -117,7 +117,7 @@ class Variable extends ElementHelper implements Interfaces\VarOrIriRef, Interfac
 	/**
 	 * extractName
 	 *
-	 * if you have a uri like
+	 * if you have a iri like
 	 * http://example.com/foaf/bob or
 	 * http://example.com/foaf#bob
 	 * http://example.com/bob/

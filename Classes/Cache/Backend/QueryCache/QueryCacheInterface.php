@@ -52,7 +52,7 @@ interface QueryCacheInterface {
 	 * @param	  float   $duration	   the duration of the originally executed Query in seconds, microseconds
 	 * @return	 boolean $result		 returns the state of the saveprocess
 	 */
-	public function save($queryId, $queryString, $modelIris, $triplePatterns, $queryResult, $duration = 0);
+	public function save($queryId, $queryString, $graphIris, $triplePatterns, $queryResult, $duration = 0);
 
 
 	/**
@@ -85,15 +85,15 @@ interface QueryCacheInterface {
 	 * @param	  array   $statements	 an Array of statements in the form $statements[$subject][$predicate] = $object
 	 * @return	 int	 $count		  count of the affected cached queries
 	 */
-	public function invalidate($modelIri, $statements = array());
+	public function invalidate($graphIri, $statements = array());
 
 	/**
 	 *  invalidating all cached Query Results according to a given ModelIri
 	 * @access	 public
-	 * @param	  string  $modelIri	   A ModelIri
+	 * @param	  string  $graphIri	   A ModelIri
 	 * @return	 int	 $count		  count of the affected cached queries
 	 */
-	public function invalidateWithModelIri($modelIri);
+	public function invalidateWithModelIri($graphIri);
 
 	/**
 	 *  invalidating all cached ObjectKeys according to a query list of QueryIds

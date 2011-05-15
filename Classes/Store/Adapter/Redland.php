@@ -57,25 +57,25 @@ class Erfurt_Store_Adapter_Redland implements Erfurt_Store_Adapter_Interface
     // ------------------------------------------------------------------------
     
     /** @see Erfurt_Store_Adapter_Abstract */
-    public function addStatement($modelIri, $subject, $predicate, $object, $options = array('subject_type' => Erfurt_Store::TYPE_IRI, 'object_type' => Erfurt_Store::TYPE_IRI))
+    public function addStatement($graphIri, $subject, $predicate, $object, $options = array('subject_type' => Erfurt_Store::TYPE_IRI, 'object_type' => Erfurt_Store::TYPE_IRI))
     {
         throw new Exception('Not implemented yet.');
     }
     
-    public function deleteMatchingStatements($modelIri, $subject, $predicate, $object)
+    public function deleteMatchingStatements($graphIri, $subject, $predicate, $object)
     {
         throw new Exception('Not implemented yet.');
     }
     
     /** @see Erfurt_Store_DataInterface */
-    public function deleteModel($modelIri) 
+    public function deleteModel($graphIri) 
     {
         
         throw new Exception('Not implemented yet.');
     }
     
     /** @see Erfurt_Store_Adapter_Abstract */
-    public function exportRdf($modelIri, $serializationType = 'xml', $filename = null)
+    public function exportRdf($graphIri, $serializationType = 'xml', $filename = null)
     {
         throw new Exception('Not implemented yet.');
     }
@@ -87,13 +87,13 @@ class Erfurt_Store_Adapter_Redland implements Erfurt_Store_Adapter_Interface
     }
     
     /** @see Erfurt_Store_Adapter_Abstract */
-    public function getModel($modelIri) {
+    public function getModel($graphIri) {
 
         throw new Exception('Not implemented yet.');
     }
     
     /** @see Erfurt_Store_Adapter_Abstract */ 
-    public function getNewModel($modelIri, $baseIri = '', $type = 'rdfs') 
+    public function getNewModel($graphIri, $baseIri = '', $type = 'rdfs') 
     {    
         throw new Exception('Not implemented yet.');
     }
@@ -110,13 +110,13 @@ class Erfurt_Store_Adapter_Redland implements Erfurt_Store_Adapter_Interface
      
     
     /** @see Erfurt_Store_Adapter_Abstract */
-    public function importRdf($modelIri, $data, $type, $locator)
+    public function importRdf($graphIri, $data, $type, $locator)
     {
         throw new Exception('Not implemented yet.');
     }
     
     /** @see Erfurt_Store_Adapter_Abstract */
-    public function isModelAvailable($modelIri) 
+    public function isModelAvailable($graphIri) 
     {
         
         librdf_storage_get_contexts();

@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace Erfurt\Uri;
+namespace Erfurt\Iri;
 /***************************************************************
  *  Copyright notice
  *

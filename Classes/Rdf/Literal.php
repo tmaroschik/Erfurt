@@ -37,59 +37,56 @@ namespace Erfurt\Rdf;
  */
 class Literal extends Node {
 
-	protected $_label = false;
-	protected $_lang = null;
-	protected $_datatype = null;
+	protected $label = false;
+	protected $lang = null;
+	protected $datatype = null;
 
 	protected function __construct($label) {
 
-		$this->_label = $label;
+		$this->label = $label;
 	}
 
-    /**
-     * Returns a string representation of this resource.
-     *
-     * @return string
-     */
-    public function __toString() {
-        if ( $this->getLabel() ) {
-            $ret = $this->getLabel();
-            if ( $this->getDatatype() ) {
-                $ret .= "^^" . $this->getDatatype() ;
-            }
-            else if ( $this->getLanguage() ) {
-                $ret .= "@" . $this->getLanguage() ;
-            }
-            return $ret;
-        }
-        else {
-            return "";
-        }
-    }
+	/**
+	 * Returns a string representation of this resource.
+	 *
+	 * @return string
+	 */
+	public function __toString() {
+		if ($this->getLabel()) {
+			$ret = $this->getLabel();
+			if ($this->getDatatype()) {
+				$ret .= "^^" . $this->getDatatype();
+			}
+			else {
+				if ($this->getLanguage()) {
+					$ret .= "@" . $this->getLanguage();
+				}
+			}
+			return $ret;
+		}
+		else {
+			return "";
+		}
+	}
 
 	public function setLanguage($lang) {
-
-		$this->_lang = $lang;
+		$this->lang = $lang;
 	}
 
 	public function setDatatype($datatype) {
-
-		$this->_datatype = $datatype;
+		$this->datatype = $datatype;
 	}
 
 	public function getLabel() {
-
-		return $this->_label;
+		return $this->label;
 	}
 
 	public function getDatatype() {
-
-	    return $this->_datatype;
+		return $this->datatype;
 	}
 
 	public function getLanguage() {
-
-	    return $this->_lang;
+		return $this->lang;
 	}
 
 }

@@ -246,23 +246,23 @@ class Query {
 	}
 
 	/**
-	 * Adds a graphuri to the from part.
+	 * Adds a graphiri to the from part.
 	 *
-	 * @param  String $graphURI
+	 * @param  String $graphIRI
 	 * @return void
 	 */
-	public function addFrom($graphURI) {
-		$this->fromPart[] = $graphURI;
+	public function addFrom($graphIRI) {
+		$this->fromPart[] = $graphIRI;
 	}
 
 	/**
-	 * Adds a graphuri to the from named part.
+	 * Adds a graphiri to the from named part.
 	 *
-	 * @param  String $graphURI
+	 * @param  String $graphIRI
 	 * @return void
 	 */
-	public function addFromNamed($graphURI) {
-		$this->fromNamedPart[] = $graphURI;
+	public function addFromNamed($graphIRI) {
+		$this->fromNamedPart[] = $graphIRI;
 	}
 
 	/**
@@ -382,14 +382,14 @@ class Query {
 			} else {
 				$type = substr($var, $nHatHat + 2, $nAt - $nHatHat - 2);
 			}
-			$fullUri = $this->getFullUri($type);
-			if ($fullUri === false) {
-				$fullUri = $type;
-				if ($fullUri[0] == '<' && substr($fullUri, -1) == '>') {
-					$fullUri = substr($fullUri, 1, -1);
+			$fullIri = $this->getFullIri($type);
+			if ($fullIri === false) {
+				$fullIri = $type;
+				if ($fullIri[0] == '<' && substr($fullIri, -1) == '>') {
+					$fullIri = substr($fullIri, 1, -1);
 				}
 			}
-			return $fullUri;
+			return $fullIri;
 		} else {
 			return null;
 		}
@@ -415,13 +415,13 @@ class Query {
 	}
 
 	/**
-	 * Gets the full URI of a qname token.
+	 * Gets the full IRI of a qname token.
 	 *
 	 * @param  string $token
-	 * @return string The complete URI of a given token, false if $token is not
+	 * @return string The complete IRI of a given token, false if $token is not
 	 * a qname or the prefix is not defined.
 	 */
-	public function getFullUri($token) {
+	public function getFullIri($token) {
 		$pattern = "/^([^:]*):([^:]*)$/";
 		if (preg_match($pattern, $token, $hits) > 0) {
 			if (isset($this->prefixes{$hits{1}})) {

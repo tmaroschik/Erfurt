@@ -29,13 +29,13 @@ namespace Erfurt\Owl;
  ***************************************************************/
 
 /**
- * Owl Model class
+ * Owl Graph class
  *
  * @package $PACKAGE$
  * @subpackage $SUBPACKAGE$
  * @scope prototype
  */
-class Model extends \Erfurt\Rdf\Model {
+class Graph extends \Erfurt\Rdfs\Graph {
 	/**
 	 * Imported graph IRIs
 	 * @var array
@@ -45,13 +45,12 @@ class Model extends \Erfurt\Rdf\Model {
 	/**
 	 * Constructor
 	 *
-	 * @param string $modelIri
+	 * @param string $graphIri
 	 * @param string $baseIri
 	 * @param array $imports
 	 */
-	public function __construct($modelIri, $baseIri = null, array $imports = array()) {
-		parent::__construct($modelIri, $baseIri);
-
+	public function __construct($graphIri, $baseIri = null, array $imports = array()) {
+		parent::__construct($graphIri, $baseIri);
 		$this->imports = $imports;
 	}
 

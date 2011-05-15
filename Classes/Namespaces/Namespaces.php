@@ -39,44 +39,36 @@ namespace Erfurt\Namespaces;
  */
 class Namespaces {
 
-	// ------------------------------------------------------------------------
-	// --- Class Constants ----------------------------------------------------
-	// ------------------------------------------------------------------------
-
 	/**
-	 * The predicate URI used to store prefixes.
+	 * The predicate IRI used to store prefixes.
 	 * @var string
 	 */
 	const PREFIX_PREDICATE = 'http://ns.ontowiki.net/SysOnt/prefix';
 
-	// ------------------------------------------------------------------------
-	// --- Protected Members --------------------------------------------------
-	// ------------------------------------------------------------------------
-
 	/**
-	 * Whether to allow multiple prefixes for the same namespace URI.
+	 * Whether to allow multiple prefixes for the same namespace IRI.
 	 * @var boolean
 	 */
-	protected $_allowMultiplePrefixes = true;
+	protected $allowMultiplePrefixes = true;
 
 	/**
 	 * Hash table for namespace storage per graph.
 	 * @var array
 	 */
-	protected $_namespaces = array();
+	protected $namespaces = array();
 
 	/**
 	 * Hash table of names not to be used as prefixes.
 	 * @var array
 	 */
-	protected $_reservedNames = array();
+	protected $reservedNames = array();
 
 	/**
 	 * Hash table of prefixes for standard vocabularies that
 	 * should always be the same.
 	 * @var array
 	 */
-	protected $_standardPrefixes = array();
+	protected $standardPrefixes = array();
 
 	/**
 	 * The injected knowledge base
@@ -94,10 +86,6 @@ class Namespaces {
 		$this->knowledgeBase = $knowledgeBase;
 	}
 
-	// ------------------------------------------------------------------------
-	// --- Magic Methods ------------------------------------------------------
-	// ------------------------------------------------------------------------
-
 	/**
 	 * Constructs a namespaces object.
 	 *
@@ -111,26 +99,22 @@ class Namespaces {
 	 */
 	public function __construct(array $options = array()) {
 		if (array_key_exists('allow_multiple_prefixes', $options)) {
-			$this->_standardPrefixes = (boolean)$options['allow_multiple_prefixes'];
+			$this->standardPrefixes = (boolean)$options['allow_multiple_prefixes'];
 		}
 
 		if (array_key_exists('reserved_names', $options)) {
-			$this->_reservedNames = array_flip((array)$options['reserved_names']);
+			$this->reservedNames = array_flip((array)$options['reserved_names']);
 		}
 
 		if (array_key_exists('standard_prefixes', $options)) {
-			$this->_standardPrefixes = array_flip((array)$options['standard_prefixes']);
+			$this->standardPrefixes = array_flip((array)$options['standard_prefixes']);
 		}
 	}
 
-	// ------------------------------------------------------------------------
-	// --- Public Methods -----------------------------------------------------
-	// ------------------------------------------------------------------------
-
 	/**
-	 * Adds a prefix for the namespace URI in a given graph.
+	 * Adds a prefix for the namespace IRI in a given graph.
 	 *
-	 * @param \Erfurt\Rdf\Model|string $graph
+	 * @param \Erfurt\Rdf\Graph|string $graph
 	 * @param string $namespace
 	 * @param string $prefix
 	 * @throws Exception
@@ -145,10 +129,10 @@ class Namespaces {
 
 		$graphPrefixes = $this->getNamespacesForGraph($graph);
 
-		// check if namespace is a valid URI
-		if (!\Erfurt\Uri\Uri::check($namespace)) {
+		// check if namespace is a valid IRI
+		if (!\Erfurt\Utility\Iri::check($namespace)) {
 
-			throw new Exception("Given namespace '$namespace' is not a valid URI.");
+			throw new Exception("Given namespace '$namespace' is not a valid IRI.");
 		}
 
 		// check if prefix is a valid XML name
@@ -156,8 +140,8 @@ class Namespaces {
 			throw new Exception("Given prefix '$prefix' is not a valid XML name.");
 		}
 
-		// check if prefix matches a URI scheme (http://www.iana.org/assignments/uri-schemes.html)
-		if (array_key_exists($prefix, $this->_reservedNames)) {
+		// check if prefix matches a IRI scheme (http://www.iana.org/assignments/iri-schemes.html)
+		if (array_key_exists($prefix, $this->reservedNames)) {
 			throw new Exception("Reserved name '$prefix' cannot be used as a namespace prefix.");
 		}
 
@@ -168,7 +152,7 @@ class Namespaces {
 		}
 
 		// check for multiple prefixes
-		if (!$this->_allowMultiplePrefixes and array_key_exists($namespace, array_flip($graphPrefixes))) {
+		if (!$this->allowMultiplePrefixes and array_key_exists($namespace, array_flip($graphPrefixes))) {
 
 			throw new Exception("Multiple prefixes for namespace '$namespace' not allowed.");
 		}
@@ -181,7 +165,7 @@ class Namespaces {
 	}
 
 	/**
-	 * Removes the prefix for the namespaces URI in a given graph.
+	 * Removes the prefix for the namespaces IRI in a given graph.
 	 *
 	 * @param string $graph
 	 * @param string $prefix
@@ -196,19 +180,19 @@ class Namespaces {
 		$this->setNamespacesForGraph($graph, $graphPrefixes);
 	}
 
-	public function getModel($graph) {
+	public function getGraph($graph) {
 		if (!is_object($graph)) {
 			$store = $this->knowledgeBase->getStore();
 			// we need to read from the system config even though the user
 			// may have no direct access to it
-			$graph = $store->getModel($graph, false);
+			$graph = $store->getGraph($graph, false);
 		}
 
 		return $graph;
 	}
 
 	/**
-	 * Returns the prefix for the namespace URI in a given graph.
+	 * Returns the prefix for the namespace IRI in a given graph.
 	 *
 	 * If more than one prefixes are stored for the given namespace,
 	 * the first one in alphabetical order is returned.
@@ -233,8 +217,8 @@ class Namespaces {
 			$prefix = $prefixesByNs[$namespace];
 		} else {
 			// try standard prefix
-			if (array_key_exists($namespace, $this->_standardPrefixes)) {
-				$prefix = $this->_standardPrefixes[$namespace];
+			if (array_key_exists($namespace, $this->standardPrefixes)) {
+				$prefix = $this->standardPrefixes[$namespace];
 			} else {
 				// synthesize prefix
 				do {
@@ -262,20 +246,20 @@ class Namespaces {
 
 	/**
 	 * Returns the stored namespaces indexed by their prefixes for a
-	 * given graph URI.
+	 * given graph IRI.
 	 *
-	 * @param string $graph The graph URI
+	 * @param string $graph The graph IRI
 	 * @return array
 	 */
 	public function getNamespacesForGraph($graph) {
-		$model = $this->getModel($graph);
-		$graph = (string)$graph;
+		$graph = $this->getGraph($graph);
+		$graphIri = (string)$graph;
 
-		if (!array_key_exists($graph, $this->_namespaces)) {
+		if (!array_key_exists($graphIri, $this->namespaces)) {
 			$graphNamespaces = array();
 
 			// load graph configuration froms store
-			$prefixOptions = (array)$model->getOption(self::PREFIX_PREDICATE);
+			$prefixOptions = (array)$graph->getOption(self::PREFIX_PREDICATE);
 
 			foreach ($prefixOptions as $entry) {
 				// split raw config string
@@ -290,10 +274,10 @@ class Namespaces {
 			}
 
 			// add to global store
-			$this->_namespaces[$graph] = $graphNamespaces;
+			$this->namespaces[$graphIri] = $graphNamespaces;
 		}
 
-		return $this->_namespaces[$graph];
+		return $this->namespaces[$graphIri];
 	}
 
 	/**
@@ -303,8 +287,8 @@ class Namespaces {
 	 * @param array|null $namespaces
 	 */
 	public function setNamespacesForGraph($graph, $namespaces = null) {
-		$model = $this->getModel($graph);
-		$graph = (string)$graph;
+		$graph = $this->getGraph($graph);
+		$graphIri = (string)$graph;
 		$namespaces = (array)$namespaces;
 
 		$newValues = array();
@@ -317,16 +301,16 @@ class Namespaces {
 		}
 
 		try {
-			// will fail if model is not writable
-			$model->setOption(self::PREFIX_PREDICATE, $newValues);
+			// will fail if graph is not writable
+			$graph->setOption(self::PREFIX_PREDICATE, $newValues);
 
 			// update locally
-			$this->_namespaces[$graph] = $namespaces;
+			$this->namespaces[$graphIri] = $namespaces;
 		}
 		catch (\Erfurt\Exception $e) {
 
 			throw new Exception(
-				"Insufficient privileges to edit namespace prefixes for graph '$graph'.");
+				"Insufficient privileges to edit namespace prefixes for graph '$graphIri'.");
 		}
 	}
 

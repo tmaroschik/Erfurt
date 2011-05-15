@@ -72,7 +72,7 @@ class RdfWriter {
 	private $namespaces;
 
 	/**
-	 * This Node array is an associative array of Nodes where the key is the uri of the subject
+	 * This Node array is an associative array of Nodes where the key is the iri of the subject
 	 *
 	 * @var Node[]
 	 */
@@ -86,9 +86,9 @@ class RdfWriter {
 	private $qnames;
 
 	/**
-	 * This is an associative array where the key is the uri of the subject and the value is an associative array
+	 * This is an associative array where the key is the iri of the subject and the value is an associative array
 	 * itself containing all properties for the specific subject. Each property is an indexed array again containing
-	 * all objects for the property. So it looks something like this: Node[<Subject-URI][<Predicate-URI][0-N]
+	 * all objects for the property. So it looks something like this: Node[<Subject-IRI][<Predicate-IRI][0-N]
 	 * @var Node[][][]
 	 */
 	private $subjects;
@@ -109,7 +109,7 @@ class RdfWriter {
 	private static $bNodeNumber = 0;
 
 	protected $store = null;
-	protected $graphUri = null;
+	protected $graphIri = null;
 
 	protected $listArray = null;
 
@@ -159,8 +159,8 @@ class RdfWriter {
 		$this->objectManager = $objectManager;
 	}
 
-	public function setGraphUri($graphUri) {
-		$this->graphUri = $graphUri;
+	public function setGraphIri($graphIri) {
+		$this->graphIri = $graphIri;
 	}
 
 	/**
@@ -187,7 +187,7 @@ class RdfWriter {
 		$propertyMap = $pArray;
 
 		if (isset($propertyMap[EF_RDF_TYPE]) && count($propertyMap[EF_RDF_TYPE]) > 0) {
-			if ($propertyMap[EF_RDF_TYPE][0]['type'] === 'uri') {
+			if ($propertyMap[EF_RDF_TYPE][0]['type'] === 'iri') {
 				$this->startElement($propertyMap[EF_RDF_TYPE][0]['value']);
 				unset($propertyMap[EF_RDF_TYPE][0]);
 				$propertyMap[EF_RDF_TYPE] = array_values($propertyMap[EF_RDF_TYPE]);
@@ -305,7 +305,7 @@ class RdfWriter {
 		}
 
 		// Node is either anonymous or rdf:Nil
-		if ($node['type'] === 'uri') {
+		if ($node['type'] === 'iri') {
 			if ($node['value'] === EF_RDF_NIL) {
 				return true;
 			}
@@ -413,7 +413,7 @@ class RdfWriter {
 	 * @return boolean
 	 */
 	private function propertyNested($value) {
-		if (($value['type'] !== 'uri') || !$this->shouldNest($value)) {
+		if (($value['type'] !== 'iri') || !$this->shouldNest($value)) {
 			return false;
 		}
 
@@ -428,7 +428,7 @@ class RdfWriter {
 	 * @return boolean
 	 */
 	private function propertyReference($value) {
-		if ($value['type'] === 'uri') {
+		if ($value['type'] === 'iri') {
 			$this->stringWriter->addAttribute(EF_RDF_NS, 'resource', $value['value']);
 			return true;
 		} else {
@@ -482,7 +482,7 @@ class RdfWriter {
 	 * @return boolean
 	 */
 	private function shouldNest($node) {
-		if ($node['type'] === 'uri') {
+		if ($node['type'] === 'iri') {
 			if (isset($this->rendered[$node['value']])) {
 				return false;
 			}
@@ -503,10 +503,10 @@ class RdfWriter {
 	}
 
 	/**
-	 * @param string $uri
+	 * @param string $iri
 	 */
-	private function startElement($uri) {
-		$this->stringWriter->startElement($uri);
+	private function startElement($iri) {
+		$this->stringWriter->startElement($iri);
 	}
 
 	protected function _getListArray() {
@@ -521,7 +521,7 @@ class RdfWriter {
 
 		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT ?s ?first ?rest');
-		$query->addFrom($this->graphUri);
+		$query->addFrom($this->graphIri);
 		$query->setWherePart('WHERE { ?s <' . EF_RDF_FIRST . '> ?first . ?s <' . EF_RDF_REST . '> ?rest }');
 
 		$result = $this->store->sparqlQuery($query, array(

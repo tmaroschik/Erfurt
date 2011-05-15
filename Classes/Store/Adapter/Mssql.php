@@ -355,7 +355,7 @@ class Erfurt_Store_Adapter_Mssql implements Erfurt_Store_Adapter_Interface, Erfu
     }
 
     /** @see Erfurt_Store_Adapter_Interface */
-    public function createModel($graphUri, $type = Erfurt_Store::MODEL_TYPE_OWL)
+    public function createModel($graphUri, $type = Erfurt_Store::GRAPH_TYPE_OWL)
     {
         $data = array(
             'uri'  => &$graphUri
@@ -412,7 +412,7 @@ class Erfurt_Store_Adapter_Mssql implements Erfurt_Store_Adapter_Interface, Erfu
         $cache->clean(Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('model_info'));
         $this->_modelInfoCache = null;
 
-        if ($type === Erfurt_Store::MODEL_TYPE_OWL) {
+        if ($type === Erfurt_Store::GRAPH_TYPE_OWL) {
             $this->addStatement($graphUri, $graphUri, EF_RDF_TYPE, array('type' => 'uri', 'value' => EF_OWL_ONTOLOGY));
             $this->_modelInfoCache = null;
         }
@@ -614,7 +614,7 @@ class Erfurt_Store_Adapter_Mssql implements Erfurt_Store_Adapter_Interface, Erfu
     }
 
     /** @see Erfurt_Store_Adapter_Interface */
-    public function exportRdf($modelIri, $serializationType = 'xml', $filename = false)
+    public function exportRdf($graphIri, $serializationType = 'xml', $filename = false)
     {
         require_once 'Erfurt/Store/Adapter/Exception.php';
         throw new Erfurt_Store_Adapter_Exception('Not implemented yet.');
@@ -627,7 +627,7 @@ class Erfurt_Store_Adapter_Mssql implements Erfurt_Store_Adapter_Interface, Erfu
 
         $models = array();
         foreach ($modelInfoCache as $mInfo) {
-            $models[$mInfo['modelIri']] = true;
+            $models[$mInfo['graphIri']] = true;
         }
 
         return $models;
@@ -667,49 +667,49 @@ class Erfurt_Store_Adapter_Mssql implements Erfurt_Store_Adapter_Interface, Erfu
     }
 
     /**
-     * Recursively gets owl:imported model IRIs starting with $modelIri as root.
+     * Recursively gets owl:imported model IRIs starting with $graphIri as root.
      *
-     * @param string $modelIri
+     * @param string $graphIri
      */
-    public function getImportsClosure($modelIri)
+    public function getImportsClosure($graphIri)
     {
         $modelInfoCache = $this->_getModelInfos();
 
-        if (isset($modelInfoCache["$modelIri"]['imports'])) {
-            return $modelInfoCache["$modelIri"]['imports'];
+        if (isset($modelInfoCache["$graphIri"]['imports'])) {
+            return $modelInfoCache["$graphIri"]['imports'];
         } else {
             return array();
         }
     }
 
     /** @see Erfurt_Store_Adapter_Interface */
-    public function getModel($modelIri)
+    public function getModel($graphIri)
     {
         // if model is already in cache return the cached value
-        if (isset($this->_modelCache[$modelIri])) {
-            return $this->_modelCache[$modelIri];
+        if (isset($this->_modelCache[$graphIri])) {
+            return $this->_modelCache[$graphIri];
         }
 
         $modelInfoCache = $this->_getModelInfos();
 
-        $baseUri = $modelInfoCache[$modelIri]['baseIri'];
+        $baseUri = $modelInfoCache[$graphIri]['baseIri'];
         if ($baseUri === '') {
             $baseUri = null;
         }
 
         // choose the right type for the model instance and instanciate it
-        if ($modelInfoCache[$modelIri]['type'] === 'owl') {
+        if ($modelInfoCache[$graphIri]['type'] === 'owl') {
             require_once 'Erfurt/Owl/Model.php';
-            $m = new Erfurt_Owl_Model($modelIri, $baseUri);
-        } else if ($this->_modelInfoCache[$modelIri]['type'] === 'rdfs') {
+            $m = new Erfurt_Owl_Model($graphIri, $baseUri);
+        } else if ($this->_modelInfoCache[$graphIri]['type'] === 'rdfs') {
             require_once 'Erfurt/Rdfs/Model.php';
-            $m = new Erfurt_Rdfs_Model($modelIri, $baseUri);
+            $m = new Erfurt_Rdfs_Model($graphIri, $baseUri);
         } else {
             require_once 'Erfurt/Rdf/Model.php';
-            $m = new Erfurt_Rdf_Model($modelIri, $baseUri);
+            $m = new Erfurt_Rdf_Model($graphIri, $baseUri);
         }
 
-        $this->_modelCache[$modelIri] = $m;
+        $this->_modelCache[$graphIri] = $m;
         return $m;
     }
 
@@ -1008,11 +1008,11 @@ class Erfurt_Store_Adapter_Mssql implements Erfurt_Store_Adapter_Interface, Erfu
     }
 
     /** @see Erfurt_Store_Adapter_Interface */
-    public function isModelAvailable($modelIri)
+    public function isModelAvailable($graphIri)
     {
         $modelInfoCache = $this->_getModelInfos();
 
-        if (isset($modelInfoCache[$modelIri])) {
+        if (isset($modelInfoCache[$graphIri])) {
             return true;
         } else {
             return false;
@@ -1479,7 +1479,7 @@ class Erfurt_Store_Adapter_Mssql implements Erfurt_Store_Adapter_Interface, Erfu
                 foreach ($result as $row) {
                     if (!isset($this->_modelInfoCache[$row['uri']])) {
                         $this->_modelInfoCache[$row['uri']]['modelId']      = $row['id'];
-                        $this->_modelInfoCache[$row['uri']]['modelIri']     = $row['uri'];
+                        $this->_modelInfoCache[$row['uri']]['graphIri']     = $row['uri'];
                         $this->_modelInfoCache[$row['uri']]['baseIri']      = $row['base'];
                         $this->_modelInfoCache[$row['uri']]['imports']      = array();
 
@@ -1512,18 +1512,18 @@ class Erfurt_Store_Adapter_Mssql implements Erfurt_Store_Adapter_Interface, Erfu
                     $hasChanged = false;
 
                     // test every model exists in the model table
-                    foreach ($this->_modelInfoCache as $modelIri) {
+                    foreach ($this->_modelInfoCache as $graphIri) {
                         // only owl models can import other models
-                        if ($modelIri['type'] !== 'owl') {
+                        if ($graphIri['type'] !== 'owl') {
                             continue;
                         }
-                        foreach ($modelIri['imports'] as $importsIri) {
+                        foreach ($graphIri['imports'] as $importsIri) {
                             if (isset($this->_modelInfoCache[$importsIri])) {
                                 foreach ($this->_modelInfoCache[$importsIri]['imports'] as $importsImportIri) {
-                                    if (!isset($modelIri['imports'][$importsImportIri]) &&
-                                            !($importsImportIri === $modelIri['modelIri'])) {
+                                    if (!isset($graphIri['imports'][$importsImportIri]) &&
+                                            !($importsImportIri === $graphIri['graphIri'])) {
 
-                                        $this->_modelInfoCache[$modelIri['modelIri']]
+                                        $this->_modelInfoCache[$graphIri['graphIri']]
                                                     ['imports'][$importsImportIri] = $importsImportIri;
                                         $hasChanged = true;
                                     }

@@ -130,10 +130,10 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	protected $accessControl;
 
 	/**
-	 * Contains an instanciated access control model.
-	 * @var \Erfurt\Rdf\Model
+	 * Contains an instanciated access control graph.
+	 * @var \Erfurt\Rdf\Graph
 	 */
-	protected $accessControlModel;
+	protected $accessControlGraph;
 
 	/**
 	 * @var \Erfurt\Authentication\Authentication
@@ -199,9 +199,9 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	protected $systemOntologyConfiguration;
 
 	/**
-	 * @var \Erfurt\Configuration\UriConfiguration
+	 * @var \Erfurt\Configuration\IriConfiguration
 	 */
-	protected $uriConfiguration;
+	protected $iriConfiguration;
 
 	/**
 	 * The injected knowledge base
@@ -235,10 +235,10 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	protected $store;
 
 	/**
-	 * Contains an instanciated system ontology model.
-	 * @var \Erfurt\Rdf\Model
+	 * Contains an instanciated system ontology graph.
+	 * @var \Erfurt\Rdf\Graph
 	 */
-	protected $systemOntologyModel;
+	protected $systemOntologyGraph;
 
 	/**
 	 * Contains an instance of the Erfurt versioning class.
@@ -335,12 +335,12 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	}
 
 	/**
-	 * Injector method for a UriConfiguration
+	 * Injector method for a IriConfiguration
 	 *
-	 * @var \Erfurt\Configuration\UriConfiguration
+	 * @var \Erfurt\Configuration\IriConfiguration
 	 */
-	public function injectUriConfiguration(Configuration\UriConfiguration $uriConfiguration) {
-		$this->uriConfiguration = $uriConfiguration;
+	public function injectIriConfiguration(Configuration\IriConfiguration $iriConfiguration) {
+		$this->iriConfiguration = $iriConfiguration;
 	}
 
 	/**
@@ -402,18 +402,18 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 * @return boolean
 	 */
 	public function addOpenIdUser($openid, $email = '', $label = '', $group = '') {
-		$acModel = $this->getAccessControlModel();
-		$acModelUri = $acModel->getModelUri();
-		$store = $acModel->getStore();
-		$userUri = urldecode($openid);
-		// uri rdf:type sioc:User
+		$acGraph = $this->getAccessControlGraph();
+		$acGraphIri = $acGraph->getGraphIri();
+		$store = $acGraph->getStore();
+		$userIri = urldecode($openid);
+		// iri rdf:type sioc:User
 		$store->addStatement(
-			$acModelUri,
-			$userUri,
+			$acGraphIri,
+			$userIri,
 			EF_RDF_TYPE,
 			array(
 				 'value' => $this->configuration->ac->user->class,
-				 'type' => 'uri'
+				 'type' => 'iri'
 			),
 			false
 		);
@@ -422,23 +422,23 @@ class KnowledgeBase implements \Erfurt\Singleton {
 			if (substr($email, 0, 7) !== 'mailto:') {
 				$email = 'mailto:' . $email;
 			}
-			// uri sioc:mailbox email
+			// iri sioc:mailbox email
 			$store->addStatement(
-				$acModelUri,
-				$userUri,
+				$acGraphIri,
+				$userIri,
 				$this->configuration->ac->user->mail,
 				array(
 					 'value' => $email,
-					 'type' => 'uri'
+					 'type' => 'iri'
 				),
 				false
 			);
 		}
 		if (!empty($label)) {
-			// uri rdfs:label $label
+			// iri rdfs:label $label
 			$store->addStatement(
-				$acModelUri,
-				$userUri,
+				$acGraphIri,
+				$userIri,
 				EF_RDFS_LABEL,
 				array(
 					 'value' => $label,
@@ -449,12 +449,12 @@ class KnowledgeBase implements \Erfurt\Singleton {
 		}
 		if (!empty($group)) {
 			$store->addStatement(
-				$acModelUri,
+				$acGraphIri,
 				$group,
 				$this->configuration->ac->group->membership,
 				array(
-					 'value' => $userUri,
-					 'type' => 'uri'
+					 'value' => $userIri,
+					 'type' => 'iri'
 				),
 				false
 			);
@@ -468,27 +468,27 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 * @param string $username
 	 * @param string $password
 	 * @param string $email
-	 * @param string|NULL $userGroupUri
+	 * @param string|NULL $userGroupIri
 	 * @return boolean
 	 */
-	public function addUser($username, $password, $email, $userGroupUri = '') {
-		$acModel = $this->getAccessControlModel();
-		$acModelUri = $acModel->getModelUri();
-		$store = $acModel->getStore();
-		$userUri = $acModelUri . urlencode($username);
+	public function addUser($username, $password, $email, $userGroupIri = '') {
+		$acGraph = $this->getAccessControlGraph();
+		$acGraphIri = $acGraph->getGraphIri();
+		$store = $acGraph->getStore();
+		$userIri = $acGraphIri . urlencode($username);
 		$store->addStatement(
-			$acModelUri,
-			$userUri,
+			$acGraphIri,
+			$userIri,
 			EF_RDF_TYPE,
 			array(
 				 'value' => $this->configuration->ac->user->class,
-				 'type' => 'uri'
+				 'type' => 'iri'
 			),
 			false
 		);
 		$store->addStatement(
-			$acModelUri,
-			$userUri,
+			$acGraphIri,
+			$userIri,
 			$this->configuration->ac->user->name,
 			array(
 				 'value' => $username,
@@ -502,18 +502,18 @@ class KnowledgeBase implements \Erfurt\Singleton {
 			$email = 'mailto:' . $email;
 		}
 		$store->addStatement(
-			$acModelUri,
-			$userUri,
+			$acGraphIri,
+			$userIri,
 			$this->configuration->ac->user->mail,
 			array(
 				 'value' => $email,
-				 'type' => 'uri'
+				 'type' => 'iri'
 			),
 			false
 		);
 		$store->addStatement(
-			$acModelUri,
-			$userUri,
+			$acGraphIri,
+			$userIri,
 			$this->configuration->ac->user->pass,
 			array(
 				 'value' => sha1($password),
@@ -521,14 +521,14 @@ class KnowledgeBase implements \Erfurt\Singleton {
 			),
 			false
 		);
-		if (!empty($userGroupUri)) {
+		if (!empty($userGroupIri)) {
 			$store->addStatement(
-				$acModelUri,
-				$userGroupUri,
+				$acGraphIri,
+				$userGroupIri,
 				$this->configuration->ac->group->membership,
 				array(
-					 'value' => $userUri,
-					 'type' => 'uri'
+					 'value' => $userIri,
+					 'type' => 'iri'
 				),
 				false
 			);
@@ -608,17 +608,17 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	}
 
 	/**
-	 * Returns an instance of the access control model.
+	 * Returns an instance of the access control graph.
 	 *
-	 * @return \Erfurt\Rdf\Model
+	 * @return \Erfurt\Rdf\Graph
 	 */
-	public function getAccessControlModel() {
-		if (NULL === $this->accessControlModel) {
-			$this->accessControlModel = $this->getStore()
-					->getModel($this->getAccessControlConfiguration()->modelUri, false);
+	public function getAccessControlGraph() {
+		if (NULL === $this->accessControlGraph) {
+			$this->accessControlGraph = $this->getStore()
+					->getGraph($this->getAccessControlConfiguration()->graphIri, false);
 		}
 
-		return $this->accessControlModel;
+		return $this->accessControlGraph;
 	}
 
 	/**
@@ -808,14 +808,14 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	/**
 	 * Returns the configuration object.
 	 *
-	 * @return \Erfurt\Configuration\UriConfiguration
+	 * @return \Erfurt\Configuration\IriConfiguration
 	 * @throws \Erfurt\Exception\ConfigurationNotLoadedException Throws an exception if no config is loaded.
 	 */
-	public function getUriConfiguration() {
-		if (NULL === $this->uriConfiguration) {
-			throw new Exception\ConfigurationNotLoadedException('Uri Configuration was not loaded.', 1303203612);
+	public function getIriConfiguration() {
+		if (NULL === $this->iriConfiguration) {
+			throw new Exception\ConfigurationNotLoadedException('Iri Configuration was not loaded.', 1303203612);
 		} else {
-			return $this->uriConfiguration;
+			return $this->iriConfiguration;
 		}
 	}
 
@@ -832,11 +832,11 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	/**
 	 * Returns a preconfigured Http_Client
 	 *
-	 * @param string $uri
+	 * @param string $iri
 	 * @param array $options
 	 * @return \Zend_Http_Client
 	 */
-	public function getHttpClient($uri, $options = array()) {
+	public function getHttpClient($iri, $options = array()) {
 		$config = $this->getConfig();
 		$defaultOptions = array();
 		if (isset($config->proxy)) {
@@ -856,7 +856,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 			}
 		}
 		$finalOptions = array_merge($defaultOptions, $options);
-		$client = new \Zend_Http_Client($uri, $finalOptions);
+		$client = new \Zend_Http_Client($iri, $finalOptions);
 		return $client;
 	}
 
@@ -883,7 +883,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 			$namespacesOptions = array(
 				'standard_prefixes' => ($this->getNamespacesConfiguration() !== NULL) ? $this
 						->getNamespacesConfiguration()->toArray() : array(),
-				'reserved_names' => isset($this->getUriConfiguration()->schemata) ? $this->getUriConfiguration()->schemata->toArray() : array()
+				'reserved_names' => isset($this->getIriConfiguration()->schemata) ? $this->getIriConfiguration()->schemata->toArray() : array()
 			);
 			$this->namespaces = $this->objectManager->create('\Erfurt\Namespaces\Namespaces', $namespacesOptions);
 		}
@@ -921,17 +921,17 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	}
 
 	/**
-	 * Returns an instance of the system ontology model.
+	 * Returns an instance of the system ontology graph.
 	 *
-	 * @return \Erfurt\Rdf\Model
+	 * @return \Erfurt\Rdf\Graph
 	 */
-	public function getSysOntModel() {
-		if (NULL === $this->systemOntologyModel) {
-			$this->systemOntologyModel = $this
+	public function getSysOntGraph() {
+		if (NULL === $this->systemOntologyGraph) {
+			$this->systemOntologyGraph = $this
 					->getStore()
-					->getModel($this->getSystemOntologyConfiguration()->modelUri, false);
+					->getGraph($this->getSystemOntologyConfiguration()->graphIri, false);
 		}
-		return $this->systemOntologyModel;
+		return $this->systemOntologyGraph;
 	}
 
 	/**

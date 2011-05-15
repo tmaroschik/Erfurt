@@ -37,7 +37,7 @@ namespace Erfurt\Syntax\RdfSerializer\Adapter;
  */
 class Turtle implements AdapterInterface {
 
-	protected $baseUri;
+	protected $baseIri;
 	protected $writingStarted = false;
 	protected $namespaces = array();
 
@@ -46,12 +46,16 @@ class Turtle implements AdapterInterface {
 	protected $lastWrittenSubject;
 	protected $lastWrittenSubjectLength = 0;
 	protected $lastWrittenPredicate;
-	protected $lastWrittenUriLength = 0;
+	protected $lastWrittenIriLength = 0;
 
 	protected $newLine = false;
 
+	protected $graphIri;
+
+	/**
+	 * @var \Erfurt\Store\Store
+	 */
 	protected $store;
-	protected $graphUri;
 
 	/**
 	 * The injected knowledge base
@@ -86,14 +90,14 @@ class Turtle implements AdapterInterface {
 		$this->objectManager = $objectManager;
 	}
 
-	public function serializeQueryResultToString($query, $graphUri, $pretty = false, $useAc = true) {
-		$this->handleGraph($graphUri, $useAc);
+	public function serializeQueryResultToString($query, $graphIri, $pretty = false, $useAc = true) {
+		$this->handleGraph($graphIri, $useAc);
 
 		$query->setLimit(1000); //needed?
-		$s = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'resourceUri');
+		$s = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'resourceIri');
 		$p = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'p');
 		$o = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'o');
-		if (strstr((string)$query, '?resourceUri ?p ?o') === false) {
+		if (strstr((string)$query, '?resourceIri ?p ?o') === false) {
 			if ($query instanceof \Erfurt\Sparql\Query2) {
 				$query->addTriple($s, $p, $o);
 			} else {
@@ -109,7 +113,7 @@ class Turtle implements AdapterInterface {
 			$query->addProjectionVar($o);
 		} else {
 			if ($query instanceof \Erfurt\Sparql\SimpleQuery) {
-				$query->setProloguePart('SELECT ?resourceUri ?p ?o');
+				$query->setProloguePart('SELECT ?resourceIri ?p ?o');
 			}
 		}
 
@@ -130,10 +134,10 @@ class Turtle implements AdapterInterface {
 															  'use_ac' => $useAc
 														 ));
 			foreach ($result['bindings'] as $row) {
-				$s = $row['resourceUri']['value'];
+				$s = $row['resourceIri']['value'];
 				$p = $row['p']['value'];
 				$o = $row['o']['value'];
-				$sType = $row['resourceUri']['type'];
+				$sType = $row['resourceIri']['type'];
 				$oType = $row['o']['type'];
 				$lang = isset($row['o']['xml:lang']) ? $row['o']['xml:lang'] : null;
 				$dType = isset($row['o']['datatype']) ? $row['o']['datatype'] : null;
@@ -151,34 +155,34 @@ class Turtle implements AdapterInterface {
 		return $this->endRdf();
 	}
 
-	public function serializeGraphToString($graphUri, $pretty = false, $useAc = true) {
+	public function serializeGraphToString($graphIri, $pretty = false, $useAc = true) {
 		//construct query
 		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
-		$query->setProloguePart('SELECT ?resourceUri ?p ?o');
-		$query->addFrom($graphUri);
-		$query->setWherePart('WHERE { ?resourceUri ?p ?o . }');
-		$query->setOrderClause('?resourceUri ?p ?o');
+		$query->setProloguePart('SELECT ?resourceIri ?p ?o');
+		$query->addFrom($graphIri);
+		$query->setWherePart('WHERE { ?resourceIri ?p ?o . }');
+		$query->setOrderClause('?resourceIri ?p ?o');
 
-		return $this->serializeQueryResultToString($query, $graphUri, $pretty, $useAc);
+		return $this->serializeQueryResultToString($query, $graphIri, $pretty, $useAc);
 	}
 
-	public function serializeResourceToString($resource, $graphUri, $pretty = false, $useAc = true, array $additional = array()) {
+	public function serializeResourceToString($resource, $graphIri, $pretty = false, $useAc = true, array $additional = array()) {
 		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
-		$query->setProloguePart('SELECT ?resourceUri ?p ?o');
-		$query->addFrom($graphUri);
-		$query->setWherePart('WHERE { ?resourceUri ?p ?o . FILTER (sameTerm(?resourceUri, <' . $resource . '>))}'); //why not as subject
-		$query->setOrderClause('?resourceUri ?p ?o');
+		$query->setProloguePart('SELECT ?resourceIri ?p ?o');
+		$query->addFrom($graphIri);
+		$query->setWherePart('WHERE { ?resourceIri ?p ?o . FILTER (sameTerm(?resourceIri, <' . $resource . '>))}'); //why not as subject
+		$query->setOrderClause('?resourceIri ?p ?o');
 
-		return $this->serializeQueryResultToString($query, $graphUri, $pretty, $useAc);
+		return $this->serializeQueryResultToString($query, $graphIri, $pretty, $useAc);
 	}
 
-	public function handleGraph($graphUri, $useAc) {
-		$this->graphUri = $graphUri;
+	public function handleGraph($graphIri, $useAc) {
+		$this->graphIri = $graphIri;
 		$namespaces = $this->knowledgeBase->getNamespaces();
-		foreach ($namespaces->getNamespacePrefixes($graphUri) as $prefix => $ns) {
+		foreach ($namespaces->getNamespacePrefixes($graphIri) as $prefix => $ns) {
 			$this->handleNamespace($prefix, $ns);
 		}
-		$this->baseUri = $this->store->getModel($graphUri, $useAc)->getBaseUri();
+		$this->baseIri = $this->store->getGraph($graphIri, $useAc)->getBaseIri();
 	}
 
 	public function startRdf($ad = null) {
@@ -193,8 +197,8 @@ class Turtle implements AdapterInterface {
 			$this->resultString .= '# ' . $ad . PHP_EOL . PHP_EOL;
 		}
 
-		if (null !== $this->baseUri) {
-			$this->resultString .= '@base <' . $this->baseUri . '> .' . PHP_EOL;
+		if (null !== $this->baseIri) {
+			$this->resultString .= '@base <' . $this->baseIri . '> .' . PHP_EOL;
 		}
 
 		foreach ($this->namespaces as $ns => $prefix) {
@@ -278,9 +282,9 @@ class Turtle implements AdapterInterface {
 	}
 
 	protected function _writeSubject($s, $sType) {
-		if ($sType === 'uri') {
-			$this->_writeUri($s);
-			$this->lastWrittenSubjectLength = $this->lastWrittenUriLength;
+		if ($sType === 'iri') {
+			$this->_writeIri($s);
+			$this->lastWrittenSubjectLength = $this->lastWrittenIriLength;
 		} else {
 			$this->write($s);
 			$this->lastWrittenSubjectLength = strlen($s);
@@ -291,8 +295,8 @@ class Turtle implements AdapterInterface {
 	}
 
 	protected function _writeObject($o, $oType, $lang = null, $dType = null) {
-		if ($oType === 'uri') {
-			$this->_writeUri($o);
+		if ($oType === 'iri') {
+			$this->_writeIri($o);
 		} else {
 			if ($oType === 'bnode') {
 				$this->write($o);
@@ -312,7 +316,7 @@ class Turtle implements AdapterInterface {
 				} else {
 					if (null !== $dType) {
 						$this->write('^^');
-						$this->_writeUri($dType);
+						$this->_writeIri($dType);
 					}
 				}
 			}
@@ -327,7 +331,7 @@ class Turtle implements AdapterInterface {
 		if ($p === EF_RDF_TYPE) {
 			$this->write('a');
 		} else {
-			$this->_writeUri($p);
+			$this->_writeIri($p);
 		}
 
 		$this->resultString .= ' ';
@@ -335,41 +339,41 @@ class Turtle implements AdapterInterface {
 	}
 
 
-	protected function _writeUri($uri) {
+	protected function _writeIri($iri) {
 		$prefix = null;
 
-		$splitIdx = \Erfurt\Syntax\Utils\Turtle::findUriSplitIndex($uri);
+		$splitIdx = \Erfurt\Syntax\Utils\Turtle::findIriSplitIndex($iri);
 		if ($splitIdx !== false) {
-			$ns = substr($uri, 0, $splitIdx);
+			$ns = substr($iri, 0, $splitIdx);
 
 			if (isset($this->namespaces[$ns])) {
 				$prefix = $this->namespaces[$ns];
 			} else {
-				if (null !== $this->baseUri && substr($uri, 0, $splitIdx) === $this->baseUri) {
+				if (null !== $this->baseIri && substr($iri, 0, $splitIdx) === $this->baseIri) {
 					$prefix = null;
-					$uri = substr($uri, $splitIdx);
+					$iri = substr($iri, $splitIdx);
 				} else {
-					// We need to support large exports so we add namespaces once and write uris that do not match as
-					// full uris.
+					// We need to support large exports so we add namespaces once and write iris that do not match as
+					// full iris.
 					//$this->_addNamespace($ns);
 					//$prefix = $this->_namespaces[$ns];
 				}
 			}
 
 			if (null !== $prefix) {
-				$this->write($prefix . ':' . substr($uri, $splitIdx));
-				$this->lastWrittenUriLength = strlen($prefix . ':' . substr($uri, $splitIdx));
+				$this->write($prefix . ':' . substr($iri, $splitIdx));
+				$this->lastWrittenIriLength = strlen($prefix . ':' . substr($iri, $splitIdx));
 			} else {
-				$this->write('<' . $uri . '>');
-				$this->lastWrittenUriLength = strlen('<' . $uri . '>');
+				$this->write('<' . $iri . '>');
+				$this->lastWrittenIriLength = strlen('<' . $iri . '>');
 			}
 		} else {
-			if (null !== $this->baseUri && $uri === $this->baseUri) {
+			if (null !== $this->baseIri && $iri === $this->baseIri) {
 				$this->write('<>');
-				$this->lastWrittenUriLength = strlen('<>');
+				$this->lastWrittenIriLength = strlen('<>');
 			} else {
-				$this->write('<' . $uri . '>');
-				$this->lastWrittenUriLength = strlen('<' . $uri . '>');
+				$this->write('<' . $iri . '>');
+				$this->lastWrittenIriLength = strlen('<' . $iri . '>');
 			}
 
 		}

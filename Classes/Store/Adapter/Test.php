@@ -37,7 +37,7 @@ class Erfurt_Store_Adapter_Test implements Erfurt_Store_Adapter_Interface, Erfur
     }
 
     /** @see Erfurt_Store_Adapter_Interface */
-    public function createModel($graphUri, $type = Erfurt_Store::MODEL_TYPE_OWL)
+    public function createModel($graphUri, $type = Erfurt_Store::GRAPH_TYPE_OWL)
     {
         if (!isset($this->_data[$graphUri])) {
             $this->_data[$graphUri] = array();
@@ -65,7 +65,7 @@ class Erfurt_Store_Adapter_Test implements Erfurt_Store_Adapter_Interface, Erfur
     }
 
     /** @see Erfurt_Store_Adapter_Interface */
-    public function exportRdf($modelIri, $serializationType = 'xml', $filename = false)
+    public function exportRdf($graphIri, $serializationType = 'xml', $filename = false)
     {
         
     }
@@ -105,16 +105,16 @@ class Erfurt_Store_Adapter_Test implements Erfurt_Store_Adapter_Interface, Erfur
         return array();
     }
     
-    public function getImportsClosure($modelIri)
+    public function getImportsClosure($graphIri)
     {
         return array();
     }
 
     /** @see Erfurt_Store_Adapter_Interface */
-    public function getModel($modelIri)
+    public function getModel($graphIri)
     {
-        if (isset($this->_data[$modelIri])) {
-            return new Erfurt_Rdf_Model($modelIri);
+        if (isset($this->_data[$graphIri])) {
+            return new Erfurt_Rdf_Model($graphIri);
         }
         return null;
     }
@@ -150,9 +150,9 @@ class Erfurt_Store_Adapter_Test implements Erfurt_Store_Adapter_Interface, Erfur
     }
 
     /** @see Erfurt_Store_Adapter_Interface */
-    public function isModelAvailable($modelIri)
+    public function isModelAvailable($graphIri)
     {
-        return isset($this->_data[$modelIri]);
+        return isset($this->_data[$graphIri]);
     }
 
     /** @see Erfurt_Store_Adapter_Interface */

@@ -30,7 +30,7 @@ namespace Erfurt\AccessControl;
 /**
  * A class providing support for access control.
  *
- * This class provides support for model, action (and statement) based access control.
+ * This class provides support for graph, action (and statement) based access control.
  * The access control informations are stored in a triple store.
  *
  * @copyright Copyright (c) 2008, {@link http://aksw.org AKSW}
@@ -42,78 +42,74 @@ namespace Erfurt\AccessControl;
  */
 class Standard {
 
-	// ------------------------------------------------------------------------
-	// --- Private properties -------------------------------------------------
-	// ------------------------------------------------------------------------
-
 	/**
-	 * Instance of the ac model.
-	 * @var Erfurt_Rdf_Model
+	 * Instance of the ac graph.
+	 * @var \Erfurt\Rdf\Graph
 	 */
-	private $accessControlModel = null;
+	protected $accessControlGraph = null;
 
 	/**
-	 * Contains the action configuration from the configurations (both ini and ac model).
+	 * Contains the action configuration from the configurations (both ini and ac graph).
 	 * @var array
 	 */
-	private $_actionConfig = null;
+	protected $_actionConfig = null;
 
 	/**
 	 * Contains a reference to a auth object.
 	 * @var Zend_Auth
 	 */
-	private $auth = null;
+	protected $auth = null;
 
 	/**
 	 * Contains the configuration.
 	 * @var Zend_Config
 	 */
-	private $config = null;
+	protected $config = null;
 
-	private $isInitialized = false;
+	protected $isInitialized = false;
 
 	/**
-	 * Contains the configured ac concept uris.
+	 * Contains the configured ac concept iris.
 	 * @var array
 	 */
-	private $uris = array(
-		'acBaseUri' => 'http://ns.ontowiki.net/SysOnt/',
-		'acModelUri' => 'http://localhost/OntoWiki/Config/',
-		'anonymousUserUri' => 'http://ns.ontowiki.net/SysOnt/Anonymous',
-		'superUserUri' => 'http://ns.ontowiki.net/SysOnt/SuperAdmin',
-		'propAnyModel' => 'http://ns.ontowiki.net/SysOnt/AnyModel',
-		'propGrantModelView' => 'http://ns.ontowiki.net/SysOnt/grantModelView',
-		'propDenyModelView' => 'http://ns.ontowiki.net/SysOnt/denyModelView',
-		'propGrantModelEdit' => 'http://ns.ontowiki.net/SysOnt/grantModelEdit',
-		'propDenyModelEdit' => 'http://ns.ontowiki.net/SysOnt/denyModelEdit',
-		'actionClassUri' => 'http://ns.ontowiki.net/SysOnt/Action',
+	protected $iris = array(
+		'acBaseIri' => 'http://ns.ontowiki.net/SysOnt/',
+		'acGraphIri' => 'http://localhost/OntoWiki/Config/',
+		'anonymousUserIri' => 'http://ns.ontowiki.net/SysOnt/Anonymous',
+		'superUserIri' => 'http://ns.ontowiki.net/SysOnt/SuperAdmin',
+		'propAnyGraph' => 'http://ns.ontowiki.net/SysOnt/AnyGraph',
+		'propGrantGraphView' => 'http://ns.ontowiki.net/SysOnt/grantGraphView',
+		'propDenyGraphView' => 'http://ns.ontowiki.net/SysOnt/denyGraphView',
+		'propGrantGraphEdit' => 'http://ns.ontowiki.net/SysOnt/grantGraphEdit',
+		'propDenyGraphEdit' => 'http://ns.ontowiki.net/SysOnt/denyGraphEdit',
+		'actionClassIri' => 'http://ns.ontowiki.net/SysOnt/Action',
 		'propAnyAction' => 'http://ns.ontowiki.net/SysOnt/AnyAction',
 		'propGrantAccess' => 'http://ns.ontowiki.net/SysOnt/grantAccess',
 		'propDenyAccess' => 'http://ns.ontowiki.net/SysOnt/denyAccess',
-		'modelClassUri' => 'http://ns.ontowiki.net/SysOnt/Model',
-		'actionConfigUri' => 'http://ns.ontowiki.net/SysOnt/rawConfig'
+		'graphClassIri' => 'http://ns.ontowiki.net/SysOnt/Graph',
+		'actionConfigIri' => 'http://ns.ontowiki.net/SysOnt/rawConfig'
 	);
 
 	/**
 	 * Contains the user rights for all fetched users.
 	 * @var array
 	 */
-	private $userRights = array();
+	protected $userRights = array();
 
 	/**
 	 * Contains a template for the default permissions of a user.
 	 * @var array
 	 */
-	private $_userRightsTemplate = array(
-		'userAnyModelViewAllowed' => false,
-		'userAnyModelEditAllowed' => false,
+	protected $_userRightsTemplate = array(
+		'userAnyGraphViewAllowed' => false,
+		'userAnyGraphEditAllowed' => false,
 		'userAnyActionAllowed' => false,
 		'grantAccess' => array(),
 		'denyAccess' => array(),
-		'grantModelView' => array(),
-		'denyModelView' => array(),
-		'grantModelEdit' => array(),
-		'denyModelEdit' => array()
+		'grantGraphView' => array(),
+		'denyGraphView' => array(),
+		'grantGraphEdit' => array(),
+		'denyGraphEdit' => array()
 	);
 
 	/**
@@ -155,7 +151,7 @@ class Standard {
 	/**
 	 * Delivers the action configuration for a given action
 	 *
-	 * @param string $actionSpec The URI of the action.
+	 * @param string $actionSpec The IRI of the action.
 	 * @return array Returns an array with the action spec.
 	 */
 	public function getActionConfig($actionSpec) {
@@ -164,19 +160,19 @@ class Standard {
 			// Fetch the action config.
 			$actionConfig = array();
 			// First we set the default values from (ini) config. These values will then be overwritten by
-			// values from the (ac model) config.
+			// values from the (ac graph) config.
 			foreach ($this->config->action->config->toArray() as $actions) {
-				$actionConfig[$actions['uri']] = $actions['spec'];
+				$actionConfig[$actions['iri']] = $actions['spec'];
 			}
-			// Now fetch the config from ac model and overwrite the values.
+			// Now fetch the config from ac graph and overwrite the values.
 			$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
 			$query->setProloguePart('SELECT ?s ?o')
 					->setWherePart(
 				'WHERE {
-                          ?s <' . $this->uris['actionConfigUri'] . '> ?o .
+                          ?s <' . $this->iris['actionConfigIri'] . '> ?o .
                       }'
 			);
-			$result = $this->sparql($this->accessControlModel, $query);
+			$result = $this->sparql($this->accessControlGraph, $query);
 			if ($result) {
 				foreach ($result as $row) {
 					$s = $row['s'];
@@ -188,7 +184,7 @@ class Standard {
 					if (substr($o[1], -1) === '"') {
 						$o[1] = substr($o[1], 0, -1);
 					}
-					// Check whether config for uri is already set.
+					// Check whether config for iri is already set.
 					if (!isset($actionConfig[$s])) {
 						$actionConfig[$s] = array();
 					}
@@ -198,9 +194,9 @@ class Standard {
 			$this->_actionConfig = $actionConfig;
 		}
 		// Return the action config for the given spec if available.
-		$actionUri = $this->uris['acBaseUri'] . $actionSpec;
-		if (isset($this->_actionConfig[$actionUri])) {
-			return $this->_actionConfig[$actionUri];
+		$actionIri = $this->iris['acBaseIri'] . $actionSpec;
+		if (isset($this->_actionConfig[$actionIri])) {
+			return $this->_actionConfig[$actionIri];
 		} else {
 			return array();
 		}
@@ -214,7 +210,7 @@ class Standard {
 	public function getAllowedActions() {
 		$this->init();
 		$user = $this->getUser();
-		$userRights = $this->getUserModelRights($user->getUri());
+		$userRights = $this->getUserGraphRights($user->getIri());
 		// filter denied actions
 		$ret = array();
 		foreach ($userRights['grantAccess'] as $allowed) {
@@ -227,12 +223,12 @@ class Standard {
 	}
 
 	/**
-	 * Delievers a list of allowed models.
+	 * Delievers a list of allowed graphs.
 	 *
 	 * @param string $type Name of the access type.
-	 * @return array Returns a list of allowed models.
+	 * @return array Returns a list of allowed graphs.
 	 */
-	public function getAllowedModels($type = 'view') {
+	public function getAllowedGraphs($type = 'view') {
 		$this->init();
 		$type = strtolower($type);
 		// not supported type?
@@ -240,13 +236,13 @@ class Standard {
 			return array();
 		}
 		$user = $this->getUser();
-		$userRights = $this->getUserModelRights($user->getUri());
+		$userRights = $this->getUserGraphRights($user->getIri());
 		$ret = array();
-		$grantModelKey = ($type === 'view') ? 'grantModelView' : 'grantModelEdit';
-		$denyModelKey = ($type === 'view') ? 'denyModelView' : 'denyModelEdit';
-		// filter denied models
-		foreach ($userRights[$grantModelKey] as $allowed) {
-			if (in_array($allowed, $userRights[$denyModelKey])) {
+		$grantGraphKey = ($type === 'view') ? 'grantGraphView' : 'grantGraphEdit';
+		$denyGraphKey = ($type === 'view') ? 'denyGraphView' : 'denyGraphEdit';
+		// filter denied graphs
+		foreach ($userRights[$grantGraphKey] as $allowed) {
+			if (in_array($allowed, $userRights[$denyGraphKey])) {
 				continue;
 			}
 			$ret[] = $allowed;
@@ -262,17 +258,17 @@ class Standard {
 	public function getDeniedActions() {
 		$this->init();
 		$user = $this->getUser();
-		$userRights = $this->getUserModelRights($user->getUri());
+		$userRights = $this->getUserGraphRights($user->getIri());
 		return $userRights['denyAccess'];
 	}
 
 	/**
-	 * Delievers a list of denied models.
+	 * Delievers a list of denied graphs.
 	 *
 	 * @param string $type Name of the access type.
-	 * @return array Returns a list of denied models.
+	 * @return array Returns a list of denied graphs.
 	 */
-	public function getDeniedModels($type = 'view') {
+	public function getDeniedGraphs($type = 'view') {
 		$this->init();
 		$type = strtolower($type);
 		// not supported type?
@@ -280,41 +276,41 @@ class Standard {
 			return array();
 		}
 		$user = $this->getUser();
-		$userRights = $this->getUserModelRights($user->getUri());
-		$denyModelKey = ($type === 'view') ? 'denyModelView' : 'denyModelEdit';
-		return $userRights[$denyModelKey];
+		$userRights = $this->getUserGraphRights($user->getIri());
+		$denyGraphKey = ($type === 'view') ? 'denyGraphView' : 'denyGraphEdit';
+		return $userRights[$denyGraphKey];
 	}
 
 	/**
 	 * Checks whether the given action is allowed for the current user on the
-	 * given model uri.
+	 * given graph iri.
 	 *
 	 * @param string $type Name of the access-type (view, edit).
-	 * @param string $modelUri The uri of the graph to check.
+	 * @param string $graphIri The iri of the graph to check.
 	 * @return boolean Returns whether allowed or denied.
 	 */
-	public function isModelAllowed($type, $modelUri) {
-		$modelUri = (string)$modelUri;
+	public function isGraphAllowed($type, $graphIri) {
+		$graphIri = (string)$graphIri;
 		$this->init();
 		$user = $this->getUser();
-		$userRights = $this->getUserModelRights($user->getUri());
+		$userRights = $this->getUserGraphRights($user->getIri());
 		$type = strtolower($type);
 		// type = view; check whether allowed
 		if ($type === 'view') {
 			// explicit forbidden
-			if (in_array($modelUri, $userRights['denyModelView'])) {
+			if (in_array($graphIri, $userRights['denyGraphView'])) {
 				return false;
 			} else {
-				if (in_array($modelUri, $userRights['grantModelView'])) {
+				if (in_array($graphIri, $userRights['grantGraphView'])) {
 					// view explicit allowed and not denied
 					return true;
 				} else {
-					if (in_array($modelUri, $userRights['grantModelEdit'])) {
+					if (in_array($graphIri, $userRights['grantGraphEdit'])) {
 						// view in edit allowed and not denied
 						return true;
 					} else {
-						if ($this->isAnyModelAllowed('view')) {
-							// any model
+						if ($this->isAnyGraphAllowed('view')) {
+							// any graph
 							return true;
 						}
 					}
@@ -324,15 +320,15 @@ class Standard {
 		// type = edit; check whether allowed
 		if ($type === 'edit') {
 			// explicit forbidden
-			if (in_array($modelUri, $userRights['denyModelEdit'])) {
+			if (in_array($graphIri, $userRights['denyGraphEdit'])) {
 				return false;
 			} else {
-				if (in_array($modelUri, $userRights['grantModelEdit'])) {
+				if (in_array($graphIri, $userRights['grantGraphEdit'])) {
 					// edit allowed and not denied
 					return true;
 				} else {
-					if ($this->isAnyModelAllowed('edit')) {
-						// any model
+					if ($this->isAnyGraphAllowed('edit')) {
+						// any graph
 						return true;
 					}
 				}
@@ -351,13 +347,13 @@ class Standard {
 	public function isActionAllowed($action) {
 		$this->init();
 		$user = $this->getUser();
-		$userRights = $this->getUserModelRights($user->getUri());
-		$actionUri = $this->uris['acBaseUri'] . $action;
+		$userRights = $this->getUserGraphRights($user->getIri());
+		$actionIri = $this->iris['acBaseIri'] . $action;
 		// Action not allowed (init is optimized on all actions which have an instance)
-		if (in_array($actionUri, $userRights['denyAccess'])) {
+		if (in_array($actionIri, $userRights['denyAccess'])) {
 			return false;
 		} else {
-			if (in_array($actionUri, $userRights['grantAccess'])) {
+			if (in_array($actionIri, $userRights['grantAccess'])) {
 				// Action explicitly allowed
 				return true;
 			} else {
@@ -368,9 +364,9 @@ class Standard {
 					// create action instance
 					// array for new statements (an action instance pus label)
 					$actionStmt = array(
-						$actionUri => array(
+						$actionIri => array(
 							EF_RDF_TYPE => array(
-								array('type' => 'uri', 'value' => $this->uris['actionClassUri'])
+								array('type' => 'iri', 'value' => $this->iris['actionClassIri'])
 							),
 							EF_RDFS_LABEL => array(
 								array('type' => 'literal', 'value' => $action)
@@ -378,7 +374,7 @@ class Standard {
 						)
 					);
 					$store = $this->knowledgeBase->getStore();
-					$store->addMultipleStatements($this->uris['acModelUri'], $actionStmt, false);
+					$store->addMultipleStatements($this->iris['acGraphIri'], $actionStmt, false);
 					return false;
 				}
 			}
@@ -393,29 +389,29 @@ class Standard {
 	public function isAnyActionAllowed() {
 		$this->init();
 		$user = $this->getUser();
-		$userRights = $this->getUserModelRights($user->getUri());
+		$userRights = $this->getUserGraphRights($user->getIri());
 		return $userRights['userAnyActionAllowed'];
 	}
 
 	/**
 	 * Checks whether the current user has the given permission
-	 * for any models.
+	 * for any graphs.
 	 *
 	 * @param string $type (optional) Contains view or edit.
 	 * @return boolean Returns whether allowed or denied.
 	 */
-	public function isAnyModelAllowed($type = 'view') {
+	public function isAnyGraphAllowed($type = 'view') {
 		$this->init();
 		$user = $this->getUser();
-		$userRights = $this->getUserModelRights($user->getUri());
+		$userRights = $this->getUserGraphRights($user->getIri());
 		$type = strtolower($type);
 		if ($type === 'view') {
-			// any model view allowed?
-			if ($userRights['userAnyModelViewAllowed'] === true) {
+			// any graph view allowed?
+			if ($userRights['userAnyGraphViewAllowed'] === true) {
 				return true;
 			} else {
-				if ($userRights['userAnyModelEditAllowed'] === true) {
-					// any model edit allowed? (implies view right)
+				if ($userRights['userAnyGraphEditAllowed'] === true) {
+					// any graph edit allowed? (implies view right)
 					return true;
 				} else {
 					// not allowed!
@@ -424,8 +420,8 @@ class Standard {
 			}
 		}
 		if ($type === 'edit') {
-			// any model edit allowed?
-			if ($userRights['userAnyModelEditAllowed'] === true) {
+			// any graph edit allowed?
+			if ($userRights['userAnyGraphEditAllowed'] === true) {
 				return true;
 			} else {
 				// not allowed!
@@ -437,15 +433,15 @@ class Standard {
 	}
 
 	/**
-	 * Adds a right to a model for the current user.
+	 * Adds a right to a graph for the current user.
 	 *
-	 * @param string $modelUri The URI of the model.
+	 * @param string $graphIri The IRI of the graph.
 	 * @param string $type Type of access: view or edit.
 	 * @param string $perm Type of permission: grant or deny.
 	 * @throws Erfurt_Exception Throws an exception if wrong type was submitted or
 	 * wrong perm type was submitted.
 	 */
-	public function setUserModelRight($modelUri, $type = 'view', $perm = 'grant') {
+	public function setUserGraphRight($graphIri, $type = 'view', $perm = 'grant') {
 		$this->init();
 		$user = $this->getUser();
 		$type = strtolower($type);
@@ -460,40 +456,40 @@ class Standard {
 		// set the property for the right to add...
 		if ($type === 'view') {
 			if ($perm === 'grant') {
-				$prop = $this->uris['propGrantModelView'];
-				$right = 'grantModelView';
+				$prop = $this->iris['propGrantGraphView'];
+				$right = 'grantGraphView';
 			} else {
 				// else the permission is deny
-				$prop = $this->uris['propDenyModelView'];
-				$right = 'denyModelView';
+				$prop = $this->iris['propDenyGraphView'];
+				$right = 'denyGraphView';
 			}
 		} else {
 			// else the type is edit
 			if ($perm === 'grant') {
-				$prop = $this->uris['propGrantModelEdit'];
-				$right = 'grantModelEdit';
+				$prop = $this->iris['propGrantGraphEdit'];
+				$right = 'grantGraphEdit';
 			} else {
 				// else the permission is deny
-				$prop = $this->uris['propDenyModelEdit'];
-				$right = 'denyModelEdit';
+				$prop = $this->iris['propDenyGraphEdit'];
+				$right = 'denyGraphEdit';
 			}
 		}
 		// Update the array that contains the right for the user.
-		//$this->_userRights[$user->getUri()][$right][] = $modelUri;
-		unset($this->userRights[$user->getUri()]);
+		//$this->_userRights[$user->getIri()][$right][] = $graphIri;
+		unset($this->userRights[$user->getIri()]);
 		// TODO set the right cache tags, such that cache is invalidated!!!
 		$store = $this->knowledgeBase->getStore();
 		$store->addStatement(
-			$this->accessControlModel->getModelUri(),
-			$user->getUri(),
+			$this->accessControlGraph->getGraphIri(),
+			$user->getIri(),
 			$prop,
-			array('type' => 'uri', 'value' => $modelUri),
+			array('type' => 'iri', 'value' => $graphIri),
 			false
 		);
 	}
 
 	// ------------------------------------------------------------------------
-	// --- Private methods ----------------------------------------------------
+	// --- Protected methods ----------------------------------------------------
 	// ------------------------------------------------------------------------
 
 	/**
@@ -502,7 +498,7 @@ class Standard {
 	 * @return array Returns a user spec array on success.
 	 * @throws Exception Throws an exception if no valid user is given.
 	 */
-	private function getUser() {
+	protected function getUser() {
 		if ($this->auth->hasIdentity()) {
 			// Identity exists; get it
 			return $this->auth->getIdentity();
@@ -513,22 +509,22 @@ class Standard {
 
 	/**
 	 * Gets the user rights for the current user.
-	 * In case the user uri was not fetched, it is fetched.
+	 * In case the user iri was not fetched, it is fetched.
 	 *
-	 * @param string $userURI The URI of the user.
+	 * @param string $userIRI The IRI of the user.
 	 * @return array Returns an array that contains the user rights.
 	 */
-	private function getUserModelRights($userURI) {
-		if (!isset($this->userRights[$userURI])) {
+	protected function getUserGraphRights($userIRI) {
+		if (!isset($this->userRights[$userIRI])) {
 			// In this case we need to fetch the rights for the user.
 			$userRights = $this->_userRightsTemplate;
 			// Super admin, i.e. a user that has database rights (only for debugging purposes and only if
 			// enabled in config).
-			if (($userURI === $this->uris['superUserUri']) && ((boolean)$this->config->allowDbUser === true)) {
+			if (($userIRI === $this->iris['superUserIri']) && ((boolean)$this->config->allowDbUser === true)) {
 				$userRights['userAnyActionAllowed'] = true;
-				$userRights['userAnyModelEditAllowed'] = true;
-				$userRights['userAnyModelViewAllowed'] = true;
-				$this->userRights[$userURI] = $userRights;
+				$userRights['userAnyGraphEditAllowed'] = true;
+				$userRights['userAnyGraphViewAllowed'] = true;
+				$this->userRights[$userIRI] = $userRights;
 				return $userRights;
 			}
 			$sparqlQuery = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
@@ -536,10 +532,10 @@ class Standard {
 					->setWherePart(
 				'WHERE {
                                 ?group ?p ?o .
-                                ?group <' . $this->config->group->membership . '> <' . $userURI . '>
+                                ?group <' . $this->config->group->membership . '> <' . $userIRI . '>
                             }'
 			);
-			if ($result = $this->sparql($this->accessControlModel, $sparqlQuery)) {
+			if ($result = $this->sparql($this->accessControlGraph, $sparqlQuery)) {
 				$this->filterAccess($result, $userRights);
 			}
 			$sparqlQuery = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
@@ -548,30 +544,30 @@ class Standard {
 				'WHERE {
                                 ?s ?p ?o .
                                 FILTER (
-                                    sameTerm(?s, <' . $userURI . '>) ||
+                                    sameTerm(?s, <' . $userIRI . '>) ||
                                     sameTerm(?o, <' . $this->config->action->class . '>)
                                 )
                             }'
 			);
-			if ($result = $this->sparql($this->accessControlModel, $sparqlQuery)) {
+			if ($result = $this->sparql($this->accessControlGraph, $sparqlQuery)) {
 				$this->filterAccess($result, $userRights);
 			}
-			// Now check for forbidden anyModel.
+			// Now check for forbidden anyGraph.
 			// view
-			if (in_array($this->uris['propAnyModel'], $userRights['denyModelView'])) {
-				$userRights['userAnyModelViewAllowed'] = false;
-				$userRights['userAnyModelEditAllowed'] = false;
-				$userRights['grantModelView'] = array();
-				$userRights['grantModelEdit'] = array();
+			if (in_array($this->iris['propAnyGraph'], $userRights['denyGraphView'])) {
+				$userRights['userAnyGraphViewAllowed'] = false;
+				$userRights['userAnyGraphEditAllowed'] = false;
+				$userRights['grantGraphView'] = array();
+				$userRights['grantGraphEdit'] = array();
 			}
 			// edit
-			if (in_array($this->uris['propAnyModel'], $userRights['denyModelEdit'])) {
-				$userRights['userAnyModelEditAllowed'] = false;
-				$userRights['grantModelEdit'] = array();
+			if (in_array($this->iris['propAnyGraph'], $userRights['denyGraphEdit'])) {
+				$userRights['userAnyGraphEditAllowed'] = false;
+				$userRights['grantGraphEdit'] = array();
 			}
-			$this->userRights[$userURI] = $userRights;
+			$this->userRights[$userIRI] = $userRights;
 		}
-		return $this->userRights[$userURI];
+		return $this->userRights[$userIRI];
 	}
 
 	/**
@@ -580,59 +576,59 @@ class Standard {
 	 * @param array $resultList A list of sparql results.
 	 * @param array $userRights A reference to an array containing user rights.
 	 */
-	private function filterAccess($resultList, &$userRights) {
+	protected function filterAccess($resultList, &$userRights) {
 		$allActions = array();
 		#var_dump($resultList);
 		foreach ($resultList as $entry) {
 			// any action allowed?
-			if (($entry['o'] === $this->uris['propAnyAction'])
-				&& ($entry['p'] === $this->uris['propGrantAccess'])) {
+			if (($entry['o'] === $this->iris['propAnyAction'])
+				&& ($entry['p'] === $this->iris['propGrantAccess'])) {
 				$userRights['userAnyActionAllowed'] = true;
 			} else {
-				if (($entry['o'] === $this->uris['propAnyModel'])
-					&& ($entry['p'] === $this->uris['propGrantModelView'])) {
-					// any model view allowed?
-					$userRights['userAnyModelViewAllowed'] = true;
+				if (($entry['o'] === $this->iris['propAnyGraph'])
+					&& ($entry['p'] === $this->iris['propGrantGraphView'])) {
+					// any graph view allowed?
+					$userRights['userAnyGraphViewAllowed'] = true;
 				} else {
-					if (($entry['o'] === $this->uris['propAnyModel'])
-						&& ($entry['p'] === $this->uris['propGrantModelEdit'])) {
-						// any model edit allowed?
-						$userRights['userAnyModelEditAllowed'] = true;
+					if (($entry['o'] === $this->iris['propAnyGraph'])
+						&& ($entry['p'] === $this->iris['propGrantGraphEdit'])) {
+						// any graph edit allowed?
+						$userRights['userAnyGraphEditAllowed'] = true;
 					} else {
-						if ($entry['p'] === $this->uris['propGrantAccess']) {
+						if ($entry['p'] === $this->iris['propGrantAccess']) {
 							// grant action?
 							if (!in_array($entry['o'], $userRights['grantAccess'])) {
 								$userRights['grantAccess'][] = $entry['o'];
 							}
 						} else {
-							if ($entry['p'] === $this->uris['propDenyAccess']) {
+							if ($entry['p'] === $this->iris['propDenyAccess']) {
 								// deny action?
 								if (!in_array($entry['o'], $userRights['denyAccess'])) {
 									$userRights['denyAccess'][] = $entry['o'];
 								}
 							} else {
-								if ($entry['p'] === $this->uris['propGrantModelView']) {
-									// grant model view?
-									if (!in_array($entry['o'], $userRights['grantModelView'])) {
-										$userRights['grantModelView'][] = $entry['o'];
+								if ($entry['p'] === $this->iris['propGrantGraphView']) {
+									// grant graph view?
+									if (!in_array($entry['o'], $userRights['grantGraphView'])) {
+										$userRights['grantGraphView'][] = $entry['o'];
 									}
 								} else {
-									if ($entry['p'] === $this->uris['propDenyModelView']) {
-										// deny model view?
-										if (!in_array($entry['o'], $userRights['denyModelView'])) {
-											$userRights['denyModelView'][] = $entry['o'];
+									if ($entry['p'] === $this->iris['propDenyGraphView']) {
+										// deny graph view?
+										if (!in_array($entry['o'], $userRights['denyGraphView'])) {
+											$userRights['denyGraphView'][] = $entry['o'];
 										}
 									} else {
-										if ($entry['p'] === $this->uris['propGrantModelEdit']) {
-											// grant model edit?
-											if (!in_array($entry['o'], $userRights['grantModelEdit'])) {
-												$userRights['grantModelEdit'][] = $entry['o'];
+										if ($entry['p'] === $this->iris['propGrantGraphEdit']) {
+											// grant graph edit?
+											if (!in_array($entry['o'], $userRights['grantGraphEdit'])) {
+												$userRights['grantGraphEdit'][] = $entry['o'];
 											}
 										} else {
-											if ($entry['p'] === $this->uris['propDenyModelEdit']) {
-												// deny model edit?
-												if (!in_array($entry['o'], $userRights['denyModelEdit'])) {
-													$userRights['denyModelEdit'][] = $entry['o'];
+											if ($entry['p'] === $this->iris['propDenyGraphEdit']) {
+												// deny graph edit?
+												if (!in_array($entry['o'], $userRights['denyGraphEdit'])) {
+													$userRights['denyGraphEdit'][] = $entry['o'];
 												}
 											} else {
 												if ($entry['p'] === EF_RDF_TYPE && $entry['o'] === $this->config->action->class &&
@@ -661,10 +657,10 @@ class Standard {
 	}
 
 	/**
-	 * initialisation of models, uris and rights
+	 * initialisation of graphs, iris and rights
 	 *
 	 */
-	private function init() {
+	protected function init() {
 		if ($this->isInitialized === true) {
 			return;
 		}
@@ -673,36 +669,36 @@ class Standard {
 		$this->config = $this->knowledgeBase->getAccessControlConfiguration();
 		$this->auth = $this->knowledgeBase->getAuthentication();
 		// access control informations
-		$this->accessControlModel = $this->knowledgeBase->getAccessControlModel();
-		// get custom uri configuration
-		$this->uris['acBaseUri'] = $this->config->baseUri;
-		$this->uris['acModelUri'] = $this->accessControlModel->getModelUri();
-		$this->uris['anonymousUserUri'] = $this->config->user->anonymousUser;
-		$this->uris['superUserUri'] = $this->config->user->superAdmin;
-		$this->uris['propAnyModel'] = $this->config->models->anyModel;
-		$this->uris['propGrantModelView'] = $this->config->models->grantView;
-		$this->uris['propDenyModelView'] = $this->config->models->denyView;
-		$this->uris['propGrantModelEdit'] = $this->config->models->grantEdit;
-		$this->uris['propDenyModelEdit'] = $this->config->models->denyEdit;
-		$this->uris['actionClassUri'] = $this->config->action->class;
-		$this->uris['propAnyAction'] = $this->config->action->anyAction;
-		$this->uris['propGrantAccess'] = $this->config->action->grant;
-		$this->uris['propDenyAccess'] = $this->config->action->deny;
-		$this->uris['modelClassUri'] = $this->config->models->class;
-		$this->uris['actionConfigUri'] = $this->config->action->rawConfig;
+		$this->accessControlGraph = $this->knowledgeBase->getAccessControlGraph();
+		// get custom iri configuration
+		$this->iris['acBaseIri'] = $this->config->baseIri;
+		$this->iris['acGraphIri'] = $this->accessControlGraph->getGraphIri();
+		$this->iris['anonymousUserIri'] = $this->config->user->anonymousUser;
+		$this->iris['superUserIri'] = $this->config->user->superAdmin;
+		$this->iris['propAnyGraph'] = $this->config->graphs->anyGraph;
+		$this->iris['propGrantGraphView'] = $this->config->graphs->grantView;
+		$this->iris['propDenyGraphView'] = $this->config->graphs->denyView;
+		$this->iris['propGrantGraphEdit'] = $this->config->graphs->grantEdit;
+		$this->iris['propDenyGraphEdit'] = $this->config->graphs->denyEdit;
+		$this->iris['actionClassIri'] = $this->config->action->class;
+		$this->iris['propAnyAction'] = $this->config->action->anyAction;
+		$this->iris['propGrantAccess'] = $this->config->action->grant;
+		$this->iris['propDenyAccess'] = $this->config->action->deny;
+		$this->iris['graphClassIri'] = $this->config->graphs->class;
+		$this->iris['actionConfigIri'] = $this->config->action->rawConfig;
 		$this->isInitialized = true;
 	}
 
 	/**
 	 * Executes a sparql query against the store.
 	 *
-	 * @param Erfurt_Rdf_Model Active model instance to query sparql.
+	 * @param \Erfurt\Rdf\Graph Active graph instance to query sparql.
 	 * @param Erfurt_Sparql_SimpleQuery The SPARQL query.
 	 * @return array Returns an array containig the result.
 	 */
-	private function sparql($model, $sparqlQuery) {
-		$sparqlQuery->addFrom($model->getModelUri());
-		$result = $model->getStore()->sparqlQuery($sparqlQuery, array(STORE_USE_AC => false));
+	protected function sparql($graph, $sparqlQuery) {
+		$sparqlQuery->addFrom($graph->getGraphIri());
+		$result = $graph->getStore()->sparqlQuery($sparqlQuery, array(STORE_USE_AC => false));
 		return $result;
 	}
 

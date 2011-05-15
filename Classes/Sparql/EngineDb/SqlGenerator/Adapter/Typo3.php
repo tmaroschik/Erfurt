@@ -185,21 +185,21 @@ class Typo3 extends EngineDb\SqlGenerator {
 	 */
 	protected $tblStatements = 'tx_semantic_statement';
 
-	public function __construct(Sparql\Query $query, array $arModelIdMapping) {
+	public function __construct(Sparql\Query $query, array $arGraphIdMapping) {
 		$this->query = $query;
-		$this->arModelIds = array();
+		$this->arGraphIds = array();
 		foreach ($query->getFromPart() as $from) {
-			if (isset($arModelIdMapping[$from])) {
-				$this->arModelIds[] = $arModelIdMapping[$from]['modelId'];
+			if (isset($arGraphIdMapping[$from])) {
+				$this->arGraphIds[] = $arGraphIdMapping[$from]['graphId'];
 			} else {
-				$this->arModelIds[] = -1;
+				$this->arGraphIds[] = -1;
 			}
 		}
 		foreach ($query->getFromNamedPart() as $from) {
-			if (isset($arModelIdMapping[$from])) {
-				$this->arModelIds[] = $arModelIdMapping[$from]['modelId'];
+			if (isset($arGraphIdMapping[$from])) {
+				$this->arGraphIds[] = $arGraphIdMapping[$from]['graphId'];
 			} else {
-				$this->arModelIds[] = -1;
+				$this->arGraphIds[] = -1;
 			}
 		}
 	}
@@ -545,13 +545,13 @@ class Typo3 extends EngineDb\SqlGenerator {
 			$strFrom = $tableName . ' as ' . $strTablePrefix;
 		} else {
 			//normal join
-			if (count($this->arModelIds) == 1) {
+			if (count($this->arGraphIds) == 1) {
 				$strFrom = 'LEFT JOIN ' . $tableName . ' as ' . $strTablePrefix
 						   . ' ON t0.g=' . $strTablePrefix . '.g';
 			} else {
-				if (count($this->arModelIds) > 1) {
+				if (count($this->arGraphIds) > 1) {
 					$arIDs = array();
-					foreach ($this->arModelIds as $nId) {
+					foreach ($this->arGraphIds as $nId) {
 						$arIDs[] = $strTablePrefix . '.g=' . intval($nId);
 					}
 					$strFrom = 'LEFT JOIN ' . $tableName . ' as ' . $strTablePrefix
@@ -572,12 +572,12 @@ class Typo3 extends EngineDb\SqlGenerator {
 		 *   WHERE part
 		 */
 		if ($this->nUnionTriplePatternCount == 0) {
-			if (count($this->arModelIds) == 1) {
-				$strWhere = $strTablePrefix . '.g=' . intval(reset($this->arModelIds));
+			if (count($this->arGraphIds) == 1) {
+				$strWhere = $strTablePrefix . '.g=' . intval(reset($this->arGraphIds));
 			} else {
-				if (count($this->arModelIds) > 1) {
+				if (count($this->arGraphIds) > 1) {
 					$arIDs = array();
-					foreach ($this->arModelIds as $nId) {
+					foreach ($this->arGraphIds as $nId) {
 						$arIDs[] = $strTablePrefix . '.g=' . intval($nId);
 					}
 					$strWhere = '(' . implode(' OR ', $arIDs) . ')';
@@ -826,7 +826,7 @@ class Typo3 extends EngineDb\SqlGenerator {
 			if ($bject instanceof Rdf\Resource) {
 				//Resource
 				$r = ' AND ' . $strTablePrefix . '.' . $strType . '='
-					 . $this->_qstr($bject->getUri());
+					 . $this->_qstr($bject->getIri());
 				if ($strType !== 'p') {
 					$r .= ' AND ' . $strTablePrefix . '.' . $strType . 't=0';
 				}

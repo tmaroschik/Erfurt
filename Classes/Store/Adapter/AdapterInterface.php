@@ -59,17 +59,17 @@ interface AdapterInterface {
 	public function addStatement($graphUri, $subject, $predicate, $object, array $options = array());
 
 	/**
-	 * Creates a new empty model (named graph) with the URI specified.
+	 * Creates a new empty graph (named graph) with the URI specified.
 	 *
 	 * @param string $graphUri
 	 * @param int $type
 	 * @return boolean true on success, false otherwise
 	 */
-	public function createModel($graphUri, $type = \Erfurt\Store\Store::MODEL_TYPE_OWL);
+	public function createGraph($graphUri, $type = \Erfurt\Store\Store::GRAPH_TYPE_OWL);
 
 	/**
 	 *
-	 * @param string $modelIri
+	 * @param string $graphIri
 	 * @param mixed $subject (string or null)
 	 * @param mixed $predicate (string or null)
 	 * @param mixed $object (string or null)
@@ -79,7 +79,7 @@ interface AdapterInterface {
 	 *
 	 * @return int The number of statements deleted
 	 */
-	public function deleteMatchingStatements($modelIri, $subject, $predicate, $object, array $options = array());
+	public function deleteMatchingStatements($graphIri, $subject, $predicate, $object, array $options = array());
 
 	/**
 	 * Deletes statements in an array from the graph specified by $graphIri.
@@ -90,15 +90,15 @@ interface AdapterInterface {
 	public function deleteMultipleStatements($graphIri, array $statementsArray);
 
 	/**
-	 * @param string $modelIri The Iri, which identifies the model.
+	 * @param string $graphIri The Iri, which identifies the graph.
 	 *
-	 * @throws Erfurt_Exception Throws an exception if no permission, model not existing or deletion fails.
+	 * @throws Erfurt_Exception Throws an exception if no permission, graph not existing or deletion fails.
 	 */
-	public function deleteModel($modelIri);
+	public function deleteGraph($graphIri);
 
 	/**
 	 *
-	 * @param string $modelIri
+	 * @param string $graphIri
 	 * @param string $serializationType One of:
 	 *		- 'xml'
 	 *		- 'n3' or 'nt'
@@ -107,13 +107,13 @@ interface AdapterInterface {
 	 *
 	 * @return string/null
 	 */
-	public function exportRdf($modelIri, $serializationType = 'xml', $filename = null);
+	public function exportRdf($graphIri, $serializationType = 'xml', $filename = null);
 
 	/**
 	 * @return array Returns an associative array, where the key is the URI of a graph and the value
 	 * is true.
 	 */
-	public function getAvailableModels();
+	public function getAvailableGraphs();
 
 	/**
 	 * Returns the prefix used by the store to identify blank nodes.
@@ -138,7 +138,7 @@ interface AdapterInterface {
 
 	/**
 	 *
-	 * @param string $modelIri
+	 * @param string $graphIri
 	 * @param string $locator Either a URL or a absolute file name.
 	 * @param string $type One of:
 	 *		- 'auto' => Tries to detect the type automatically in the following order:
@@ -153,7 +153,7 @@ interface AdapterInterface {
 	 *
 	 * @return boolean On success
 	 */
-	public function importRdf($modelIri, $data, $type, $locator);
+	public function importRdf($graphIri, $data, $type, $locator);
 
 	/**
 	 * This method allows the backend to (re)initialize itself, e.g. when an import was done.
@@ -161,17 +161,17 @@ interface AdapterInterface {
 	public function init();
 
 	/**
-	 * @param string $modelIri The Iri, which identifies the model to look for.
+	 * @param string $graphIri The Iri, which identifies the graph to look for.
 	 * @param boolean $useAc Whether to use access control or not.
 	 *
-	 * @return boolean Returns true if model exists and is available for the user ($useAc === true).
+	 * @return boolean Returns true if graph exists and is available for the user ($useAc === true).
 	 */
-	public function isModelAvailable($modelIri);
+	public function isGraphAvailable($graphIri);
 
 	/**
 	 * Executes a SPARQL ASK query and returns a boolean result value.
 	 *
-	 * @param string $modelIri
+	 * @param string $graphIri
 	 * @param string $askSparql
 	 * @param boolean $useAc Whether to check for access control.
 	 */
@@ -179,9 +179,9 @@ interface AdapterInterface {
 
 	/**
 	 * @param string $query A string containing a sparql query
-	 * @param array $modelIris An additional array of modelIris to query against. If a non empty array is given, the
+	 * @param array $graphIris An additional array of graphIris to query against. If a non empty array is given, the
 	 * values in this array will overwrite all FROM and FROM NAMED clauses in the query. If the array contains no
-	 * element, the FROM and FROM NAMED is evaluated. If non of them is present, all available models are queried.
+	 * element, the FROM and FROM NAMED is evaluated. If non of them is present, all available graphs are queried.
 	 * @param array Option array to push down parameters to adapters
 	 * feel free to add anything you want. put the store name in front for special options, but use macros
 	 *	  'result_format' => ['plain' | 'xml']

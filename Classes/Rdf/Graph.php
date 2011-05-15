@@ -35,16 +35,16 @@ namespace Erfurt\Rdf;
  * @subpackage $SUBPACKAGE$
  * @scope prototype
  */
-class Model {
+class Graph {
 
 	/**
-	 * The model base IRI. If not set, defaults to the model IRI.
+	 * The graph base IRI. If not set, defaults to the graph IRI.
 	 * @var string
 	 */
 	protected $baseIri = null;
 
 	/**
-	 * Denotes whether the model is editable by the current agent.
+	 * Denotes whether the graph is editable by the current agent.
 	 * @var boolean
 	 */
 	protected $isEditable = false;
@@ -56,10 +56,10 @@ class Model {
 	protected $graphOptions = null;
 
 	/**
-	 * The model IRI
+	 * The graph IRI
 	 * @var string
 	 */
-	protected $graphUri = null;
+	protected $graphIri = null;
 
 	/**
 	 * The injected knowledge base
@@ -77,18 +77,18 @@ class Model {
 
 	/**
 	 * Erfurt namespace management module
-	 * @var Erfurt_Namespaces
+	 * @var \Erfurt\Namespaces\Namespaces
 	 */
 	protected $namespaces = null;
 
 	/**
-	 * The model's title property value
+	 * The graph's title property value
 	 * @var string
 	 */
 	protected $title = null;
 
 	/**
-	 * An array of properties used in this model to express
+	 * An array of properties used in this graph to express
 	 * a resource's human-readable representation.
 	 * @var array
 	 * @todo remove hard-coded mock title properties
@@ -101,18 +101,18 @@ class Model {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $modelIri
+	 * @param string $graphIri
 	 * @param string $baseIri
 	 */
-	public function __construct($modelIri, $baseIri = null) {
-		$this->graphUri = $modelIri;
+	public function __construct($graphIri, $baseIri = null) {
+		$this->graphIri = $graphIri;
 		$this->baseIri = $baseIri;
 	}
 
 	/**
 	 * Injector method for a \Erfurt\KnowledgeBase
 	 *
-	 * @var \Erfurt\KnowledgeBase
+	 * @var Erfurt\KnowledgeBase
 	 */
 	public function injectKnowledgeBase(\Erfurt\KnowledgeBase $knowledgeBase) {
 		$this->knowledgeBase = $knowledgeBase;
@@ -125,36 +125,36 @@ class Model {
 	/**
 	 * Injector method for a \Erfurt\Object\ObjectManager
 	 *
-	 * @var \Erfurt\Object\ObjectManager
+	 * @var Erfurt\Object\ObjectManager
 	 */
 	public function injectObjectManager(\Erfurt\Object\ObjectManager $objectManager) {
 		$this->objectManager = $objectManager;
 	}
 
 	/**
-	 * Returns a string representing the model instance. For convenience
-	 * reasons this is in fact the model IRI.
+	 * Returns a string representing the graph instance. For convenience
+	 * reasons this is in fact the graph IRI.
 	 *
 	 * @return string
 	 */
 	public function __toString() {
-		return $this->getModelIri();
+		return $this->getGraphIri();
 	}
 
 	/**
-	 * Adds a statement to this model
+	 * Adds a statement to this graph
 	 *
 	 * @param string $subject
 	 * @param string $predicate
 	 * @param array $object
 	 */
 	public function addStatement($subject, $predicate, array $object) {
-		$this->getStore()->addStatement($this->graphUri, $subject, $predicate, $object);
+		$this->getStore()->addStatement($this->graphIri, $subject, $predicate, $object);
 		return $this;
 	}
 
 	/**
-	 * Adds multiple statements to this model.
+	 * Adds multiple statements to this graph.
 	 *
 	 * Accepts an associative array of statement subjects. The format of the
 	 * array must conform to Talis' RDF/PHP specification
@@ -163,18 +163,18 @@ class Model {
 	 * @param stdClass $statements
 	 */
 	public function addMultipleStatements(array $statements) {
-		$this->getStore()->addMultipleStatements($this->graphUri, $statements);
+		$this->getStore()->addMultipleStatements($this->graphIri, $statements);
 		return $this;
 	}
 
 	/**
-	 * Creates a unique resource URI with the model's base URI as namespace and
+	 * Creates a unique resource IRI with the graph's base IRI as namespace and
 	 * a unique ID starting with $spec.
 	 *
 	 * @param string $spec
 	 * @return string
 	 */
-	public function createResourceUri($spec = '') {
+	public function createResourceIri($spec = '') {
 		$prefix = $this->getBaseIri()
 				  . $spec;
 		// TODO: check uniqueness
@@ -190,18 +190,18 @@ class Model {
 	 * @param string $object
 	 */
 	public function deleteStatement($subject, $predicate, $object) {
-		$this->getStore()->deleteMatchingStatements($this->graphUri, $subject, $predicate, $object);
+		$this->getStore()->deleteMatchingStatements($this->graphIri, $subject, $predicate, $object);
 	}
 
 	/**
-	 * Deletes all statements contained in the associative array from this model.
+	 * Deletes all statements contained in the associative array from this graph.
 	 *
 	 * @param string $subject
 	 * @param string $predicate
 	 * @param string $object
 	 */
 	public function deleteMultipleStatements(array $statements) {
-		$this->getStore()->deleteMultipleStatements($this->graphUri, $statements);
+		$this->getStore()->deleteMultipleStatements($this->graphIri, $statements);
 	}
 
 	/**
@@ -215,55 +215,49 @@ class Model {
 	 * @param string|null $objectSpec
 	 */
 	public function deleteMatchingStatements($subjectSpec, $predicateSpec, $objectSpec, array $options = array()) {
-		$this->getStore()->deleteMatchingStatements($this->graphUri,
-													$subjectSpec,
-													$predicateSpec,
-													$objectSpec,
-													$options);
+		$this->getStore()->deleteMatchingStatements(
+			$this->graphIri,
+			$subjectSpec,
+			$predicateSpec,
+			$objectSpec,
+			$options
+		);
 	}
 
 	/**
-	 * Returns the model base IRI
+	 * Returns the graph base IRI
 	 *
 	 * @return string
 	 */
 	public function getBaseIri() {
 		if (empty($this->baseIri)) {
-			return $this->getModelIri();
+			return $this->getGraphIri();
 		}
 		return $this->baseIri;
 	}
 
-	public function getBaseUri() {
-		return $this->getBaseIri();
-	}
-
 	/**
-	 * Returns the model IRI
+	 * Returns the graph IRI
 	 *
 	 * @return string
 	 */
-	public function getModelIri() {
-		return $this->graphUri;
-	}
-
-	public function getModelUri() {
-		return $this->getModelIri();
+	public function getGraphIri() {
+		return $this->graphIri;
 	}
 
 	/**
 	 * Returns an array of options (the object part of an RDF/PHP array) or null
-	 * if no such options exists. An option is identified through an URI.
+	 * if no such options exists. An option is identified through an IRI.
 	 *
-	 * @param string $optionUri The URI that identifies the option.
+	 * @param string $optionIri The IRI that identifies the option.
 	 * @return array|null An array containing the value(s) for the given option.
 	 */
-	public function getOption($optionUri) {
+	public function getOption($optionIri) {
 		$options = $this->getOptions();
-		if (!isset($options[$optionUri])) {
+		if (!isset($options[$optionIri])) {
 			return null;
 		} else {
-			return $options[$optionUri];
+			return $options[$optionIri];
 		}
 	}
 
@@ -277,7 +271,7 @@ class Model {
 	}
 
 	/**
-	 * Returns the model's title property value.
+	 * Returns the graph's title property value.
 	 *
 	 * @return string
 	 */
@@ -287,20 +281,20 @@ class Model {
 			$select = '';
 			$where = array();
 			if (!empty($titleProperties)) {
-				foreach ($titleProperties as $key => $uri) {
+				foreach ($titleProperties as $key => $iri) {
 					$select .= ' ?' . $key;
-					$where[] = '{?s <' . $uri . '> ' . '?' . $key . '.}';
+					$where[] = '{?s <' . $iri . '> ' . '?' . $key . '.}';
 				}
-				$query = \Erfurt\Sparql\SimpleQuery::initWithString(
+				$query = $this->objectManager->get('Erfurt\Sparql\SimpleQueryFactory')->buildFromQueryString(
 					'SELECT ' . $select . '
 					 WHERE {
 						' . implode(' UNION ', $where) . '
-						FILTER (sameTerm(?s, <' . $this->getModelIri() . '>))
+						FILTER (sameTerm(?s, <' . $this->getGraphIri() . '>))
 					}'
 				);
 				if ($result = $this->getStore()->sparqlQuery($query)) {
 					if (is_array($result) && is_array($result[0])) {
-						foreach ($titleProperties as $key => $uri) {
+						foreach ($titleProperties as $key => $iri) {
 							if (!empty($result[0][$key])) {
 								$this->title = $result[0][$key];
 							}
@@ -314,7 +308,7 @@ class Model {
 	}
 
 	/**
-	 * Returns an array of properties used in this model to express
+	 * Returns an array of properties used in this graph to express
 	 * a resource's human-readable representation.
 	 *
 	 * @return array
@@ -325,7 +319,7 @@ class Model {
 
 	/**
 	 * Returns whether the current agent has edit privileges
-	 * on this model instance.
+	 * on this graph instance.
 	 *
 	 * @return bool
 	 */
@@ -334,7 +328,7 @@ class Model {
 	}
 
 	/**
-	 * Sets this model's editable flag.
+	 * Sets this graph's editable flag.
 	 *
 	 * @param boolean $editableFlag
 	 */
@@ -344,48 +338,48 @@ class Model {
 	}
 
 	/**
-	 * Sets an option for the model in the SysOnt.
+	 * Sets an option for the graph in the SysOnt.
 	 * If no value is given, the option will be unset.
 	 *
-	 * @param string $optionUri The URI that identifies the option.
+	 * @param string $optionIri The IRI that identifies the option.
 	 * @param array|null An array (RDF/PHP object part) of values or null.
 	 */
-	public function setOption($optionUri, $value = null) {
+	public function setOption($optionIri, $value = null) {
 		if (!$this->isEditable) {
-			// User has no right to edit the model.
+			// User has no right to edit the graph.
 			return;
 		}
-		$sysOntUri = $this->knowledgeBase->getSystemOntologyConfiguration()->modelUri;
+		$sysOntIri = $this->knowledgeBase->getSystemOntologyConfiguration()->graphIri;
 		$options = $this->getOptions();
 		$store = $this->getStore();
-		if (isset($options[$optionUri])) {
+		if (isset($options[$optionIri])) {
 			// In this case we need to remove the old values from sysont
 			$options = array(
 				'use_ac' => false, // We disable AC, for we need to write the system ontology.
 			);
-			$store->deleteMatchingStatements($sysOntUri, $this->graphUri, $optionUri, null, $options);
+			$store->deleteMatchingStatements($sysOntIri, $this->graphIri, $optionIri, null, $options);
 		}
 		if (null !== $value) {
 			$addArray = array();
-			$addArray[$this->graphUri] = array();
-			$addArray[$this->graphUri][$optionUri] = $value;
-			$store->addMultipleStatements($sysOntUri, $addArray, false);
+			$addArray[$this->graphIri] = array();
+			$addArray[$this->graphIri][$optionIri] = $value;
+			$store->addMultipleStatements($sysOntIri, $addArray, false);
 		}
-		// TODO add this statement on model add?!
-		// Add a statement graphUri a SysOnt:Model
-		$addArray[$this->graphUri] = array();
-		$addArray[$this->graphUri][EF_RDF_TYPE] = array();
-		$addArray[$this->graphUri][EF_RDF_TYPE][] = array(
-			'value' => 'http://ns.ontowiki.net/SysOnt/Model',
-			'type' => 'uri'
+		// TODO add this statement on graph add?!
+		// Add a statement graphIri a SysOnt:graph
+		$addArray[$this->graphIri] = array();
+		$addArray[$this->graphIri][EF_RDF_TYPE] = array();
+		$addArray[$this->graphIri][EF_RDF_TYPE][] = array(
+			'value' => 'http://ns.ontowiki.net/SysOnt/Graph',
+			'type' => 'iri'
 		);
-		$store->addMultipleStatements($sysOntUri, $addArray, false);
+		$store->addMultipleStatements($sysOntIri, $addArray, false);
 		// Reset the options
 		$this->graphOptions = null;
 	}
 
 	/**
-	 * Updates this model if the mutual difference of 2 RDF/PHP arrays.
+	 * Updates this graph if the mutual difference of 2 RDF/PHP arrays.
 	 *
 	 * Added statements are those that are found in $changed but not in $original,
 	 * removed statements are found in $original but not in $changed.
@@ -412,16 +406,16 @@ class Model {
 	}
 
 	/**
-	 * Sets the internal options array for the model (if neccessary) and returns it.
+	 * Sets the internal options array for the graph (if neccessary) and returns it.
 	 * The options are actually fetched by the store class.
 	 *
-	 * @return array An array of all options. If there are no options for the model
+	 * @return array An array of all options. If there are no options for the graph
 	 * an empty array is returned.
 	 */
 	protected function getOptions() {
 		if (null === $this->graphOptions) {
 			$store = $this->getStore();
-			$this->graphOptions = $store->getGraphConfiguration($this->graphUri);
+			$this->graphOptions = $store->getGraphConfiguration($this->graphIri);
 		}
 		return $this->graphOptions;
 	}
@@ -509,62 +503,32 @@ class Model {
 			unset($options['use_ac']);
 		}
 		if (is_string($query)) {
-			require_once 'Erfurt/Sparql/SimpleQuery.php';
-			$query = Erfurt_Sparql_SimpleQuery::initWithString($query);
+			$query = $this->objectManager->get('Erfurt\Sparql\SimpleQueryFactory')->buildFromString($query);
 		}
-		// restrict to this model
-		if ($query instanceof Erfurt_Sparql_SimpleQuery) {
-			$query->setFrom(array($this->graphUri));
+		// restrict to this graph
+		if ($query instanceof \Erfurt\Sparql\SimpleQuery) {
+			$query->setFrom(array($this->graphIri));
 		} else {
-			if ($query instanceof Erfurt_Sparql_Query2) {
-				$query->setFroms(array($this->graphUri));
+			if ($query instanceof \Erfurt\Sparql\Query2) {
+				$query->setFroms(array($this->graphIri));
 			}
 		}
 		return $this->getStore()->sparqlQuery($query, $options);
 	}
 
-	/*public function sparqlQueryWithPlainResult($query)
-		{
-			require_once 'Erfurt/Sparql/SimpleQuery.php';
-			$queryObject = Erfurt_Sparql_SimpleQuery::initWithString($query);
-			$queryObject->addFrom($this->graphUri);
-
-			return $this->getStore()->sparqlQuery($queryObject);
-		}*/
 
 	public function getStore() {
 		return $this->knowledgeBase->getStore();
 	}
 
 	/**
-	 * Returns an array of namespace IRIs (keys) and prefixes defined
-	 * in this model's source file.
-	 *
-	 * @return array
-	 * @deprecated
-	 */
-	public function getNamespaces() {
-		return array_flip($this->getNamespacePrefixes());
-	}
-
-	/**
-	 * Add a namespace -> prefix mapping
-	 * @param $prefix a prefix to identify the namespace
-	 * @param $namespace the namespace uri
-	 * @deprecated
-	 */
-	public function addPrefix($prefix, $namespace) {
-		return $this->addNamespacePrefix($prefix, $namespace);
-	}
-
-	/**
-	 * Get all namespaces with there prefix
+	 * Get all namespaces with their prefix
 	 * @return array with namespace as key and prefix as value
 	 */
 	public function getNamespacePrefixes() {
 		// $store = $this->getStore();
-		// return $store->getNamespacePrefixes($this->graphUri);
-		return $this->namespaces->getNamespacePrefixes($this->getModelUri());
+		// return $store->getNamespacePrefixes($this->graphIri);
+		return $this->namespaces->getNamespacePrefixes($this->getGraphIri());
 	}
 
 	/**
@@ -574,20 +538,20 @@ class Model {
 	 */
 	public function getNamespacePrefix($namespace) {
 		// $store = $this->getStore();
-		// return $store->getNamespacePrefix($this->graphUri, $namespace);
-		return $this->namespaces->getNamespacePrefix($this->getModelUri(), $namespace);
+		// return $store->getNamespacePrefix($this->graphIri, $namespace);
+		return $this->namespaces->getNamespacePrefix($this->getGraphIri(), $namespace);
 	}
 
 	/**
 	 * Add a namespace -> prefix mapping
 	 * @param $prefix a prefix to identify the namespace
-	 * @param $namespace the namespace uri
+	 * @param $namespace the namespace iri
 	 */
 	public function addNamespacePrefix($prefix, $namespace) {
 		// $ns = $this
 		// $store = $this->getStore();
-		// $store->addNamespacePrefix($this->graphUri, $prefix, $namespace);
-		return $this->namespaces->addNamespacePrefix($this->getModelUri(), $namespace, $prefix);
+		// $store->addNamespacePrefix($this->graphIri, $prefix, $namespace);
+		return $this->namespaces->addNamespacePrefix($this->getGraphIri(), $namespace, $prefix);
 	}
 
 	/**
@@ -596,8 +560,8 @@ class Model {
 	 */
 	public function deleteNamespacePrefix($prefix) {
 		// $store = $this->getStore();
-		// $store->deleteNamespacePrefix($this->graphUri, $prefix);
-		return $this->namespaces->deleteNamespacePrefix($this->getModelUri(), $prefix);
+		// $store->deleteNamespacePrefix($this->graphIri, $prefix);
+		return $this->namespaces->deleteNamespacePrefix($this->getGraphIri(), $prefix);
 	}
 
 }

@@ -29,34 +29,34 @@ namespace Erfurt\Syntax\RdfParser\Adapter\RdfXml;
  ***************************************************************/
 class PropertyElement {
 
-	protected $uri = null;
-	protected $reificationUri = null;
+	protected $iri = null;
+	protected $reificationIri = null;
 	protected $datatype = null;
 	protected $parseAsCollection = false;
 	protected $lastListResource = null;
 
-	public function __construct($uri) {
-		$this->uri = $uri;
+	public function __construct($iri) {
+		$this->iri = $iri;
 	}
 
-	public function getUri() {
-		return $this->uri;
+	public function getIri() {
+		return $this->iri;
 	}
 
 	public function isReified() {
-		if (null !== $this->reificationUri) {
+		if (null !== $this->reificationIri) {
 			return true;
 		} else {
 			return false;
 		}
 	}
 
-	public function setReificationUri($reifUri) {
-		$this->reificationUri = $reifUri;
+	public function setReificationIri($reifIri) {
+		$this->reificationIri = $reifIri;
 	}
 
-	public function getReificationUri() {
-		return $this->reificationUri;
+	public function getReificationIri() {
+		return $this->reificationIri;
 	}
 
 	public function setDatatype($datatype) {

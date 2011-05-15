@@ -52,8 +52,8 @@ class ModelTest extends \Erfurt\Tests\Unit\BaseTestCase {
 	}
 
 	public function testObjectCreationWithoutBaseUriAndWithoutImports() {
-		$model = new \Erfurt\Owl\Model('http://example.org/model/');
-		$this->assertTrue($model instanceof \Erfurt\Owl\Model);
+		$model = new \Erfurt\Owl\Graph('http://example.org/model/');
+		$this->assertTrue($model instanceof \Erfurt\Owl\Graph);
 	}
 
 }

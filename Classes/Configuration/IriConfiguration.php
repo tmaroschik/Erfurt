@@ -35,12 +35,12 @@ namespace Erfurt\Configuration;
  * @scope singleton
  * @api
  */
-class UriConfiguration extends AbstractConfiguration implements \Erfurt\Singleton {
+class IriConfiguration extends AbstractConfiguration implements \Erfurt\Singleton {
 
 	/**
 	 * This is the key for this configuration inside the extension configuration
 	 */
-	protected $extensionConfigurationKey = 'uri';
+	protected $extensionConfigurationKey = 'iri';
 
 	/**
 	 * Abstract_Configuration provides a property based interface to

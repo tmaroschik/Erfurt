@@ -276,8 +276,8 @@ class ModelTest extends \Erfurt\Tests\Unit\BaseTestCase {
 		}*/
 
 	public function testGetBaseIriWithEmptyBaseReturnsModelIri() {
-		$model1 = new \Erfurt\Rdf\Model('http://example.org/');
-		$model2 = new \Erfurt\Rdf\Model('http://example.org/', 'http://example.org/resources/');
+		$model1 = new \Erfurt\Rdf\Graph('http://example.org/');
+		$model2 = new \Erfurt\Rdf\Graph('http://example.org/', 'http://example.org/resources/');
 
 		$this->assertSame('http://example.org/', $model1->getBaseIri());
 		$this->assertSame('http://example.org/resources/', $model2->getBaseIri());
@@ -522,7 +522,7 @@ class ModelTest extends \Erfurt\Tests\Unit\BaseTestCase {
 
 		$this->authenticateAnonymous();
 		$model = $store->getModel('http://example.org/');
-		$this->assertTrue($model instanceof \Erfurt\Rdf\Model);
+		$this->assertTrue($model instanceof \Erfurt\Rdf\Graph);
 		$this->assertFalse($model->isEditable());
 
 		$ac->setUserModelRight('http://example.org/', 'view', 'deny');

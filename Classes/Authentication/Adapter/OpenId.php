@@ -44,11 +44,11 @@ class OpenId implements \Zend_Auth_Adapter_Interface {
 	// ------------------------------------------------------------------------
 
 	/**
-	 * Contains the URI of the graph used for ac and auth.
+	 * Contains the IRI of the graph used for ac and auth.
 	 *
 	 * @var string
 	 */
-	protected $_acModelUri = null;
+	protected $accessControlGraphIri = null;
 
 	/**
 	 * Contains the query part of the OpenID auth request (used for the
@@ -91,12 +91,12 @@ class OpenId implements \Zend_Auth_Adapter_Interface {
 	protected $_store = null;
 
 	/**
-	 * Contains the URIs used for modeling users and rights in RDF.
-	 * This URIs are loaded from the config file.
+	 * Contains the IRIs used for modeling users and rights in RDF.
+	 * This IRIs are loaded from the config file.
 	 *
 	 * @var array
 	 */
-	protected $_uris = array();
+	protected $_iris = array();
 
 	/**
 	 * Contains a URL, which is used for redirection when the login at the OpenID
@@ -138,10 +138,10 @@ class OpenId implements \Zend_Auth_Adapter_Interface {
 
 		$config = $app->getConfig();
 
-		$this->_acModelUri = $config->ac->modelUri;
+		$this->accessControlGraphIri = $config->ac->graphIri;
 
-		// load URIs from config
-		$this->_uris = array(
+		// load IRIs from config
+		$this->_iris = array(
 			'user_class' => $config->ac->user->class,
 			'user_username' => $config->ac->user->name,
 			'user_password' => $config->ac->user->pass,
@@ -182,7 +182,7 @@ class OpenId implements \Zend_Auth_Adapter_Interface {
 			if (null === $this->_sReg) {
 				$userResult = $this->_checkOpenId($this->_id);
 
-				if ($userResult['userUri'] === false) {
+				if ($userResult['userIri'] === false) {
 					$result = false;
 					$msg = 'User does not exist!';
 
@@ -223,7 +223,7 @@ class OpenId implements \Zend_Auth_Adapter_Interface {
 
 				/*
 								$identity = array(
-									'uri'       => null,
+									'iri'       => null,
 									'dbuser'    => false,
 									'anonymous' => false
 								);
@@ -234,7 +234,7 @@ class OpenId implements \Zend_Auth_Adapter_Interface {
 			}
 
 			$identity = array(
-				'uri' => $this->_get['openid_identity'],
+				'iri' => $this->_get['openid_identity'],
 				'dbuser' => false,
 				'anonymous' => false,
 				'is_openid_user' => true
@@ -289,7 +289,7 @@ class OpenId implements \Zend_Auth_Adapter_Interface {
 	 */
 	protected function _checkOpenId($openId) {
 		$retVal = array(
-			'userUri' => false,
+			'userIri' => false,
 			'denyLogin' => false
 		);
 
@@ -297,37 +297,37 @@ class OpenId implements \Zend_Auth_Adapter_Interface {
 		require_once 'Erfurt/Sparql/SimpleQuery.php';
 		$query = new Erfurt_Sparql_SimpleQuery();
 		$query->setProloguePart('SELECT ?s ?p ?o');
-		$query->addFrom($this->_acModelUri);
+		$query->addFrom($this->accessControlGraphIri);
 
 		$where = 'WHERE {
                             ?s ?p ?o .
-                            ?s <' . EF_RDF_TYPE . '> <' . $this->_uris['user_class'] . "> .
+                            ?s <' . EF_RDF_TYPE . '> <' . $this->_iris['user_class'] . "> .
                             FILTER (sameTerm(?s, <$openId>))
                         }";
 		$query->setWherePart($where);
 		$result = $this->_store->sparqlQuery($query, array('use_ac' => false));
 
 		foreach ((array)$result as $row) {
-			// Set user URI
-			if (($retVal['userUri']) === false) {
-				$retVal['userUri'] = $row['s'];
+			// Set user IRI
+			if (($retVal['userIri']) === false) {
+				$retVal['userIri'] = $row['s'];
 			}
 
 			// Check predicates, whether needed.
 			switch ($row['p']) {
-				case $this->_uris['action_deny']:
+				case $this->_iris['action_deny']:
 					// if login is disallowed
-					if ($row['o'] === $this->_uris['action_login']) {
+					if ($row['o'] === $this->_iris['action_login']) {
 						$retVal['denyLogin'] = true;
 					}
 					break;
 				case EF_RDFS_LABEL:
 					$retVal['userLabel'] = $row['o'];
 					break;
-				case $this->_uris['user_username']:
+				case $this->_iris['user_username']:
 					$retVal['username'] = $row['o'];
 					break;
-				case $this->_uris['user_mail'];
+				case $this->_iris['user_mail'];
 					$retVal['email'] = $row['o'];
 				default:
 					// Ignore all other statements.

@@ -41,7 +41,7 @@ namespace Erfurt\Object;
 class ObjectManager {
 
 	/**
-	 * @var Tx_Extbase_Object_ObjectManager
+	 * @var \Tx_Extbase_Object_ObjectManager
 	 */
 	protected $objectManagerInstance;
 
@@ -53,12 +53,51 @@ class ObjectManager {
 	}
 
 	/**
-	 * This magic function forwards all calls to the object manager instance instance
-	 * @param  $name
-	 * @param  $arguments
-	 * @return void
+	 * Returns a fresh or existing instance of the object specified by $objectName.
+	 *
+	 * Important:
+	 *
+	 * If possible, instances of Prototype objects should always be created with the
+	 * Object Manager's create() method and Singleton objects should rather be
+	 * injected by some type of Dependency Injection.
+	 *
+	 * Note: Additional arguments to this function are only passed to the object
+	 * container's get method for when the object is a prototype. Any argument
+	 * besides $objectName is ignored if the target object is in singleton or session
+	 * scope.
+	 *
+	 * @param string $objectName The name of the object to return an instance of
+	 * @return object The object instance
+	 * @author Robert Lemke <robert@typo3.org>
+	 * @api
 	 */
-	public function __call($name, $arguments) {
-		return call_user_func_array(array($this->objectManagerInstance, $name), $arguments);
+	public function get($objectName) {
+		return call_user_func_array(array($this->objectManagerInstance, 'get'), func_get_args());
 	}
+
+	/**
+	 * Creates a fresh instance of the object specified by $objectName.
+	 *
+	 * This factory method can only create objects of the scope prototype.
+	 * Singleton objects must be either injected by some type of Dependency Injection or
+	 * if that is not possible, be retrieved by the get() method of the
+	 * Object Manager
+	 *
+	 * You must use either Dependency Injection or this factory method for instantiation
+	 * of your objects if you need FLOW3's object management capabilities (including
+	 * AOP, Security and Persistence). It is absolutely okay and often advisable to
+	 * use the "new" operator for instantiation in your automated tests.
+	 *
+	 * @param string $objectName The name of the object to create
+	 * @return object The new object instance
+	 * @author Robert Lemke <robert@typo3.org>
+	 * @since 1.0.0 alpha 8
+	 * @api
+	 */
+	public function create($objectName) {
+		return call_user_func_array(array($this->objectManagerInstance, 'create'), func_get_args());
+	}
+
 }
+
+?>
