@@ -417,7 +417,7 @@ class Parser {
 		if ($match > 0) {
 			$literalFactory = $this->objectManager->get('\Erfurt\Rdf\LiteralFactory');
 			$node = $literalFactory->createFromLabel($hits[0]);
-			$node->setDatatype(EF_XSD_NS . 'integer');
+			$node->setDatatype(Erfurt\Vocabulary\Xsd::NS . 'integer');
 			return true;
 		}
 		$patternBool = "/^(true|false)$/";
@@ -425,14 +425,14 @@ class Parser {
 		if ($match > 0) {
 			$literalFactory = $this->objectManager->get('\Erfurt\Rdf\LiteralFactory');
 			$node = $literalFactory->createFromLabel($hits[0]);
-			$node->setDatatype(EF_XSD_NS . 'boolean');
+			$node->setDatatype(Erfurt\Vocabulary\Xsd::NS . 'boolean');
 			return true;
 		}
 		$patternType = "/^a$/";
 		$match = preg_match($patternType, $node, $hits);
 		if ($match > 0) {
 			$ressourceFactory = $this->objectManager->get('\Erfurt\Rdf\ResourceFactory');
-			$node = $ressourceFactory->createFromNamespaceAndLocalName(EF_RDF_NS, 'type');
+			$node = $ressourceFactory->createFromNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'type');
 			return true;
 		}
 		$patternDouble = "/^-?[0-9]+.[0-9]+[e|E]?-?[0-9]*/";
@@ -440,7 +440,7 @@ class Parser {
 		if ($match > 0) {
 			$literalFactory = $this->objectManager->get('\Erfurt\Rdf\LiteralFactory');
 			$node = $literalFactory->createFromLabel($hits[0]);
-			$node->setDatatype(EF_XSD_NS . 'double');
+			$node->setDatatype(Erfurt\Vocabulary\Xsd::NS . 'double');
 			return true;
 		}
 		return false;
@@ -533,9 +533,9 @@ class Parser {
 		$this->_fastForward();
 		$i = 0;
 		$emptyList = true;
-		$rdfRest = \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName(EF_RDF_NS, 'rest');
-		$rdfFirst = \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName(EF_RDF_NS, 'first');
-		$rdfNil = \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName(EF_RDF_NS, 'nil');
+		$rdfRest = \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'rest');
+		$rdfFirst = \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'first');
+		$rdfNil = \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'nil');
 		while (current($this->tokens) !== ')') {
 			if ($i > 0) {
 				$trp[] = new QueryTriple($this->_parseNode($tmpLabel), $rdfRest,
@@ -1061,9 +1061,9 @@ class Parser {
 		} else {
 			$datatype = '';
 			if (is_string($node) && strpos($node, '.') !== false) {
-				$datatype = EF_XSD_NS . 'integer';
+				$datatype = Erfurt\Vocabulary\Xsd::NS . 'integer';
 			} else {
-				$datatype = EF_XSD_NS . 'decimal';
+				$datatype = Erfurt\Vocabulary\Xsd::NS . 'decimal';
 			}
 			$literalFactory = $this->objectManager->get('\Erfurt\Rdf\LiteralFactory');
 			$node = $literalFactory->createFromLabel($node);

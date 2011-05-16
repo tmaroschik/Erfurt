@@ -402,9 +402,9 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 		$actionConfig = Erfurt_App::getInstance()->getActionConfig('RegisterNewUser');
 
 		$foafData = $this->_getFoafData($webId);
-		if (isset($foafData[$webId][EF_RDF_TYPE][0]['value'])) {
-			if ($foafData[$webId][EF_RDF_TYPE][0]['value'] === 'http://xmlns.com/foaf/0.1/OnlineAccount' ||
-				$foafData[$webId][EF_RDF_TYPE][0]['value'] === 'http://xmlns.com/foaf/0.1/Person') {
+		if (isset($foafData[$webId][Erfurt\Vocabulary\Rdf::TYPE][0]['value'])) {
+			if ($foafData[$webId][Erfurt\Vocabulary\Rdf::TYPE][0]['value'] === 'http://xmlns.com/foaf/0.1/OnlineAccount' ||
+				$foafData[$webId][Erfurt\Vocabulary\Rdf::TYPE][0]['value'] === 'http://xmlns.com/foaf/0.1/Person') {
 
 				// Look for label, email
 				if (isset($foafData[$webId]['http://xmlns.com/foaf/0.1/mbox'][0]['value'])) {
@@ -413,7 +413,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 				if (isset($foafData[$webId]['http://xmlns.com/foaf/0.1/name'][0]['value'])) {
 					$label = $foafData[$webId]['http://xmlns.com/foaf/0.1/name'][0]['value'];
 				} else {
-					if (isset($foafData[$webId][EF_RDFS_LABEL][0]['value'])) {
+					if (isset($foafData[$webId][Erfurt\Vocabulary\Rdfs::LABEL][0]['value'])) {
 						$label = $foafData[$webId]['http://xmlns.com/foaf/0.1/name'][0]['value'];
 					}
 				}
@@ -424,7 +424,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 		$store->addStatement(
 			$acGraphIri,
 			$webId,
-			EF_RDF_TYPE,
+			Erfurt\Vocabulary\Rdf::TYPE,
 			array(
 				 'value' => $this->iris['user_class'],
 				 'type' => 'iri'
@@ -456,7 +456,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 			$store->addStatement(
 				$acGraphIri,
 				$userIri,
-				EF_RDFS_LABEL,
+				Erfurt\Vocabulary\Rdfs::LABEL,
 				array(
 					 'value' => $label,
 					 'type' => 'literal'
@@ -691,7 +691,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 		$query->addFrom($this->accessControlGraphIri);
 		$where = 'WHERE {
                             ?s ?p ?o .
-                            ?s <' . EF_RDF_TYPE . '> <' . $this->iris['user_class'] . "> .
+                            ?s <' . Erfurt\Vocabulary\Rdf::TYPE . '> <' . $this->iris['user_class'] . "> .
                             FILTER (sameTerm(?s, <$webId>))
                         }";
 		$query->setWherePart($where);
@@ -711,7 +711,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 						$retVal['denyLogin'] = true;
 					}
 					break;
-				case EF_RDFS_LABEL:
+				case Erfurt\Vocabulary\Rdfs::LABEL:
 					$retVal['userLabel'] = $row['o'];
 					break;
 				case $this->iris['user_username']:
@@ -907,7 +907,7 @@ class FoafSsl implements \Zend_Auth_Adapter_Interface {
 		$pubKeyId = null;
 		foreach ($foafData as $s => $pArray) {
 			foreach ($pArray as $p => $oArray) {
-				if ($p === EF_RDF_TYPE) {
+				if ($p === Erfurt\Vocabulary\Rdf::TYPE) {
 					foreach ($oArray as $o) {
 						if ($o['type'] === 'iri' && $o['value'] === self::PUBLIC_KEY_PROPERTY) {
 							// This is a public key... Now check whether it belongs to the iri...

@@ -101,15 +101,15 @@ class RdfXml implements AdapterInterface {
 
 		$this->rdfWriter->setMaxLevel(10);
 
-		$this->_serializeType('Ontology specific informations', EF_OWL_ONTOLOGY);
+		$this->_serializeType('Ontology specific informations', Erfurt\Vocabulary\Owl::ONTOLOGY);
 		$this->rdfWriter->setMaxLevel(1);
 
-		$this->_serializeType('Classes', EF_OWL_CLASS);
+		$this->_serializeType('Classes', Erfurt\Vocabulary\Owl::OWL_CLASS);
 
-		$this->_serializeType('Datatypes', EF_RDFS_DATATYPE);
-		$this->_serializeType('Annotation properties', EF_OWL_ANNOTATION_PROPERTY);
-		$this->_serializeType('Datatype properties', EF_OWL_DATATYPE_PROPERTY);
-		$this->_serializeType('Object properties', EF_OWL_OBJECT_PROPERTY);
+		$this->_serializeType('Datatypes', Erfurt\Vocabulary\Rdfs::DATATYPE);
+		$this->_serializeType('Annotation properties', Erfurt\Vocabulary\Owl::ANNOTATION_PROPERTY);
+		$this->_serializeType('Datatype properties', Erfurt\Vocabulary\Owl::DATATYPE_PROPERTY);
+		$this->_serializeType('Object properties', Erfurt\Vocabulary\Owl::OBJECT_PROPERTY);
 
 		$this->serializeRest('Instances and untyped data');
 
@@ -248,7 +248,7 @@ class RdfXml implements AdapterInterface {
 		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT DISTINCT ?s ?p ?o');
 		$query->addFrom($this->graphIri);
-		$query->setWherePart('WHERE { ?s ?p ?o . ?s <' . EF_RDF_TYPE . '> <' . $class . '> }');
+		$query->setWherePart('WHERE { ?s ?p ?o . ?s <' . Erfurt\Vocabulary\Rdf::TYPE . '> <' . $class . '> }');
 		$query->setOrderClause('?s ?p ?o');
 		$query->setLimit(1000);
 
@@ -297,7 +297,7 @@ class RdfXml implements AdapterInterface {
 
 		$where = 'WHERE
 		          { ?s ?p ?o .
-		          OPTIONAL { ?s <' . EF_RDF_TYPE . '> ?o2  } .
+		          OPTIONAL { ?s <' . Erfurt\Vocabulary\Rdf::TYPE . '> ?o2  } .
 	              FILTER (!bound(?o2) || (';
 
 		$count = count($this->renderedTypes);

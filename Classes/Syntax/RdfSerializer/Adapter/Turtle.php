@@ -328,7 +328,7 @@ class Turtle implements AdapterInterface {
 			$this->resultString .= str_repeat(' ', $this->lastWrittenSubjectLength + 1);
 		}
 
-		if ($p === EF_RDF_TYPE) {
+		if ($p === Erfurt\Vocabulary\Rdf::TYPE) {
 			$this->write('a');
 		} else {
 			$this->_writeIri($p);

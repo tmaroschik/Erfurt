@@ -41,9 +41,9 @@ class ClassNode {
 	protected $outgoinglinks;
 	protected $query;
 
-	public function __construct(Query2\IriRef $type, $member_predicate = EF_RDF_TYPE, Query2 $query, $varName = null, $withChilds = true) {
+	public function __construct(Query2\IriRef $type, $member_predicate = Erfurt\Vocabulary\Rdf::TYPE, Query2 $query, $varName = null, $withChilds = true) {
 		$this->query = $query;
-		if ($member_predicate == EF_RDF_TYPE) {
+		if ($member_predicate == Erfurt\Vocabulary\Rdf::TYPE) {
 			$type = new RDFSClass($type, $withChilds);
 			$member_predicate = new Query2\A();
 		} else

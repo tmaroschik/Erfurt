@@ -243,9 +243,9 @@ class RdfXml implements AdapterInterface {
 			throw new \Erfurt\Syntax\RdfParserException('Invalid element name: ' . $name . '.');
 		}
 
-		if ($name === EF_RDF_NS . 'RDF') {
-			if (isset($attrs[(EF_XML_NS . 'base')])) {
-				$this->_baseIri = $attrs[(EF_XML_NS . 'base')];
+		if ($name === Erfurt\Vocabulary\Rdf::NS . 'RDF') {
+			if (isset($attrs[(Erfurt\Vocabulary\Xml::NS . 'base')])) {
+				$this->_baseIri = $attrs[(Erfurt\Vocabulary\Xml::NS . 'base')];
 			}
 			return;
 		}
@@ -288,7 +288,7 @@ class RdfXml implements AdapterInterface {
 			return;
 		}
 
-		if ($name === EF_RDF_NS . 'RDF') {
+		if ($name === Erfurt\Vocabulary\Rdf::NS . 'RDF') {
 			return;
 		}
 
@@ -309,10 +309,10 @@ class RdfXml implements AdapterInterface {
 				if (null === $lastListResource) {
 					$subject = $this->_peekStack(1);
 
-					$this->_addStatement($subject->getResource(), $topElement->getIri(), EF_RDF_NIL, 'iri');
-					$this->_handleReification(EF_RDF_NIL);
+					$this->_addStatement($subject->getResource(), $topElement->getIri(), Erfurt\Vocabulary\Rdf::NIL, 'iri');
+					$this->_handleReification(Erfurt\Vocabulary\Rdf::NIL);
 				} else {
-					$this->_addStatement($lastListResource, EF_RDF_REST, EF_RDF_NIL, 'iri');
+					$this->_addStatement($lastListResource, Erfurt\Vocabulary\Rdf::REST, Erfurt\Vocabulary\Rdf::NIL, 'iri');
 				}
 			}
 		}
@@ -385,10 +385,10 @@ class RdfXml implements AdapterInterface {
 					$this->_handleReification($newListResource);
 				} else {
 					// Not the first element in the list.
-					$this->_addStatement($lastListResource, EF_RDF_REST, $newListResource);
+					$this->_addStatement($lastListResource, Erfurt\Vocabulary\Rdf::REST, $newListResource);
 				}
 
-				$this->_addStatement($newListResource, EF_RDF_FIRST, $nodeResource);
+				$this->_addStatement($newListResource, Erfurt\Vocabulary\Rdf::FIRST, $nodeResource);
 				$predicate->setLastListResource($newListResource);
 			} else {
 				$this->_addStatement($subject->getResource(), $predicate->getIri(), $nodeResource);
@@ -396,15 +396,15 @@ class RdfXml implements AdapterInterface {
 			}
 		}
 
-		if ($name !== EF_RDF_NS . 'Description') {
+		if ($name !== Erfurt\Vocabulary\Rdf::NS . 'Description') {
 			// Element name is the type of the iri.
-			$this->_addStatement($nodeResource, EF_RDF_TYPE, $name, 'iri');
+			$this->_addStatement($nodeResource, Erfurt\Vocabulary\Rdf::TYPE, $name, 'iri');
 		}
 
-		$type = $this->_removeAttribute($attrs, EF_RDF_TYPE);
+		$type = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::TYPE);
 		if (null !== $type) {
 			$className = $this->_resolveIri($type);
-			$this->_addStatement($nodeResource, EF_RDF_TYPE, $className, 'iri');
+			$this->_addStatement($nodeResource, Erfurt\Vocabulary\Rdf::TYPE, $className, 'iri');
 		}
 
 		// Process all remaining attributes of this element.
@@ -419,9 +419,9 @@ class RdfXml implements AdapterInterface {
 		$propIri = $name;
 
 		// List expansion rule
-		if ($propIri === EF_RDF_NS . 'li') {
+		if ($propIri === Erfurt\Vocabulary\Rdf::NS . 'li') {
 			$subject = $this->_peekStack(0);
-			$propIri = EF_RDF_NS . '_' . $subject->getNextLiCounter();
+			$propIri = Erfurt\Vocabulary\Rdf::NS . '_' . $subject->getNextLiCounter();
 		}
 
 		// Push the property on the stack.
@@ -429,14 +429,14 @@ class RdfXml implements AdapterInterface {
 		$this->_elementStack[] = $predicate;
 
 		// Check, whether the prop has a reification id.
-		$id = $this->_removeAttribute($attrs, EF_RDF_NS . 'ID');
+		$id = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'ID');
 		if (null !== $id) {
 			$iri = $this->_buildIriFromId($id);
 			$predicate->setReificationIri($iri);
 		}
 
 		// Check for rdf:parseType attribute.
-		$parseType = $this->_removeAttribute($attrs, EF_RDF_NS . 'parseType');
+		$parseType = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'parseType');
 		if (null !== $parseType) {
 			switch ($parseType) {
 				case 'Resource':
@@ -457,8 +457,8 @@ class RdfXml implements AdapterInterface {
 				case 'Collection':
 					if ($this->_currentElementIsEmpty) {
 						$subject = $this->_peekStack(1);
-						$this->_addStatement($subject->getResource(), $propIri, EF_RDF_NIL, 'iri');
-						$this->_handleReification(EF_RDF_NIL);
+						$this->_addStatement($subject->getResource(), $propIri, Erfurt\Vocabulary\Rdf::NIL, 'iri');
+						$this->_handleReification(Erfurt\Vocabulary\Rdf::NIL);
 					} else {
 						$predicate->setParseAsCollection(true);
 					}
@@ -469,7 +469,7 @@ class RdfXml implements AdapterInterface {
 					if ($this->_currentElementIsEmpty) {
 						$subject = $this->_peekStack(1);
 						$this->_addStatement($subject->getResource(), $propIri,
-											 '', 'literal', null, EF_RDF_NS . 'XmlLiteral');
+											 '', 'literal', null, Erfurt\Vocabulary\Rdf::NS . 'XmlLiteral');
 						$this->_handleReification('');
 					} else {
 						$predicate->setDatatype($value);
@@ -481,14 +481,14 @@ class RdfXml implements AdapterInterface {
 			// No parseType
 
 			if ($this->_currentElementIsEmpty) {
-				if (count($attrs) === 0 || (count($attrs) === 1 && isset($attrs[EF_RDF_NS . 'datatype']))) {
+				if (count($attrs) === 0 || (count($attrs) === 1 && isset($attrs[Erfurt\Vocabulary\Rdf::NS . 'datatype']))) {
 					// Element has no attributes, or only the optional
 					// rdf:ID and/or rdf:datatype attributes.
 					$subject = $this->_peekStack(1);
 
 					$dt = null;
-					if (isset($attrs[EF_RDF_NS . 'datatype'])) {
-						$dt = $attrs[EF_RDF_NS . 'datatype'];
+					if (isset($attrs[Erfurt\Vocabulary\Rdf::NS . 'datatype'])) {
+						$dt = $attrs[Erfurt\Vocabulary\Rdf::NS . 'datatype'];
 					}
 
 					$this->_addStatement($subject->getResource(), $propIri, '', 'literal', $this->_currentXmlLang, $dt);
@@ -505,11 +505,11 @@ class RdfXml implements AdapterInterface {
 					$this->_addStatement($subject->getResource(), $propIri, $resourceRes);
 					$this->_handleReification($resourceRes);
 
-					$type = $this->_removeAttribute($attrs, EF_RDF_TYPE);
+					$type = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::TYPE);
 					if (null !== $type) {
 						$className = $this->_resolveIri($type);
 
-						$this->_addStatement($resourceRes, EF_RDF_TYPE, $className);
+						$this->_addStatement($resourceRes, Erfurt\Vocabulary\Rdf::TYPE, $className);
 					}
 
 					$this->_processSubjectAttributes($resourceRes, $attrs);
@@ -517,16 +517,16 @@ class RdfXml implements AdapterInterface {
 			} else {
 				// Not an empty element.
 
-				$datatype = $this->_removeAttribute($attrs, EF_RDF_NS . 'datatype');
+				$datatype = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'datatype');
 				if (null !== $datatype) {
 					$predicate->setDatatype($datatype);
 				}
 
 				// Check for about attribute
-				#$about = $this->_removeAttribute($attrs, EF_RDF_NS.'about');
+				#$about = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS.'about');
 				#if (null !== $about) {
 				#    $aboutIri = $this->_resolveIri($about);
-				#    $this->_addStatement($aboutIri, EF_RDF_TYPE, $predicate, 'iri');
+				#    $this->_addStatement($aboutIri, Erfurt\Vocabulary\Rdf::TYPE, $predicate, 'iri');
 				// TODO phil    #
 				#    $this->_processSubjectAttributes($aboutIri, $attrs);
 				#}
@@ -539,8 +539,8 @@ class RdfXml implements AdapterInterface {
 	}
 
 	protected function _getPropertyResource(&$attrs) {
-		$resource = $this->_removeAttribute($attrs, EF_RDF_NS . 'resource');
-		$nodeId = $this->_removeAttribute($attrs, EF_RDF_NS . 'nodeID');
+		$resource = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'resource');
+		$nodeId = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'nodeID');
 
 		if (null !== $resource) {
 			return $this->_resolveIri($resource);
@@ -626,16 +626,16 @@ class RdfXml implements AdapterInterface {
 	protected function _reifyStatement($reifNode, $s, $p, $o) {
 		// TODO handle literals and bnodes the right way...
 
-		$this->_addStatement($reifNode, EF_RDF_TYPE, EF_RDF_NS . 'Statement');
-		$this->_addStatement($reifNode, EF_RDF_NS . 'subject', $s);
-		$this->_addStatement($reifNode, EF_RDF_NS . 'predicate', $p);
-		$this->_addStatement($reifNode, EF_RDF_NS . 'object', $o);
+		$this->_addStatement($reifNode, Erfurt\Vocabulary\Rdf::TYPE, Erfurt\Vocabulary\Rdf::NS . 'Statement');
+		$this->_addStatement($reifNode, Erfurt\Vocabulary\Rdf::NS . 'subject', $s);
+		$this->_addStatement($reifNode, Erfurt\Vocabulary\Rdf::NS . 'predicate', $p);
+		$this->_addStatement($reifNode, Erfurt\Vocabulary\Rdf::NS . 'object', $o);
 	}
 
 	protected function _getNodeResource(&$attrs) {
-		$id = $this->_removeAttribute($attrs, EF_RDF_NS . 'ID');
-		$about = $this->_removeAttribute($attrs, EF_RDF_NS . 'about');
-		$nodeId = $this->_removeAttribute($attrs, EF_RDF_NS . 'nodeID');
+		$id = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'ID');
+		$about = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'about');
+		$nodeId = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'nodeID');
 
 		// We could throw an exception if more than one of the above attributes
 		// are given, but we want to be as tolerant as possible, so we use the

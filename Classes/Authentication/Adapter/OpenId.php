@@ -301,7 +301,7 @@ class OpenId implements \Zend_Auth_Adapter_Interface {
 
 		$where = 'WHERE {
                             ?s ?p ?o .
-                            ?s <' . EF_RDF_TYPE . '> <' . $this->_iris['user_class'] . "> .
+                            ?s <' . Erfurt\Vocabulary\Rdf::TYPE . '> <' . $this->_iris['user_class'] . "> .
                             FILTER (sameTerm(?s, <$openId>))
                         }";
 		$query->setWherePart($where);
@@ -321,7 +321,7 @@ class OpenId implements \Zend_Auth_Adapter_Interface {
 						$retVal['denyLogin'] = true;
 					}
 					break;
-				case EF_RDFS_LABEL:
+				case Erfurt\Vocabulary\Rdfs::LABEL:
 					$retVal['userLabel'] = $row['o'];
 					break;
 				case $this->_iris['user_username']:

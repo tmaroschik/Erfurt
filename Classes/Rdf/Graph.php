@@ -368,8 +368,8 @@ class Graph {
 		// TODO add this statement on graph add?!
 		// Add a statement graphIri a SysOnt:graph
 		$addArray[$this->graphIri] = array();
-		$addArray[$this->graphIri][EF_RDF_TYPE] = array();
-		$addArray[$this->graphIri][EF_RDF_TYPE][] = array(
+		$addArray[$this->graphIri][Erfurt\Vocabulary\Rdf::TYPE] = array();
+		$addArray[$this->graphIri][Erfurt\Vocabulary\Rdf::TYPE][] = array(
 			'value' => 'http://ns.ontowiki.net/SysOnt/Graph',
 			'type' => 'iri'
 		);

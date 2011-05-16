@@ -421,7 +421,7 @@ class Turtle implements AdapterInterface {
 	}
 
 	protected function _parseNumber() {
-		$datatype = EF_XSD_INTEGER;
+		$datatype = Erfurt\Vocabulary\Xsd::INTEGER;
 
 		$c = $this->_read();
 
@@ -436,7 +436,7 @@ class Turtle implements AdapterInterface {
 		}
 
 		if ($c === '.' || $c === 'e' || $c === 'E') {
-			$datatype = EF_XSD_DECIMAL;
+			$datatype = Erfurt\Vocabulary\Xsd::DECIMAL;
 
 			if ($c === '.') {
 				$token .= $c;
@@ -458,7 +458,7 @@ class Turtle implements AdapterInterface {
 			}
 
 			if ($c === 'e' || $c === 'E') {
-				$datatype = EF_XSD_DOUBLE;
+				$datatype = Erfurt\Vocabulary\Xsd::DOUBLE;
 				$token .= $c;
 
 				$c = $this->_read();
@@ -683,7 +683,7 @@ class Turtle implements AdapterInterface {
 				$value = $prefix;
 
 				if ($prefix === 'true' || $prefix === 'false') {
-					return \Erfurt\Rdf\Literal::initWithLabelAndDatatype($value, EF_XSD_BOOLEAN);
+					return \Erfurt\Rdf\Literal::initWithLabelAndDatatype($value, Erfurt\Vocabulary\Xsd::BOOLEAN);
 				}
 			}
 
@@ -786,7 +786,7 @@ class Turtle implements AdapterInterface {
 		if ($c === ')') {
 			// Empty list
 			$this->_read();
-			return EF_RDF_NIL;
+			return Erfurt\Vocabulary\Rdf::NIL;
 		} else {
 			$listRoot = $this->_createBNode();
 
@@ -794,14 +794,14 @@ class Turtle implements AdapterInterface {
 			$oldPredicate = $this->_predicate;
 
 			$this->_subject = $listRoot;
-			$this->_predicate = EF_RDF_FIRST;
+			$this->_predicate = Erfurt\Vocabulary\Rdf::FIRST;
 
 			$this->_parseObject();
 
 			$bNode = $listRoot;
 			while (!$this->_isEndReached() && $this->_skipWS() !== ')') {
 				$newBNode = $this->_createBNode();
-				$this->_addStatement($bNode, EF_RDF_REST, $newBNode);
+				$this->_addStatement($bNode, Erfurt\Vocabulary\Rdf::REST, $newBNode);
 
 				$this->_subject = $bNode = $newBNode;
 
@@ -811,7 +811,7 @@ class Turtle implements AdapterInterface {
 			$this->_read();
 
 			// Finish the list.
-			$this->_addStatement($bNode, EF_RDF_REST, EF_RDF_NIL);
+			$this->_addStatement($bNode, Erfurt\Vocabulary\Rdf::REST, Erfurt\Vocabulary\Rdf::NIL);
 
 			$this->_subject = $oldSubject;
 			$this->_predicate = $oldPredicate;
@@ -856,7 +856,7 @@ class Turtle implements AdapterInterface {
 
 			if ($this->_isWS($c2)) {
 				$this->_unread();
-				return EF_RDF_TYPE;
+				return Erfurt\Vocabulary\Rdf::TYPE;
 			}
 
 			$this->_unread();

@@ -365,10 +365,10 @@ class Standard {
 					// array for new statements (an action instance pus label)
 					$actionStmt = array(
 						$actionIri => array(
-							EF_RDF_TYPE => array(
+							Erfurt\Vocabulary\Rdf::TYPE => array(
 								array('type' => 'iri', 'value' => $this->iris['actionClassIri'])
 							),
-							EF_RDFS_LABEL => array(
+							Erfurt\Vocabulary\Rdfs::LABEL => array(
 								array('type' => 'literal', 'value' => $action)
 							)
 						)
@@ -631,7 +631,7 @@ class Standard {
 													$userRights['denyGraphEdit'][] = $entry['o'];
 												}
 											} else {
-												if ($entry['p'] === EF_RDF_TYPE && $entry['o'] === $this->config->action->class &&
+												if ($entry['p'] === Erfurt\Vocabulary\Rdf::TYPE && $entry['o'] === $this->config->action->class &&
 													$entry['s'] !== $this->config->action->anyAction) {
 													// load all actions into array (handle afterwards)
 													$allActions[] = $entry['s'];

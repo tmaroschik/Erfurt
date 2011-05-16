@@ -106,7 +106,7 @@ class Identity {
 	public function initializeObject() {
 		$this->propertyIris['username'] = $this->knowledgeBase->getAccessControlConfiguration()->user->name;
 		$this->propertyIris['email'] = $this->knowledgeBase->getAccessControlConfiguration()->user->mail;
-		$this->propertyIris['label'] = EF_RDFS_LABEL;
+		$this->propertyIris['label'] = Erfurt\Vocabulary\Rdfs::LABEL;
 
 		$this->iri = $this->userSpec['iri'];
 
@@ -235,7 +235,7 @@ class Identity {
 						array(
 							 'type' => 'literal',
 							 'value' => $newUsername,
-							 'datatype' => EF_XSD_NS . 'string'
+							 'datatype' => Erfurt\Vocabulary\Xsd::NS . 'string'
 						),
 						false
 					);

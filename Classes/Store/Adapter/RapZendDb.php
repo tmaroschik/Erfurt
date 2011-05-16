@@ -465,7 +465,7 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
         
 // TODO add owl:Ontology statement if we can do add
         //if ($type === 'owl') {
-        //    $mt->add(new Statement(new Resource($graphIri), new Resource(EF_RDF_TYPE), new Resource(EF_OWL_ONTOLOGY)));
+        //    $mt->add(new Statement(new Resource($graphIri), new Resource(Erfurt\Vocabulary\Rdf::TYPE), new Resource(Erfurt\Vocabulary\Owl::ONTOLOGY)));
         //}
         
         // invalidate the cache and fetch model infos again
@@ -797,14 +797,14 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
                         WHERE s2.modelID = m.modelID 
                         AND s2.subject = m.modelURI 
                         AND s2.subject_is = "r" 
-                        AND s2.predicate = "' . EF_RDF_TYPE . '" 
-                        AND s2.object = "' . EF_OWL_ONTOLOGY . '" 
+                        AND s2.predicate = "' . Erfurt\Vocabulary\Rdf::TYPE . '" 
+                        AND s2.object = "' . Erfurt\Vocabulary\Owl::ONTOLOGY . '" 
                         AND s2.object_is = "r") as is_owl_ontology 
                     FROM models m 
                     LEFT JOIN namespaces n ON (m.modelID = n.modelID) 
                     LEFT JOIN statements s ON (m.modelID = s.modelID 
                         AND m.modelURI = s.subject 
-                        AND s.predicate = "' . EF_OWL_IMPORTS. '" 
+                        AND s.predicate = "' . Erfurt\Vocabulary\Owl::IMPORTS. '" 
                         AND s.object_is = "r") 
                     LEFT JOIN statements s3 ON (m.modelID = s3.modelID 
                         AND m.modelURI = s3.subject 
@@ -826,7 +826,7 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
             // $countSelect = $this->_dbConn->select();
             //             
             //             $countWhereCondition = 's2.modelID = m.modelID AND s2.subject = m.modelURI AND s2.subject_is = `r`' .
-            //                                     ' AND s2.predicate = `' . EF_RDF_TYPE . '` AND s2.object = `' . EF_OWL_ONTOLOGY .
+            //                                     ' AND s2.predicate = `' . Erfurt\Vocabulary\Rdf::TYPE . '` AND s2.object = `' . Erfurt\Vocabulary\Owl::ONTOLOGY .
             //                                     '` AND s2.object_is = `r`';
             //             
             //             $countSelect
@@ -836,7 +836,7 @@ class Erfurt_Store_Adapter_RapZendDb implements Erfurt_Store_Adapter_Interface, 
             //             $select = $this->_dbConn->select();
             // 
             //             $sJoinCondition = 'm.modelID = s.modelID AND m.modelURI = s.subject AND s.predicate = `' . 
-            //                                 EF_OWL_IMPORTS . '` AND s.object_is = `r`';
+            //                                 Erfurt\Vocabulary\Owl::IMPORTS . '` AND s.object_is = `r`';
             //             
             //             $select
             //                 ->from(array('m' => 'models'), array('modelID', 'modelURI', 'baseURI'))

@@ -846,7 +846,7 @@ class Store implements \Erfurt\Singleton {
 			$owlQuery = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
 			$owlQuery->setProloguePart('ASK')
 					->addFrom($graphIri)
-					->setWherePart('{<' . $graphIri . '> <' . EF_RDF_NS . 'type> <' . EF_OWL_ONTOLOGY . '>.}');
+					->setWherePart('{<' . $graphIri . '> <' . Erfurt\Vocabulary\Rdf::NS . 'type> <' . Erfurt\Vocabulary\Owl::ONTOLOGY . '>.}');
 			// TODO: cache this
 			if ($this->sparqlAsk($owlQuery, $useAc)) {
 				// instantiate OWL graph

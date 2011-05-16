@@ -49,7 +49,7 @@ class Abstraction {
 	 * @param string|null $varName the var-name to be used for instances of this class
 	 * @param string $member_predicate the predicate that stands between the class und its instances (mostly rdf:type)
 	 */
-	public function __construct($class = null, $withChilds = true, $varName = null, $member_predicate = EF_RDF_TYPE) {
+	public function __construct($class = null, $withChilds = true, $varName = null, $member_predicate = Erfurt\Vocabulary\Rdf::TYPE) {
 		$this->query = new Query2();
 		if ($class != null && !($class instanceof IriRef)) {
 			if (is_string($class)) {
@@ -105,7 +105,7 @@ class Abstraction {
 	 * @param string $member_predicate the predicate that stands between the class und its instances (mostly rdf:type)
 	 * @return Abstraction\ClassNode the new node
 	 */
-	public function addNode(Abstraction\ClassNode $sourceNode, $LinkPredicate, $targetClass = null, $withChilds = true, $varName = null, $member_predicate = EF_RDF_TYPE) {
+	public function addNode(Abstraction\ClassNode $sourceNode, $LinkPredicate, $targetClass = null, $withChilds = true, $varName = null, $member_predicate = Erfurt\Vocabulary\Rdf::TYPE) {
 		// hack for overloaded functioncalls
 		if (!($LinkPredicate instanceof IriRef)) {
 			if (is_string($LinkPredicate)) {

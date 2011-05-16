@@ -217,9 +217,9 @@ class Rdf implements AdapterInterface {
 		$sparqlQuery = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
 		$sparqlQuery->setProloguePart('SELECT ?subject ?predicate ?object');
 
-		$wherePart = 'WHERE { ?subject ?predicate ?object . ?subject <' . EF_RDF_TYPE . '> <' .
+		$wherePart = 'WHERE { ?subject ?predicate ?object . ?subject <' . Erfurt\Vocabulary\Rdf::TYPE . '> <' .
 					 $iris['user_class'] . '> . ?subject <' . $iris['user_username'] . '> "' . $username . '"^^<' .
-					 EF_XSD_NS . 'string> }';
+					 Erfurt\Vocabulary\Xsd::NS . 'string> }';
 		$sparqlQuery->setWherePart($wherePart);
 
 		if ($result = $this->_sparql($sparqlQuery)) {
@@ -265,7 +265,7 @@ class Rdf implements AdapterInterface {
 		$userSparql = new Sparql\SimpleQuery();
 		$userSparql->setProloguePart('SELECT ?subject ?predicate ?object');
 
-		$wherePart = 'WHERE { ?subject ?predicate ?object . ?subject <' . EF_RDF_TYPE . '> <' .
+		$wherePart = 'WHERE { ?subject ?predicate ?object . ?subject <' . Erfurt\Vocabulary\Rdf::TYPE . '> <' .
 					 $iris['user_class'] . '> }';
 		$userSparql->setWherePart($wherePart);
 

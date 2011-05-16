@@ -104,11 +104,11 @@ class AbstractConfiguration implements \Countable, \Iterator {
 	protected $loadFileErrorString = null;
 
 	/**
-	 * Abstract_Configuration provides a property based interface to
+	 * AbstractConfiguration provides a property based interface to
 	 * an array. The data are read-only unless $allowModifications
 	 * is set to true on construction.
 	 *
-	 * Abstract_Configuration also implements Countable and Iterator to
+	 * AbstractConfiguration also implements Countable and Iterator to
 	 * facilitate easy access to the data.
 	 *
 	 * @param array $configuration
@@ -185,7 +185,7 @@ class AbstractConfiguration implements \Countable, \Iterator {
 	}
 
 	/**
-	 * Deep clone of this instance to ensure that nested Abstract_Configurations
+	 * Deep clone of this instance to ensure that nested AbstractConfigurations
 	 * are also cloned.
 	 *
 	 * @return void
@@ -193,7 +193,7 @@ class AbstractConfiguration implements \Countable, \Iterator {
 	public function __clone() {
 	  $array = array();
 	  foreach ($this->data as $key => $value) {
-		  if ($value instanceof Abstract_Configuration) {
+		  if ($value instanceof AbstractConfiguration) {
 			  $array[$key] = clone $value;
 		  } else {
 			  $array[$key] = $value;
@@ -211,7 +211,7 @@ class AbstractConfiguration implements \Countable, \Iterator {
 		$array = array();
 		$data = $this->data;
 		foreach ($data as $key => $value) {
-			if ($value instanceof Abstract_Configuration) {
+			if ($value instanceof AbstractConfiguration) {
 				$array[$key] = $value->toArray();
 			} else {
 				$array[$key] = $value;
@@ -331,24 +331,24 @@ class AbstractConfiguration implements \Countable, \Iterator {
 
 
 	/**
-	 * Merge another Abstract_Configuration with this one. The items
+	 * Merge another AbstractConfiguration with this one. The items
 	 * in $merge will override the same named items in
 	 * the current config.
 	 *
-	 * @param Abstract_Configuration $merge
-	 * @return Abstract_Configuration
+	 * @param AbstractConfiguration $merge
+	 * @return AbstractConfiguration
 	 */
-	public function merge(Abstract_Configuration $merge) {
+	public function merge(AbstractConfiguration $merge) {
 		foreach($merge as $key => $item) {
 			if(array_key_exists($key, $this->data)) {
-				if($item instanceof Abstract_Configuration && $this->$key instanceof Abstract_Configuration) {
-					$this->$key = $this->$key->merge(new Abstract_Configuration($item->toArray(), !$this->readOnly()));
+				if($item instanceof AbstractConfiguration && $this->$key instanceof AbstractConfiguration) {
+					$this->$key = $this->$key->merge(new AbstractConfiguration($item->toArray(), !$this->readOnly()));
 				} else {
 					$this->$key = $item;
 				}
 			} else {
-				if($item instanceof Abstract_Configuration) {
-					$this->$key = new Abstract_Configuration($item->toArray(), !$this->readOnly());
+				if($item instanceof AbstractConfiguration) {
+					$this->$key = new AbstractConfiguration($item->toArray(), !$this->readOnly());
 				} else {
 					$this->$key = $item;
 				}
@@ -360,21 +360,21 @@ class AbstractConfiguration implements \Countable, \Iterator {
 
 	/**
 	 * Prevent any more modifications being made to this instance. Useful
-	 * after merge() has been used to merge multiple Abstract_Configuration objects
+	 * after merge() has been used to merge multiple AbstractConfiguration objects
 	 * into one object which should then not be modified again.
 	 *
 	 */
 	public function setReadOnly() {
 		$this->allowedModifications = false;
 		foreach ($this->data as $key => $value) {
-			if ($value instanceof Abstract_Configuration) {
+			if ($value instanceof AbstractConfiguration) {
 				$value->setReadOnly();
 			}
 		}
 	}
 
 	/**
-	 * Returns if this Abstract_Configuration object is read only or not.
+	 * Returns if this AbstractConfiguration object is read only or not.
 	 *
 	 * @return boolean
 	 */
@@ -392,7 +392,7 @@ class AbstractConfiguration implements \Countable, \Iterator {
 	}
 
 	/**
-	 * Set an extend for Abstract_Configuration_Writer
+	 * Set an extend for AbstractConfiguration_Writer
 	 *
 	 * @param  string $extendingSection
 	 * @param  string $extendedSection

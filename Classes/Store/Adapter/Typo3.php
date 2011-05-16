@@ -332,7 +332,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 		$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('graph_info'));
 		$this->graphInfoCache = null;
 		if ($type === \Erfurt\Store\Store::GRAPH_TYPE_OWL) {
-			$this->addStatement($graphIri, $graphIri, EF_RDF_TYPE, array('type' => 'iri', 'value' => EF_OWL_ONTOLOGY));
+			$this->addStatement($graphIri, $graphIri, Erfurt\Vocabulary\Rdf::TYPE, array('type' => 'iri', 'value' => Erfurt\Vocabulary\Owl::ONTOLOGY));
 			$this->graphInfoCache = null;
 		}
 	}
@@ -611,7 +611,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 		$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('graph_info'));
 		$this->graphInfoCache = null;
 		if ($type === 'owl') {
-			$this->addStatement($graphIri, $graphIri, EF_RDF_TYPE, array('type' => 'iri', 'value' => EF_OWL_ONTOLOGY));
+			$this->addStatement($graphIri, $graphIri, Erfurt\Vocabulary\Rdf::TYPE, array('type' => 'iri', 'value' => Erfurt\Vocabulary\Owl::ONTOLOGY));
 			$this->graphInfoCache = null;
 		}
 		// instanciate the graph
@@ -998,13 +998,13 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
                         WHERE s2.g = g.id
                         AND s2.s = g.iri
                         AND s2.st = 0
-                        AND s2.p = \'' . EF_RDF_TYPE . '\'
-                        AND s2.o = \'' . EF_OWL_ONTOLOGY . '\'
+                        AND s2.p = \'' . Erfurt\Vocabulary\Rdf::TYPE . '\'
+                        AND s2.o = \'' . Erfurt\Vocabulary\Owl::ONTOLOGY . '\'
                         AND s2.ot = 0) as is_owl_ontology
                     FROM tx_semantic_graph g
                     LEFT JOIN tx_semantic_statement s ON (g.id = s.g
                         AND g.iri = s.s
-                        AND s.p = \'' . EF_OWL_IMPORTS . '\'
+                        AND s.p = \'' . Erfurt\Vocabulary\Owl::IMPORTS . '\'
                         AND s.ot = 0)
                     LEFT JOIN tx_semantic_iri u ON (u.id = g.iri_r OR u.id = g.base_r OR u.id = s.o_r)';
 			$result = $this->sqlQuery($sql);
