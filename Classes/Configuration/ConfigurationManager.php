@@ -1,31 +1,27 @@
 <?php
 declare(ENCODING = 'utf-8');
 namespace Erfurt\Configuration;
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2011 Thomas Maroschik <tmaroschik@dfau.de>
- *  All rights reserved
- *
- *  This class is a port of the Zend_Config class.
- *  All credits go to the zend team.
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+
+/*                                                                        *
+ * This script belongs to the Erfurt framework.                           *
+ *                                                                        *
+ * It has been ported from the corresponding class of the FLOW3           *
+ * framework. All credits go to the responsible contributors.             *
+ *                                                                        *
+ * It is free software; you can redistribute it and/or modify it under    *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
+ *                                                                        */
 
 /**
  * A general purpose configuration manager
@@ -35,7 +31,9 @@ namespace Erfurt\Configuration;
  */
 class ConfigurationManager {
 
+	const CONFIGURATION_TYPE_CACHES = 'Caches';
 	const CONFIGURATION_TYPE_POLICY = 'Policy';
+	const CONFIGURATION_TYPE_PREFIXES = 'Prefixes';
 	const CONFIGURATION_TYPE_SETTINGS = 'Settings';
 	const CONFIGURATION_TYPE_SIGNALSSLOTS = 'SignalsSlots';
 
@@ -46,7 +44,7 @@ class ConfigurationManager {
 	protected $context;
 
 	/**
-	 * @var \Erfurt\Configuration\Source\SourceInterface
+	 * @var \Erfurt\Configuration\Source\YamlSource
 	 */
 	protected $configurationSource;
 
@@ -86,20 +84,20 @@ class ConfigurationManager {
 	 */
 	public function __construct($context) {
 		$this->context = $context;
-		if (!is_dir(FLOW3_PATH_CONFIGURATION . $context)) {
-			\Erfurt\Utility\Files::createDirectoryRecursively(FLOW3_PATH_CONFIGURATION . $context);
+		if (!is_dir(EF_PATH_CONFIGURATION . $context)) {
+			\Erfurt\Utility\Files::createDirectoryRecursively(EF_PATH_CONFIGURATION . $context);
 		}
-		$this->includeCachedConfigurationsPathAndFilename = FLOW3_PATH_CONFIGURATION . $context . '/IncludeCachedConfigurations.php';
+		$this->includeCachedConfigurationsPathAndFilename = EF_PATH_CONFIGURATION . $context . '/IncludeCachedConfigurations.php';
 		$this->loadConfigurationCache();
 	}
 
 	/**
 	 * Injects the configuration source
 	 *
-	 * @param \Erfurt\Configuration\Source\SourceInterface $configurationSource
+	 * @param \Erfurt\Configuration\Source\YamlSource $configurationSource
 	 * @return void
 	 */
-	public function injectConfigurationSource(\Erfurt\Configuration\Source\SourceInterface $configurationSource) {
+	public function injectConfigurationSource(\Erfurt\Configuration\Source\YamlSource $configurationSource) {
 		$this->configurationSource = $configurationSource;
 	}
 
@@ -137,7 +135,38 @@ class ConfigurationManager {
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function getConfiguration($configurationType, $packageKey = NULL, array $configurationPath = NULL) {
+		$configuration = array();
+		switch ($configurationType) {
+			case self::CONFIGURATION_TYPE_SIGNALSSLOTS :
+			case self::CONFIGURATION_TYPE_CACHES :
+			case self::CONFIGURATION_TYPE_POLICY :
+				if (!isset($this->configurations[$configurationType])) {
+					$this->loadConfiguration($configurationType, $this->packages);
+				}
+				if (isset($this->configurations[$configurationType])) {
+					$configuration = &$this->configurations[$configurationType];
+				}
+			break;
 
+			case self::CONFIGURATION_TYPE_SETTINGS :
+				if ($packageKey === NULL) {
+					foreach ($this->packages as $package) {
+						if (!isset($this->configurations[self::CONFIGURATION_TYPE_SETTINGS][$package->getPackageKey()])) {
+							$this->loadConfiguration($configurationType, $this->packages);
+						}
+					}
+					$configuration = &$this->configurations[self::CONFIGURATION_TYPE_SETTINGS];
+					break;
+				}
+
+			default :
+				throw new \Erfurt\Configuration\Exception\InvalidConfigurationTypeException('Invalid configuration type "' . $configurationType . '"', 1206031879);
+		}
+		if ($configurationPath === NULL) {
+			return $configuration;
+		} else {
+			return \Erfurt\Utility\Arrays::getValueByPath($configuration, $configurationPath);
+		}
 	}
 
 	/**
@@ -151,7 +180,10 @@ class ConfigurationManager {
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function setConfiguration($configurationType, array $configuration) {
-
+		switch ($configurationType) {
+			default :
+				throw new \Erfurt\Configuration\Exception\InvalidConfigurationTypeException('Invalid configuration type "' . $configurationType . '"', 1251127738);
+		}
 	}
 
 	/**
@@ -163,7 +195,10 @@ class ConfigurationManager {
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function saveConfiguration($configurationType) {
-
+		switch ($configurationType) {
+			default :
+				throw new \Erfurt\Configuration\Exception\InvalidConfigurationTypeException('Configuration type "' . $configurationType . '" does not support saving.', 1251127425);
+		}
 	}
 
 	/**
@@ -192,7 +227,62 @@ class ConfigurationManager {
 	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	protected function loadConfiguration($configurationType, array $packages) {
+		$this->cacheNeedsUpdate = TRUE;
 
+		switch ($configurationType) {
+			case self::CONFIGURATION_TYPE_SETTINGS :
+				if (isset($packages['FLOW3'])) {
+					$flow3Package = $packages['FLOW3'];
+					unset($packages['FLOW3']);
+					array_unshift($packages, $flow3Package);
+				}
+				$settings = array();
+
+				foreach ($packages as $package) {
+					if (!isset($settings[$package->getPackageKey()])) {
+						$settings[$package->getPackageKey()] = array();
+					}
+					$settings = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($settings, $this->configurationSource->load($package->getConfigurationPath() . self::CONFIGURATION_TYPE_SETTINGS));
+				}
+				$settings = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($settings, $this->configurationSource->load(EF_PATH_CONFIGURATION . self::CONFIGURATION_TYPE_SETTINGS));
+				foreach ($packages as $package) {
+					$settings = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($settings, $this->configurationSource->load($package->getConfigurationPath() . $this->context . '/' . self::CONFIGURATION_TYPE_SETTINGS));
+				}
+				$settings = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($settings, $this->configurationSource->load(EF_PATH_CONFIGURATION . $this->context . '/' . self::CONFIGURATION_TYPE_SETTINGS));
+
+				if (isset($this->configurations[self::CONFIGURATION_TYPE_SETTINGS])) {
+					$this->configurations[self::CONFIGURATION_TYPE_SETTINGS] = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($this->configurations[self::CONFIGURATION_TYPE_SETTINGS], $settings);
+				} else {
+					$this->configurations[self::CONFIGURATION_TYPE_SETTINGS] = $settings;
+				}
+
+				if (!isset($this->configurations[self::CONFIGURATION_TYPE_SETTINGS]['FLOW3']['core']['context'])) {
+					$this->configurations[self::CONFIGURATION_TYPE_SETTINGS]['FLOW3']['core']['context'] = $this->context;
+				}
+			break;
+			case self::CONFIGURATION_TYPE_CACHES :
+			case self::CONFIGURATION_TYPE_POLICY :
+			case self::CONFIGURATION_TYPE_SIGNALSSLOTS :
+				$this->configurations[$configurationType] = array();
+				foreach ($packages as $package) {
+					$this->configurations[$configurationType] = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($this->configurations[$configurationType], $this->configurationSource->load($package->getConfigurationPath() . $configurationType));
+				}
+				foreach ($packages as $package) {
+					$this->configurations[$configurationType] = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($this->configurations[$configurationType], $this->configurationSource->load($package->getConfigurationPath() . $this->context . '/' . $configurationType));
+				}
+			break;
+			default:
+				throw new \Erfurt\Configuration\Exception\InvalidConfigurationTypeException('Configuration type "' . $configurationType . '" cannot be loaded with loadConfiguration().', 1251450613);
+		}
+
+			// merge in global configuration
+		switch ($configurationType) {
+			case self::CONFIGURATION_TYPE_CACHES :
+			case self::CONFIGURATION_TYPE_POLICY :
+			case self::CONFIGURATION_TYPE_SIGNALSSLOTS :
+				$this->configurations[$configurationType] = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($this->configurations[$configurationType], $this->configurationSource->load(EF_PATH_CONFIGURATION . $configurationType));
+				$this->configurations[$configurationType] = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($this->configurations[$configurationType], $this->configurationSource->load(EF_PATH_CONFIGURATION . $this->context . '/' . $configurationType));
+		}
 
 		$this->postProcessConfiguration($this->configurations[$configurationType]);
 	}

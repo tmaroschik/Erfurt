@@ -114,7 +114,7 @@ class Namespaces {
 	/**
 	 * Adds a prefix for the namespace IRI in a given graph.
 	 *
-	 * @param \Erfurt\Rdf\Graph|string $graph
+	 * @param \Erfurt\Domain\Model\Rdf\Graph|string $graph
 	 * @param string $namespace
 	 * @param string $prefix
 	 * @throws Exception

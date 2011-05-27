@@ -15,8 +15,6 @@ require_once 'Erfurt/Store.php';
  *
  * @copyright  Copyright (c) 2009, {@link http://aksw.org AKSW}
  * @license    http://opensource.org/licenses/gpl-license.php GNU General Public License (GPL)
- * @package    erfurt
- * @subpackage store
  * @author     Philipp Frischmuth <pfrischmuth@googlemail.com>
  */
 class Erfurt_Store_Adapter_Sparql implements Erfurt_Store_Adapter_Interface

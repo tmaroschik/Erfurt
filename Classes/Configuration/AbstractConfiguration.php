@@ -471,4 +471,7 @@ class AbstractConfiguration implements \Countable, \Iterator {
 
 		return $firstArray;
 	}
+
 }
+
+?>

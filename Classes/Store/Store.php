@@ -1,37 +1,27 @@
 <?php
 declare(ENCODING = 'utf-8');
 namespace Erfurt\Store;
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2011 Thomas Maroschik <tmaroschik@dfau.de>
- *  All rights reserved
- *
- *  This class is a port of the corresponding class of the
- *  {@link http://aksw.org/Projects/Erfurt Erfurt} project.
- *  All credits go to the Erfurt team.
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+
+/*                                                                        *
+ * This script belongs to the Erfurt framework.                           *
+ *                                                                        *
+ * It is free software; you can redistribute it and/or modify it under    *
+ * the terms of the GNU General Public License as published by the Free   *
+ * Software Foundation, either version 2 of the License, or (at your      *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/copyleft/gpl.html.                      *
+ *                                                                        */
 /**
  * Enter descriptions here
  *
- * @package $PACKAGE$
- * @subpackage $SUBPACKAGE$
  * @scope prototype
  * @entity
  * @api
@@ -412,10 +402,10 @@ class Store implements \Erfurt\Singleton {
 //		$logger = $this->knowledgeBase->getLog();
 		$sysOntSchema = $this->getOption('schemaIri');
 		$schemaLocation = $this->getOption('schemaLocation');
-		$schemaPath = preg_replace('/[\/\\\\]/', '/', EF_BASE . $this->getOption('schemaPath'));
+		$schemaPath = preg_replace('/[\/\\\\]/', '/', EF_PATH_FRAMEWORK . $this->getOption('schemaPath'));
 		$sysOntGraph = $this->getOption('graphIri');
 		$graphLocation = $this->getOption('graphLocation');
-		$graphPath = preg_replace('/[\/\\\\]/', '/', EF_BASE . $this->getOption('graphPath'));
+		$graphPath = preg_replace('/[\/\\\\]/', '/', EF_PATH_FRAMEWORK . $this->getOption('graphPath'));
 		$returnValue = true;
 		// check for system configuration graph
 		// We need to import this first, for the schema graph has namespaces definitions, which will be stored in the
@@ -810,7 +800,7 @@ class Store implements \Erfurt\Singleton {
 	 * @param string $graphIri The IRI, which identifies the graph.
 	 * @param boolean $useAc Whether to use access control or not.
 	 * @throws \Erfurt\Store\Exception\StoreException if the requested graph is not available.
-	 * @return \Erfurt\Rdf\Graph Returns an instance of \Erfurt\Rdf\Graph or one of its subclasses.
+	 * @return \Erfurt\Domain\Model\Rdf\Graph Returns an instance of \Erfurt\Domain\Model\Rdf\Graph or one of its subclasses.
 	 */
 	public function getGraph($graphIri, $useAc = true) {
 		// check whether graph exists and is visible
@@ -850,10 +840,10 @@ class Store implements \Erfurt\Singleton {
 			// TODO: cache this
 			if ($this->sparqlAsk($owlQuery, $useAc)) {
 				// instantiate OWL graph
-				$graphInstance = $this->objectManager->create('\Erfurt\Owl\Graph', $graphIri);
+				$graphInstance = $this->objectManager->create('\Erfurt\Domain\Model\Owl\Graph', $graphIri);
 			} else {
 				// instantiate RDF-S graph
-				$graphInstance = $this->objectManager->create('\Erfurt\Rdfs\Graph', $graphIri);
+				$graphInstance = $this->objectManager->create('\Erfurt\Domain\Model\Rdfs\Graph', $graphIri);
 			}
 		}
 		// check for edit possibility
@@ -884,7 +874,7 @@ class Store implements \Erfurt\Singleton {
 	 *
 	 * @throws \Erfurt\Store\Exception\StoreException
 	 *
-	 * @return \Erfurt\Rdf\Graph
+	 * @return \Erfurt\Domain\Model\Rdf\Graph
 	 */
 	public function getNewGraph($graphIri, $baseIri = '', $type = self::GRAPH_TYPE_OWL, $useAc = true) {
 		// check graph availablity

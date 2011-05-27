@@ -1,39 +1,29 @@
 <?php
 declare(ENCODING = 'utf-8') ;
 namespace Erfurt\Object;
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2011 Thomas Maroschik <tmaroschik@dfau.de>
- *  All rights reserved
- *
- *  This class is a port of the corresponding class of the
- *  {@link http://aksw.org/Projects/Erfurt Erfurt} project.
- *  All credits go to the Erfurt team.
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+
+/*                                                                        *
+ * This script belongs to the Erfurt framework.                           *
+ *                                                                        *
+ * It is free software; you can redistribute it and/or modify it under    *
+ * the terms of the GNU General Public License as published by the Free   *
+ * Software Foundation, either version 2 of the License, or (at your      *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/copyleft/gpl.html.                      *
+ *                                                                        */
 
 /**
  * This is a wrapper around a object mananger.
  * It is needed for the standalone library.
  *
- * @package $PACKAGE$
- * @subpackage $SUBPACKAGE$
  * @scope singleton
  * @entity
  * @api
@@ -89,7 +79,7 @@ class ObjectManager {
 	 * use the "new" operator for instantiation in your automated tests.
 	 *
 	 * @param string $objectName The name of the object to create
-	 * @return object The new object instance
+	 * @return \object The new object instance
 	 * @author Robert Lemke <robert@typo3.org>
 	 * @since 1.0.0 alpha 8
 	 * @api

@@ -1,9 +1,12 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\FLOW3\Configuration\Source;
+namespace Erfurt\Configuration\Source;
 
 /*                                                                        *
- * This script belongs to the FLOW3 framework.                            *
+ * This script belongs to the Erfurt framework.                           *
+ *                                                                        *
+ * It has been ported from the corresponding class of the FLOW3           *
+ * framework. All credits go to the responsible contributors.             *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -18,8 +21,6 @@ namespace F3\FLOW3\Configuration\Source;
  * You should have received a copy of the GNU Lesser General Public       *
  * License along with the script.                                         *
  * If not, see http://www.gnu.org/licenses/lgpl.html                      *
- *                                                                        *
- * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
 /**
@@ -28,7 +29,7 @@ namespace F3\FLOW3\Configuration\Source;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class YamlSource implements \F3\FLOW3\Configuration\Source\SourceInterface {
+class YamlSource implements \Erfurt\Configuration\Source\SourceInterface {
 
 	/**
 	 * Loads the specified configuration file and returns its content as an
@@ -42,9 +43,9 @@ class YamlSource implements \F3\FLOW3\Configuration\Source\SourceInterface {
 	public function load($pathAndFilename) {
 		if (file_exists($pathAndFilename . '.yaml')) {
 			try {
-				$configuration = \F3\FLOW3\Configuration\Source\YamlParser::loadFile($pathAndFilename . '.yaml');
-			} catch (\F3\FLOW3\Error\Exception $exception) {
-				throw new \F3\FLOW3\Configuration\Exception\ParseErrorException('A parse error occurred while parsing file "' . $pathAndFilename . '.yaml". Error message: ' . $exception->getMessage(), 1232014321);
+				$configuration = \Erfurt\Configuration\Source\YamlParser::loadFile($pathAndFilename . '.yaml');
+			} catch (\Erfurt\Exception $exception) {
+				throw new \Erfurt\Configuration\Exception\ParseErrorException('A parse error occurred while parsing file "' . $pathAndFilename . '.yaml". Error message: ' . $exception->getMessage(), 1232014321);
 			}
 		} else {
 			$configuration = array();
@@ -65,7 +66,7 @@ class YamlSource implements \F3\FLOW3\Configuration\Source\SourceInterface {
 		if (file_exists($pathAndFilename . '.yaml')) {
 			$header = $this->getHeaderFromFile($pathAndFilename . '.yaml');
 		}
-		$yaml = \F3\FLOW3\Configuration\Source\YamlParser::dump($configuration);
+		$yaml = \Erfurt\Configuration\Source\YamlParser::dump($configuration);
 		file_put_contents($pathAndFilename . '.yaml', $header . PHP_EOL . $yaml);
 	}
 

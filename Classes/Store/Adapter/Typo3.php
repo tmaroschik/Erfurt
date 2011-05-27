@@ -1,32 +1,24 @@
 <?php
 declare(ENCODING = 'utf-8') ;
 namespace Erfurt\Store\Adapter;
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2011 Thomas Maroschik <tmaroschik@dfau.de>
- *  All rights reserved
- *
- *  This class is a port of the corresponding class of the
- *  {@link http://aksw.org/Projects/Erfurt Erfurt} project.
- *  All credits go to the Erfurt team.
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+
+/*                                                                        *
+ * This script belongs to the Erfurt framework.                           *
+ *                                                                        *
+ * It is free software; you can redistribute it and/or modify it under    *
+ * the terms of the GNU General Public License as published by the Free   *
+ * Software Foundation, either version 2 of the License, or (at your      *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/copyleft/gpl.html.                      *
+ *                                                                        */
 /**
  * This is an alternative entry point to the erfurt library
  *
@@ -555,12 +547,12 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 		}
 		// choose the right type for the graph instance and instanciate it
 		if ($graphInfoCache[$graphIri]['type'] === 'owl') {
-			$m = $this->objectManager->create('\Erfurt\Owl\Graph', $graphIri, $baseIri);
+			$m = $this->objectManager->create('\Erfurt\Domain\Model\Owl\Graph', $graphIri, $baseIri);
 		} else {
 			if ($this->graphInfoCache[$graphIri]['type'] === 'rdfs') {
-				$m = $this->objectManager->create('\Erfurt\Rdfs\Graph', $graphIri, $baseIri);
+				$m = $this->objectManager->create('\Erfurt\Domain\Model\Rdfs\Graph', $graphIri, $baseIri);
 			} else {
-				$m = $this->objectManager->create('\Erfurt\Rdf\Graph', $graphIri, $baseIri);
+				$m = $this->objectManager->create('\Erfurt\Domain\Model\Rdf\Graph', $graphIri, $baseIri);
 			}
 		}
 		$this->graphCache[$graphIri] = $m;

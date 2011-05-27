@@ -3,7 +3,10 @@ declare(ENCODING = 'utf-8');
 namespace Erfurt\Utility;
 
 /*                                                                        *
- * This script belongs to the FLOW3 framework.                            *
+ * This script belongs to the Erfurt framework.                           *
+ *                                                                        *
+ * It has been ported from the corresponding class of the FLOW3           *
+ * framework. All credits go to the responsible contributors.             *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -18,8 +21,6 @@ namespace Erfurt\Utility;
  * You should have received a copy of the GNU Lesser General Public       *
  * License along with the script.                                         *
  * If not, see http://www.gnu.org/licenses/lgpl.html                      *
- *                                                                        *
- * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
 /**
@@ -34,6 +35,7 @@ namespace Erfurt\Utility;
  * superglobal replacement will lead to unexpected behavior (on your side).
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * @scope singleton
  * @api
  */
 class Environment {
@@ -85,40 +87,25 @@ class Environment {
 	protected $temporaryDirectory = NULL;
 
 	/**
-	 * @var Erfurt\Property\DataType\Uri
+	 * @var \Erfurt\Iri\Iri
 	 */
-	protected $baseUri;
+	protected $baseIri;
 
 	/**
-	 * Sets the FLOW3 context
+	 * Initializes the environment instance. Copies the superglobals $_SERVER,
+	 * $_GET, $_POST, $_FILES to local variables.
 	 *
 	 * @param string $context The FLOW3 context
 	 * @return void
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
-	public function setContext($context) {
+	public function __construct($context) {
 		$this->context = $context;
-	}
 
-	/**
-	 * Initializes the environment instance. Copies the superglobals $_SERVER,
-	 * $_GET, $_POST, $_FILES to local variables and replaces the superglobals
-	 * to block their use.
-	 *
-	 * @return void
-	 * @author Robert Lemke <robert@typo3.org>
-	 */
-	public function initializeObject() {
-		if (!($_SERVER instanceof \Erfurt\Utility\SuperGlobalReplacement)) {
-			$this->SERVER = $_SERVER;
-			$this->GET = $_GET;
-			$this->POST = $_POST;
-			$this->FILES = $this->untangleFilesArray($_FILES);
-
-			$_GET = new \Erfurt\Utility\SuperGlobalReplacement('_GET', 'Please use the Request object which is built by the Request Handler instead of accessing the _GET superglobal directly.');
-			$_POST = new \Erfurt\Utility\SuperGlobalReplacement('_POST', 'Please use the Request object which is built by the Request Handler instead of accessing the _POST superglobal directly.');
-			$_FILES = new \Erfurt\Utility\SuperGlobalReplacement('_FILES', 'Please use the Request object which is built by the Request Handler instead of accessing the _FILES superglobal directly.');
-		}
+		$this->SERVER = $_SERVER;
+		$this->GET = $_GET;
+		$this->POST = $_POST;
+		$this->FILES = $this->untangleFilesArray($_FILES);
 	}
 
 	/**
@@ -127,10 +114,8 @@ class Environment {
 	 * @param string $temporaryDirectoryBase Base path of the temporary directory, with trailing slash
 	 * @return void
 	 * @author Robert Lemke <robert@typo3.org>
-	 * @api
 	 */
 	public function setTemporaryDirectoryBase($temporaryDirectoryBase) {
-		if (!is_string($temporaryDirectoryBase)) throw new \InvalidArgumentException('String expected.', 1228743683);
 		$this->temporaryDirectoryBase = $temporaryDirectoryBase;
 		$this->temporaryDirectory = NULL;
 	}
@@ -190,6 +175,7 @@ class Environment {
 	 *
 	 * @return array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 * @api
 	 */
 	public function getRequestHeaders() {
@@ -198,6 +184,12 @@ class Environment {
 			if (strpos($key, 'HTTP_') === 0) {
 				$key = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($key, 5)))));
 				$headers[$key] = $value;
+			} elseif (strpos($key, 'PHP_AUTH_') === 0) {
+				$key = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($key, 9)))));
+				$headers[$key] = $value;
+			} elseif ($key == 'REDIRECT_REMOTE_AUTHORIZATION') {
+				$authorizationData = base64_decode($value);
+				list($headers['User'], $headers['Pw']) = explode(':', $authorizationData);
 			}
 		}
 		return $headers;
@@ -300,7 +292,7 @@ class Environment {
 	 *
 	 * The script name "index.php" will be removed if it exists.
 	 *
-	 * @return \Erfurt\Property\DataType\Uri The request URI
+	 * @return \Erfurt\Iri\Iri The request URI
 	 * @author Robert Lemke <robert@typo3.org>
 	 * @api
 	 */
@@ -309,20 +301,20 @@ class Environment {
 			return FALSE;
 		}
 
-		return new \Erfurt\Uri\Uri($this->getRequestProtocol() . '://' . $this->getHTTPHost() . str_replace('/index.php' , '', $this->SERVER['REQUEST_URI']));
+		return new \Erfurt\Iri\Iri($this->getRequestProtocol() . '://' . $this->getHTTPHost() . str_replace('/index.php' , '', $this->SERVER['REQUEST_URI']));
 	}
 
 	/**
 	 * Returns the current base URI which is the root FLOW3's relative URIs.
 	 *
-	 * @return \Erfurt\Property\DataType\Uri The base URI
+	 * @return \Erfurt\Iri\Iri The base URI
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
-	public function getBaseUri() {
-		if ($this->baseUri === NULL) {
+	public function getBaseIri() {
+		if ($this->baseIri === NULL) {
 			$this->detectBaseUri();
 		}
-		return $this->baseUri;
+		return $this->baseIri;
 	}
 
 	/**
@@ -517,10 +509,10 @@ class Environment {
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	protected function detectBaseUri() {
-		$this->baseUri = $this->getRequestUri();
-		$this->baseUri->setQuery(NULL);
-		$this->baseUri->setFragment(NULL);
-		$this->baseUri->setPath($this->getScriptRequestPath());
+		$this->baseIri = $this->getRequestUri();
+		$this->baseIri->setQuery(NULL);
+		$this->baseIri->setFragment(NULL);
+		$this->baseIri->setPath($this->getScriptRequestPath());
 	}
 
 	/**
@@ -562,11 +554,12 @@ class Environment {
 	}
 
 	/**
-	 *  Returns and array of all possibles "field paths" for the given array.
+	 * Returns and array of all possibles "field paths" for the given array.
 	 *
-	 *  @param array $structure The array to walk through
-	 *  @return array An array of paths (as strings) in the format "key1/key2/key3" ...
-	 *  @author Robert Lemke <robert@typo3.org>
+	 * @param array $structure The array to walk through
+	 * @param string $firstLevelFieldName
+	 * @return array An array of paths (as strings) in the format "key1/key2/key3" ...
+	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	protected function calculateFieldPaths(array $structure, $firstLevelFieldName = NULL) {
 		$fieldPaths = array();
@@ -598,20 +591,17 @@ class Environment {
 	protected function createTemporaryDirectory($temporaryDirectoryBase) {
 		$temporaryDirectoryBase = \Erfurt\Utility\Files::getUnixStylePath($temporaryDirectoryBase);
 		if (substr($temporaryDirectoryBase, -1, 1) !== '/') $temporaryDirectoryBase .= '/';
-
-		$processUser = extension_loaded('posix') ? posix_getpwuid(posix_geteuid()) : array('name' => 'default');
-		$pathHash = substr(md5(FLOW3_PATH_WEB . $this->getSAPIName() . $processUser['name'] . $this->context), 0, 12);
-		$temporaryDirectory = $temporaryDirectoryBase . $pathHash . '/';
+		$temporaryDirectory = $temporaryDirectoryBase . $this->context . '/';
 
 		if (!is_dir($temporaryDirectory)) {
 			try {
 				\Erfurt\Utility\Files::createDirectoryRecursively($temporaryDirectory);
-			} catch (\Exception $exception) {
+			} catch (\Erfurt\Exception $exception) {
 			}
 		}
 
 		if (!is_writable($temporaryDirectory)) {
-			throw new \Erfurt\Utility\Exception('The temporary directory "' . $temporaryDirectory . '" could not be created or is not writable for the current user "' . $processUser['name'] . '". Please make this directory writable or define another temporary directory by setting the respective system environment variable (eg. TMPDIR) or defining it in the FLOW3 settings.', 1216287176);
+			throw new \Erfurt\Utility\Exception('The temporary directory "' . $temporaryDirectory . '" could not be created or is not writable. Please make this directory writable or define another temporary directory by setting the respective system environment variable (eg. TMPDIR) or defining it in the FLOW3 settings.', 1216287176);
 		}
 
 		return $temporaryDirectory;

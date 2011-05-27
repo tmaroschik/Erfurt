@@ -1,32 +1,24 @@
 <?php
 declare(ENCODING = 'utf-8') ;
 namespace Erfurt\Sparql;
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2011 Thomas Maroschik <tmaroschik@dfau.de>
- *  All rights reserved
- *
- *  This class is a port of the corresponding class of the
- *  {@link http://aksw.org/Projects/Erfurt Erfurt} project.
- *  All credits go to the Erfurt team.
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+
+/*                                                                        *
+ * This script belongs to the Erfurt framework.                           *
+ *                                                                        *
+ * It is free software; you can redistribute it and/or modify it under    *
+ * the terms of the GNU General Public License as published by the Free   *
+ * Software Foundation, either version 2 of the License, or (at your      *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/copyleft/gpl.html.                      *
+ *                                                                        */
 /**
  * Parses a SPARQL Query string and returns a Query Object.
  *
@@ -375,7 +367,7 @@ class Parser {
 					if (strlen(current($this->tokens)) === 2) {
 						next($this->tokens);
 					}
-					$literalFactory = $this->objectManager->get('\Erfurt\Rdf\LiteralFactory');
+					$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
 					$node = $literalFactory->createFromLabel(substr($node, 1, -1));
 					$node->setDatatype(
 						$this->query->getFullUri(
@@ -385,7 +377,7 @@ class Parser {
 				}
 				break;
 			case '@':
-				$literalFactory = $this->objectManager->get('\Erfurt\Rdf\Literal');
+				$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\Literal');
 				$node = $literalFactory->createFromLabelAndLanguage(
 					substr($node, $nSubstrLength, -$nSubstrLength),
 					substr(current($this->tokens), $nSubstrLength)
@@ -393,7 +385,7 @@ class Parser {
 				break;
 			default:
 				prev($this->tokens);
-				$literalFactory = $this->objectManager->get('\Erfurt\Rdf\LiteralFactory');
+				$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
 				$node = $literalFactory->createFromLabel(substr($node, $nSubstrLength, -$nSubstrLength));
 				break;
 		}
@@ -415,7 +407,7 @@ class Parser {
 		$patternInt = "/^-?[0-9]+$/";
 		$match = preg_match($patternInt, $node, $hits);
 		if ($match > 0) {
-			$literalFactory = $this->objectManager->get('\Erfurt\Rdf\LiteralFactory');
+			$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
 			$node = $literalFactory->createFromLabel($hits[0]);
 			$node->setDatatype(Erfurt\Vocabulary\Xsd::NS . 'integer');
 			return true;
@@ -423,7 +415,7 @@ class Parser {
 		$patternBool = "/^(true|false)$/";
 		$match = preg_match($patternBool, $node, $hits);
 		if ($match > 0) {
-			$literalFactory = $this->objectManager->get('\Erfurt\Rdf\LiteralFactory');
+			$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
 			$node = $literalFactory->createFromLabel($hits[0]);
 			$node->setDatatype(Erfurt\Vocabulary\Xsd::NS . 'boolean');
 			return true;
@@ -431,14 +423,14 @@ class Parser {
 		$patternType = "/^a$/";
 		$match = preg_match($patternType, $node, $hits);
 		if ($match > 0) {
-			$ressourceFactory = $this->objectManager->get('\Erfurt\Rdf\ResourceFactory');
+			$ressourceFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\ResourceFactory');
 			$node = $ressourceFactory->createFromNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'type');
 			return true;
 		}
 		$patternDouble = "/^-?[0-9]+.[0-9]+[e|E]?-?[0-9]*/";
 		$match = preg_match($patternDouble, $node, $hits);
 		if ($match > 0) {
-			$literalFactory = $this->objectManager->get('\Erfurt\Rdf\LiteralFactory');
+			$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
 			$node = $literalFactory->createFromLabel($hits[0]);
 			$node->setDatatype(Erfurt\Vocabulary\Xsd::NS . 'double');
 			return true;
@@ -533,9 +525,9 @@ class Parser {
 		$this->_fastForward();
 		$i = 0;
 		$emptyList = true;
-		$rdfRest = \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'rest');
-		$rdfFirst = \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'first');
-		$rdfNil = \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'nil');
+		$rdfRest = \Erfurt\Domain\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'rest');
+		$rdfFirst = \Erfurt\Domain\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'first');
+		$rdfNil = \Erfurt\Domain\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'nil');
 		while (current($this->tokens) !== ')') {
 			if ($i > 0) {
 				$trp[] = new QueryTriple($this->_parseNode($tmpLabel), $rdfRest,
@@ -949,10 +941,10 @@ class Parser {
 		}
 		$this->_fastForward();
 		if ($this->_iriCheck($name)) {
-			$name = \Erfurt\Rdf\Resource::initWithIri(substr($name, 1, -1));
+			$name = \Erfurt\Domain\Resource::initWithIri(substr($name, 1, -1));
 		} else {
 			if ($this->_qnameCheck($name)) {
-				$name = \Erfurt\Rdf\Resource::initWithIri($this->query->getFullUri($name));
+				$name = \Erfurt\Domain\Resource::initWithIri($this->query->getFullUri($name));
 			}
 		}
 		$this->_parseGraphPattern(false, false, $name);
@@ -1065,7 +1057,7 @@ class Parser {
 			} else {
 				$datatype = Erfurt\Vocabulary\Xsd::NS . 'decimal';
 			}
-			$literalFactory = $this->objectManager->get('\Erfurt\Rdf\LiteralFactory');
+			$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
 			$node = $literalFactory->createFromLabel($node);
 			$node->setDatatype($datatype);
 		}
@@ -1145,17 +1137,17 @@ class Parser {
 		if ($this->_iriCheck($node)) {
 			$base = $this->query->getBase();
 			if ($base != null) {
-				$ressourceFactory = $this->objectManager->get('\Erfurt\Rdf\ResourceFactory');
+				$ressourceFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\ResourceFactory');
 				$node = $ressourceFactory->createFromNamespaceAndLocalName(substr($base, 1, -1), substr($node, 1, -1));
 			} else {
-				$ressourceFactory = $this->objectManager->get('\Erfurt\Rdf\ResourceFactory');
+				$ressourceFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\ResourceFactory');
 				$node = $ressourceFactory->createFromIri(substr($node, 1, -1));
 			}
 			return $node;
 		} else {
 			if ($this->_qnameCheck($node)) {
 				$node = $this->query->getFullUri($node);
-				$ressourceFactory = $this->objectManager->get('\Erfurt\Rdf\ResourceFactory');
+				$ressourceFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\ResourceFactory');
 				$node = $ressourceFactory->createFromIri($node);
 				return $node;
 			} else {

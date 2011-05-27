@@ -1,32 +1,24 @@
 <?php
 declare(ENCODING = 'utf-8');
 namespace Erfurt\Syntax\RdfParser\Adapter;
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2011 Thomas Maroschik <tmaroschik@dfau.de>
- *  All rights reserved
- *
- *  This class is a port of the corresponding class of the
- *  {@link http://aksw.org/Projects/Erfurt Erfurt} project.
- *  All credits go to the Erfurt team.
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+
+/*                                                                        *
+ * This script belongs to the Erfurt framework.                           *
+ *                                                                        *
+ * It is free software; you can redistribute it and/or modify it under    *
+ * the terms of the GNU General Public License as published by the Free   *
+ * Software Foundation, either version 2 of the License, or (at your      *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/copyleft/gpl.html.                      *
+ *                                                                        */
 class Turtle implements AdapterInterface {
 
 	protected $_data = '';
@@ -309,7 +301,7 @@ class Turtle implements AdapterInterface {
 	protected function _addNamespace($prefix, $ns) {
 		$prefix = (string)$prefix;
 
-		if ($ns instanceof \Erfurt\Rdf\Resource) {
+		if ($ns instanceof \Erfurt\Domain\Resource) {
 			$ns = $ns->getIri();
 		} else {
 			$ns = (string)$ns;
@@ -331,7 +323,7 @@ class Turtle implements AdapterInterface {
 		#$c = $this->_skipWS();
 
 		$iri = $this->_resolveIri($this->_decodeString($token, true));
-		return \Erfurt\Rdf\Resource::initWithIri($iri);
+		return \Erfurt\Domain\Resource::initWithIri($iri);
 	}
 
 	protected function _resolveIri($iri) {
@@ -483,7 +475,7 @@ class Turtle implements AdapterInterface {
 
 		$this->_unread();
 
-		return \Erfurt\Rdf\Literal::initWithLabelAndDatatype($token, $datatype);
+		return \Erfurt\Domain\Literal::initWithLabelAndDatatype($token, $datatype);
 	}
 
 	protected function _parseQuotedLiteral() {
@@ -516,7 +508,7 @@ class Turtle implements AdapterInterface {
 			}
 
 			$this->_unread();
-			return \Erfurt\Rdf\Literal::initWithLabelAndLanguage($label, $lang);
+			return \Erfurt\Domain\Literal::initWithLabelAndLanguage($label, $lang);
 		} else {
 			if ($c === '^') {
 				$this->_read();
@@ -524,14 +516,14 @@ class Turtle implements AdapterInterface {
 				$this->_verifyChar($this->_read(), '^');
 
 				$datatype = $this->_parseValue();
-				if ($datatype instanceof \Erfurt\Rdf\Resource) {
-					return \Erfurt\Rdf\Literal::initWithLabelAndDatatype($label, (string)$datatype);
+				if ($datatype instanceof \Erfurt\Domain\Resource) {
+					return \Erfurt\Domain\Literal::initWithLabelAndDatatype($label, (string)$datatype);
 				} else {
 					$this->_throwException('Illegal datatype value.');
 					return null;
 				}
 			} else {
-				return \Erfurt\Rdf\Literal::initWithLabel($label);
+				return \Erfurt\Domain\Literal::initWithLabel($label);
 			}
 		}
 	}
@@ -683,7 +675,7 @@ class Turtle implements AdapterInterface {
 				$value = $prefix;
 
 				if ($prefix === 'true' || $prefix === 'false') {
-					return \Erfurt\Rdf\Literal::initWithLabelAndDatatype($value, Erfurt\Vocabulary\Xsd::BOOLEAN);
+					return \Erfurt\Domain\Literal::initWithLabelAndDatatype($value, Erfurt\Vocabulary\Xsd::BOOLEAN);
 				}
 			}
 
@@ -708,7 +700,7 @@ class Turtle implements AdapterInterface {
 		$this->_unread();
 
 
-		return \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName($namespace, $localName);
+		return \Erfurt\Domain\Resource::initWithNamespaceAndLocalName($namespace, $localName);
 	}
 
 	/*protected function _isPrefixChar($c)
@@ -776,7 +768,7 @@ class Turtle implements AdapterInterface {
 		}
 
 		$this->_usedBnodeIds[$id] = true;
-		return \Erfurt\Rdf\Resource::initWithBlankNode($id);
+		return \Erfurt\Domain\Resource::initWithBlankNode($id);
 	}
 
 	protected function _parseCollection() {
@@ -864,7 +856,7 @@ class Turtle implements AdapterInterface {
 		$this->_unread();
 
 		$predicate = $this->_parseValue();
-		if ($predicate instanceof \Erfurt\Rdf\Resource && !$predicate->isBlankNode()) {
+		if ($predicate instanceof \Erfurt\Domain\Resource && !$predicate->isBlankNode()) {
 			return $predicate;
 		} else {
 			$this->_throwException("Illegal predicate value ($predicate).");
@@ -900,7 +892,7 @@ class Turtle implements AdapterInterface {
 	}
 
 	protected function _addStatement($s, $p, $o) {
-		if ($s instanceof \Erfurt\Rdf\Resource) {
+		if ($s instanceof \Erfurt\Domain\Resource) {
 			if ($s->isBlankNode()) {
 				$s = '_:' . $s->getId();
 			} else {
@@ -908,11 +900,11 @@ class Turtle implements AdapterInterface {
 			}
 		}
 
-		if ($p instanceof \Erfurt\Rdf\Resource) {
+		if ($p instanceof \Erfurt\Domain\Resource) {
 			$p = $p->getIri();
 		}
 
-		if ($o instanceof \Erfurt\Rdf\Resource) {
+		if ($o instanceof \Erfurt\Domain\Resource) {
 			if ($o->isBlankNode()) {
 				$o = '_:' . $o->getId();
 				$oType = 'bnode';
@@ -921,7 +913,7 @@ class Turtle implements AdapterInterface {
 				$oType = 'iri';
 			}
 		} else {
-			if ($o instanceof \Erfurt\Rdf\Literal) {
+			if ($o instanceof \Erfurt\Domain\Literal) {
 				$dType = $o->getDatatype();
 				$lang = $o->getLanguage();
 				$o = $o->getLabel();

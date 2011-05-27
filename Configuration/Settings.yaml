@@ -1,0 +1,242 @@
+Erfurt:
+
+  configuration:
+
+    # Enables the configuration file cache which compiles YAML files into
+    # much faster to load PHP files.
+    #
+    # NOTE: You must clear all caches right after switching this option OFF
+    compileConfigurationFiles: y
+
+  # Logging
+  log:
+    #
+    # Enables logging up to a certain level. The specified logs folder needs to
+    # be writable. To disable logging at all set this option to false. If the
+    # debug option is set to true logging is enabled (7) automatically.
+    #
+    # The following log levels are supported:
+    #
+    #   0: Emergency     - System is unusable
+    #   1: Alert         - Action must be taken immediately
+    #   2: Critical      - Critical conditions
+    #   3: Error         - Error conditions
+    #   4: Warning       - Warning conditions
+    #   5: Notice        - Normal but significant condition
+    #   6: Informational - Informational messages
+    #   7: Debug         - Debug messages
+    level: n
+
+    path: '%EF_BASE%logs/'
+
+  # Store Configuration
+  store:
+
+    backend: 'Erfurt\Store\Adapter\Typo3'
+
+    # Options for the store
+    backendOptions:
+      dbname: ontowiki
+      username: ow
+      password: ow
+      dbtype: mysql
+      host: localhost
+
+  # System Configuration
+  sysont:
+
+    # System configuration ontology
+    schemaUri: 'http://ns.ontowiki.net/SysOnt/'
+    schemaLocation: 'http://ontowiki.googlecode.com/svn/trunk/erfurt/src/Erfurt/include/rdf'
+    schemaPath: 'include/rdf'
+
+    # System configuration graph (local)
+    graphUri: 'http://localhost/OntoWiki/Config/'
+    graphLocation: 'http://ontowiki.googlecode.com/svn/trunk/erfurt/src/Erfurt/include/SysOntLocal.rdf'
+    graphPath: 'include/SysOntLocal.rdf'
+
+    # System configuration properties
+    properties:
+
+      hiddenImports: 'http://ns.ontowiki.net/SysOnt/hiddenImports'
+      hidden: 'http://ns.ontowiki.net/SysOnt/hidden'
+      isLarge: 'http://ns.ontowiki.net/SysOnt/isLarge'
+      prefix: 'http://ns.ontowiki.net/SysOnt/prefix'
+
+  # Authentication Configuration
+  auth:
+    foafssl:
+      idp:
+        serviceUrl: 'https://  org/srv/idp'
+        verifyTimestamp: n
+        verifySignature: n
+        publicKey: '-----BEGIN PUBLIC KEY-----
+                    MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCfJiMcqSHgZiExRuuCXM3R4ZMi
+                    HuhnT3Wc8obFW1WwcCXgJ1y7gwXuk/tgNWpTLsOs2oLlLG+H8DeaDQ1Ggcc6j5Cy
+                    Rn7WVOPlf0Ovjt0T1yC3ef2/3yYCj3G/YwpYjM2qNaNSLJmOpX6fL8d0L0Qe4HDr
+                    QmGckTo0M/IiBxcAAQIDAQAB
+                    -----END PUBLIC KEY-----'
+
+      provider:
+        ca:
+          state: 'Sachsen'
+          country: 'DE'
+          # Attention: Needs to be the same as in CA cert!
+          org: 'AKSW'
+          expiration: '365'
+          password: 'ontowiki'
+
+      # Needs to be a valid PEM encoded cert with SAN! (SAN:>AgentId)
+      agentCertFilename: '/etc/apache2/localhost.pem'
+
+  # Access Control Configuration
+  ac:
+    allowDatabaseUser: y
+    deactivateLogin: n
+
+    # Access Control Schema Configuartion
+    # Note: If you change these values, you have to change your access control graph too!
+    graphUri: 'http://localhost/OntoWiki/Config/'
+    baseUri: 'http://ns.ontowiki.net/SysOnt/'
+
+    # Schema URIs which define properties and classes for auth. and registration
+    user:
+      class: 'http://rdfs.org/sioc/ns#User'
+      name: 'http://xmlns.com/foaf/  1/accountName'
+      pass: 'http://ns.ontowiki.net/SysOnt/userPassword'
+      mail: 'http://rdfs.org/sioc/ns#email'
+      superAdmin: 'http://ns.ontowiki.net/SysOnt/SuperAdmin'
+      anonymousUser: 'http://ns.ontowiki.net/SysOnt/Anonymous'
+      recoveryHash: 'http://ns.ontowiki.net/SysOnt/recoveryHash'
+
+    # Schema URIs which define properties and classes for grouping
+    group:
+      class: 'http://rdfs.org/sioc/ns#Usergroup'
+      membership: 'http://rdfs.org/sioc/ns#has_member'
+      subgroup: 'http://ns.ontowiki.net/SysOnt/subGroup'
+
+    # Schema URIs which define Model Class and Model Access Control Relations
+    graphs:
+      class: 'http://ns.ontowiki.net/SysOnt/Model'
+      grantEdit: 'http://ns.ontowiki.net/SysOnt/grantModelEdit'
+      grantView: 'http://ns.ontowiki.net/SysOnt/grantModelView'
+      denyEdit: 'http://ns.ontowiki.net/SysOnt/denyModelEdit'
+      denyView: 'http://ns.ontowiki.net/SysOnt/denyModelView'
+      anyGraph: 'http://ns.ontowiki.net/SysOnt/AnyModel'
+
+    # Schema URIs which define Action Class and Action Access Control Relations
+    action:
+      class: 'http://ns.ontowiki.net/SysOnt/Action'
+      deny: 'http://ns.ontowiki.net/SysOnt/denyAccess'
+      grant: 'http://ns.ontowiki.net/SysOnt/grantAccess'
+      anyAction: 'http://ns.ontowiki.net/SysOnt/AnyAction'
+      login: 'http://ns.ontowiki.net/SysOnt/Login'
+      rawConfig: 'http://ns.ontowiki.net/SysOnt/rawConfig'
+
+      # Access Control Configuartion
+      config:
+        - uri: 'http://ns.ontowiki.net/SysOnt/RegisterNewUser'
+          spec:
+            defaultGroup: 'http://localhost/OntoWiki/Config/DefaultUserGroup'
+            mailvalidation: 'yes'
+            uidregexp: '/^[[:alnum:]]+$/'
+            passregexp: ''
+
+        - uri: 'http://ns.ontowiki.net/SysOnt/Login'
+          spec:
+            type: 'RDF'
+
+  # Extensions
+  extensions:
+    plugins: 'extensions/plugins'
+    wrapper: 'extensions/wrapper'
+
+  # Mail Configuration
+  mail:
+    hostname: 'localhost'
+    localname:
+        recovery: 'erfurt-identity-recovery'
+
+  # [RFC4395] defines an IANA-maintained registry of URI Schemes.
+  # These registries include the Permanent and Provisional URI Schemes.
+  # see http://www.iana.org/assignments/uri-schemes.html for the list
+  uri:
+    schemata:
+      - 'aaa'
+      - 'aaas'
+      - 'acap'
+      - 'cap'
+      - 'cid'
+      - 'crid'
+      - 'data'
+      - 'dav'
+      - 'dict'
+      - 'dns'
+      - 'fax'
+      - 'file'
+      - 'ftp'
+  	#- 'go'
+      - 'gopher'
+      - 'h323'
+      - 'http'
+      - 'https'
+      - 'iax'
+      - 'icap'
+      - 'im'
+      - 'imap'
+      - 'info'
+      - 'ipp'
+      - 'iris'
+      - 'iris.beep'
+      - 'iris.xpc'
+      - 'iris.xpcs'
+      - 'iris.lwz'
+      - 'ldap'
+      - 'mailto'
+      - 'mid'
+      - 'modem'
+      - 'msrp'
+      - 'msrps'
+      - 'mtqp'
+      - 'mupdate'
+      - 'news'
+      - 'nfs'
+      - 'nntp'
+      - 'opaquelocktoken'
+      - 'pop'
+      - 'pres'
+      - 'rtsp'
+      - 'service'
+      - 'shttp'
+      - 'sieve'
+      - 'sip'
+      - 'sips'
+      - 'snmp'
+      - 'soap.beep'
+      - 'soap.beeps'
+      - 'tag'
+      - 'tel'
+      - 'telnet'
+      - 'tftp'
+      - 'thismessage'
+      - 'tip'
+      - 'tv'
+      - 'urn'
+      - 'vemmi'
+      - 'xmlrpc.beep'
+      - 'xmlrpc.beeps'
+      - 'xmpp'
+      - 'z39.50r'
+      - 'z39.50s'
+      - 'afs'
+      - 'dtn'
+      - 'mailserver'
+      - 'pack'
+      - 'tn3270'
+      - 'prospero'
+      - 'snews'
+      - 'videotex'
+      - 'wais'
+      # these are additional uri schemes (not iana listed but also supported)
+      - 'ldaps'
+      - 'icq'

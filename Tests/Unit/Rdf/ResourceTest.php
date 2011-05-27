@@ -46,7 +46,7 @@ class ResourceTest extends \Erfurt\Tests\Unit\BaseTestCase {
 	 * @access protected
 	 */
 	protected function setUp() {
-		$this->_object = new \Erfurt\Rdf\Resource('http://example.org/resource1');
+		$this->_object = new \Erfurt\Domain\Resource('http://example.org/resource1');
 	}
 
 	/**
@@ -88,7 +88,7 @@ class ResourceTest extends \Erfurt\Tests\Unit\BaseTestCase {
 		$this->authenticateDbUser();
 		$model = \Erfurt\App::getInstance()->getSysOntModel();
 
-		$r = new \Erfurt\Rdf\Resource(EF_RDF_TYPE, $model);
+		$r = new \Erfurt\Domain\Resource(EF_RDF_TYPE, $model);
 		$this->assertEquals('rdf:type', $r->getQualifiedName());
 	}
 
@@ -114,8 +114,8 @@ class ResourceTest extends \Erfurt\Tests\Unit\BaseTestCase {
 	 * @todo Implement testInitWithIri().
 	 */
 	public function testInitWithIri() {
-		$r = \Erfurt\Rdf\Resource::initWithIri('http://example.org/resourceXX');
-		$this->assertTrue($r instanceof \Erfurt\Rdf\Resource);
+		$r = \Erfurt\Domain\Resource::initWithIri('http://example.org/resourceXX');
+		$this->assertTrue($r instanceof \Erfurt\Domain\Resource);
 		$this->assertEquals('http://example.org/resourceXX', $r->getUri());
 		$this->assertEquals('http://example.org/', $r->getNamespace());
 		$this->assertEquals('resourceXX', $r->getLocalName());
@@ -125,8 +125,8 @@ class ResourceTest extends \Erfurt\Tests\Unit\BaseTestCase {
 	 * @todo Implement testInitWithUri().
 	 */
 	public function testInitWithUri() {
-		$r = \Erfurt\Rdf\Resource::initWithUri('http://example.org/resource123');
-		$this->assertTrue($r instanceof \Erfurt\Rdf\Resource);
+		$r = \Erfurt\Domain\Resource::initWithUri('http://example.org/resource123');
+		$this->assertTrue($r instanceof \Erfurt\Domain\Resource);
 		$this->assertEquals('http://example.org/resource123', $r->getUri());
 		$this->assertEquals('http://example.org/', $r->getNamespace());
 		$this->assertEquals('resource123', $r->getLocalName());
@@ -139,8 +139,8 @@ class ResourceTest extends \Erfurt\Tests\Unit\BaseTestCase {
 		$ns = 'http://example.org/';
 		$l = 'resourceLocal123abc';
 
-		$r = \Erfurt\Rdf\Resource::initWithNamespaceAndLocalName($ns, $l);
-		$this->assertTrue($r instanceof \Erfurt\Rdf\Resource);
+		$r = \Erfurt\Domain\Resource::initWithNamespaceAndLocalName($ns, $l);
+		$this->assertTrue($r instanceof \Erfurt\Domain\Resource);
 		$this->assertEquals('http://example.org/resourceLocal123abc', $r->getUri());
 		$this->assertEquals('http://example.org/', $r->getNamespace());
 		$this->assertEquals('resourceLocal123abc', $r->getLocalName());
@@ -150,8 +150,8 @@ class ResourceTest extends \Erfurt\Tests\Unit\BaseTestCase {
 	 * @todo Implement testInitWithBlankNode().
 	 */
 	public function testInitWithBlankNode() {
-		$bn = \Erfurt\Rdf\Resource::initWithBlankNode('bnode123');
-		$this->assertTrue($bn instanceof \Erfurt\Rdf\Resource);
+		$bn = \Erfurt\Domain\Resource::initWithBlankNode('bnode123');
+		$this->assertTrue($bn instanceof \Erfurt\Domain\Resource);
 		$this->assertTrue($bn->isBlankNode());
 		$this->assertEquals('bnode123', $bn->getId());
 	}
@@ -160,7 +160,7 @@ class ResourceTest extends \Erfurt\Tests\Unit\BaseTestCase {
 	 * @todo Implement testIsBlankNode().
 	 */
 	public function testIsBlankNode() {
-		$bn = \Erfurt\Rdf\Resource::initWithBlankNode('bnode123456789abc');
+		$bn = \Erfurt\Domain\Resource::initWithBlankNode('bnode123456789abc');
 		$this->assertTrue($bn->isBlankNode());
 	}
 
@@ -168,7 +168,7 @@ class ResourceTest extends \Erfurt\Tests\Unit\BaseTestCase {
 	 * @todo Implement testGetId().
 	 */
 	public function testGetId() {
-		$bn = \Erfurt\Rdf\Resource::initWithBlankNode('bnode123abcdefghjiklmnopqrstuvwxyz');
+		$bn = \Erfurt\Domain\Resource::initWithBlankNode('bnode123abcdefghjiklmnopqrstuvwxyz');
 		$this->assertEquals('bnode123abcdefghjiklmnopqrstuvwxyz', $bn->getId());
 	}
 
@@ -185,7 +185,7 @@ class ResourceTest extends \Erfurt\Tests\Unit\BaseTestCase {
 		$this->markTestNeedsDatabase();
 		$this->authenticateDbUser();
 		$model = \Erfurt\App::getInstance()->getSysOntModel();
-		$resource = new \Erfurt\Rdf\Resource('http://ns.ontowiki.net/SysOnt/Anonymous', $model);
+		$resource = new \Erfurt\Domain\Resource('http://ns.ontowiki.net/SysOnt/Anonymous', $model);
 
 		$expected = array(
 			'http://ns.ontowiki.net/SysOnt/Anonymous' => array(
@@ -252,12 +252,12 @@ class ResourceTest extends \Erfurt\Tests\Unit\BaseTestCase {
 	}
 
 	public function testGetLocatorNoLocator() {
-		$uri = new \Erfurt\Rdf\Resource('http://example.org/testResource1');
+		$uri = new \Erfurt\Domain\Resource('http://example.org/testResource1');
 		$this->assertEquals('http://example.org/testResource1', $uri->getLocator());
 	}
 
 	public function testGetLocator() {
-		$uri = new \Erfurt\Rdf\Resource('http://example.org/testResource1');
+		$uri = new \Erfurt\Domain\Resource('http://example.org/testResource1');
 		$uri->setLocator('http://example.org/testLocator');
 		$this->assertEquals('http://example.org/testLocator', $uri->getLocator());
 	}

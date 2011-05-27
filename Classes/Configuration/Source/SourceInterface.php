@@ -1,9 +1,12 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\FLOW3\Configuration\Source;
+namespace Erfurt\Configuration\Source;
 
 /*                                                                        *
- * This script belongs to the FLOW3 framework.                            *
+ * This script belongs to the Erfurt framework.                           *
+ *                                                                        *
+ * It has been ported from the corresponding class of the FLOW3           *
+ * framework. All credits go to the responsible contributors.             *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -18,8 +21,6 @@ namespace F3\FLOW3\Configuration\Source;
  * You should have received a copy of the GNU Lesser General Public       *
  * License along with the script.                                         *
  * If not, see http://www.gnu.org/licenses/lgpl.html                      *
- *                                                                        *
- * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
 /**

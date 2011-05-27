@@ -30,16 +30,16 @@ namespace Erfurt\Tests\Unit\Rdf;
 class LiteralTest extends \Erfurt\Tests\Unit\BaseTestCase {
 
 	public function testInitWithLabel() {
-		$literal1 = \Erfurt\Rdf\Literal::initWithLabel("Testliteral1");
-		$literal2 = \Erfurt\Rdf\Literal::initWithLabel("Testliteral2");
+		$literal1 = \Erfurt\Domain\Literal::initWithLabel("Testliteral1");
+		$literal2 = \Erfurt\Domain\Literal::initWithLabel("Testliteral2");
 
 		$this->assertSame("Testliteral1", $literal1->getLabel());
 		$this->assertSame("Testliteral2", $literal2->getLabel());
 	}
 
 	public function testInitWithLabelAndLanguage() {
-		$literal1 = \Erfurt\Rdf\Literal::initWithLabelAndLanguage("Testliteral1", "de");
-		$literal2 = \Erfurt\Rdf\Literal::initWithLabelAndLanguage("Testliteral2", "en");
+		$literal1 = \Erfurt\Domain\Literal::initWithLabelAndLanguage("Testliteral1", "de");
+		$literal2 = \Erfurt\Domain\Literal::initWithLabelAndLanguage("Testliteral2", "en");
 
 		$this->assertSame("Testliteral1", $literal1->getLabel());
 		$this->assertSame("Testliteral2", $literal2->getLabel());
@@ -50,8 +50,8 @@ class LiteralTest extends \Erfurt\Tests\Unit\BaseTestCase {
 	}
 
 	public function testInitWithLabelAndDatatype() {
-		$literal1 = \Erfurt\Rdf\Literal::initWithLabelAndDatatype("true", "http://www.w3.org/2001/XMLSchema#boolean");
-		$literal2 = \Erfurt\Rdf\Literal::initWithLabelAndDatatype("Testliteral2", "http://www.w3.org/2001/XMLSchema#string");
+		$literal1 = \Erfurt\Domain\Literal::initWithLabelAndDatatype("true", "http://www.w3.org/2001/XMLSchema#boolean");
+		$literal2 = \Erfurt\Domain\Literal::initWithLabelAndDatatype("Testliteral2", "http://www.w3.org/2001/XMLSchema#string");
 
 		$this->assertSame("true", $literal1->getLabel());
 		$this->assertSame("Testliteral2", $literal2->getLabel());

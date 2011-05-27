@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\FLOW3\Configuration\Source;
+namespace Erfurt\Configuration\Source;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "YAML".                       *
@@ -22,11 +22,11 @@ namespace F3\FLOW3\Configuration\Source;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-require(FLOW3_PATH_FLOW3 . 'Resources/Private/Configuration/Yaml/Yaml.php');
-require(FLOW3_PATH_FLOW3 . 'Resources/Private/Configuration/Yaml/Loader.php');
-require(FLOW3_PATH_FLOW3 . 'Resources/Private/Configuration/Yaml/Exception.php');
-require(FLOW3_PATH_FLOW3 . 'Resources/Private/Configuration/Yaml/Node.php');
-require(FLOW3_PATH_FLOW3 . 'Resources/Private/Configuration/Yaml/Dumper.php');
+require(EF_PATH_FRAMEWORK . 'Resources/PHP/HordeYaml/Yaml.php');
+require(EF_PATH_FRAMEWORK . 'Resources/PHP/HordeYaml/Loader.php');
+require(EF_PATH_FRAMEWORK . 'Resources/PHP/HordeYaml/Exception.php');
+require(EF_PATH_FRAMEWORK . 'Resources/PHP/HordeYaml/Node.php');
+require(EF_PATH_FRAMEWORK . 'Resources/PHP/HordeYaml/Dumper.php');
 
 /**
  * Façade for a Yaml Parser and Dumper
