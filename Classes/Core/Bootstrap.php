@@ -156,12 +156,15 @@ class Bootstrap {
 		$this->initializeSignalsSlots();
 		$this->initializeCacheManagement();
 
+		$classInfoFactory = new \Erfurt\Object\ClassInfoFactory();
+		$classInfoFactory->injectConfigurationManager($this->configurationManager);
 		$classInfoCache = new \Erfurt\Object\ClassInfoCache();
 		$classInfoCache->injectCache($this->cacheManager->getCache('Erfurt_Object_ClassInfoCache'));
 		$this->objectManager = new \Erfurt\Object\ObjectManager($this->context);
 		$this->objectManager->injectAllSettings($this->configurationManager->getConfiguration(\Erfurt\Configuration\ConfigurationManager::CONFIGURATION_TYPE_SETTINGS));
 		$this->objectManager->injectAllPrefixes($this->configurationManager->getConfiguration(\Erfurt\Configuration\ConfigurationManager::CONFIGURATION_TYPE_PREFIXES));
 		$this->objectManager->injectClassInfoCache($classInfoCache);
+		$this->objectManager->injectClassInfoFactory($classInfoFactory);
 		self::$staticObjectManager = $this->objectManager;
 	}
 

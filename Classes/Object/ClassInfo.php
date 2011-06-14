@@ -34,11 +34,19 @@ namespace Erfurt\Object;
  */
 class ClassInfo {
 
+	const CONSTRUCTOR_ARGUMENT_NAME = 'name';
+	const CONSTRUCTOR_ARGUMENT_DEPENDENCY = 'dependency';
+	const CONSTRUCTOR_ARGUMENT_DEFAULTVALUE = 'defaultvalue';
+
+	const ARGUMENT_TYPES_STRAIGHTVALUE = 0;
+	const ARGUMENT_TYPES_OBJECT = 1;
+	const ARGUMENT_TYPES_SETTING = 2;
+
 	/**
 	 * The classname of the class where the infos belong to
 	 * @var string
 	 */
-	private $className;
+	protected $className;
 
 	/**
 	 * The constructor Dependencies for the class in the format:
@@ -53,7 +61,13 @@ class ClassInfo {
 	 *
 	 * @var array
 	 */
-	private $constructorArguments;
+	protected $constructorArguments;
+
+	/**
+	 * The classname of the responsible factory
+	 * @var string
+	 */
+	protected $factoryObjectName;
 
 	/**
 	 * All setter injections in the format
@@ -61,7 +75,7 @@ class ClassInfo {
 	 *
 	 * @var array
 	 */
-	private $injectMethods;
+	protected $injectMethods;
 
 	/**
 	 *
@@ -69,37 +83,48 @@ class ClassInfo {
 	 * @param array $constructorArguments
 	 * @param array $injectMethods
 	 */
-	public function __construct($className, array $constructorArguments, array $injectMethods) {
+	public function __construct($className, array $constructorArguments, array $injectMethods, $factoryObjectName = NULL) {
 		$this->className = $className;
 		$this->constructorArguments = $constructorArguments;
 		$this->injectMethods = $injectMethods;
+		$this->factoryObjectName = $factoryObjectName;
 	}
 
 	/**
-	 * @return the $className
+	 * @return string $className
 	 */
 	public function getClassName() {
 		return $this->className;
 	}
 
 	/**
-	 * @return the $constructorArguments
+	 * @return array $constructorArguments
 	 */
 	public function getConstructorArguments() {
 		return $this->constructorArguments;
 	}
 
 	/**
-	 * @return the $injectMethods
+	 * @return array $injectMethods
 	 */
 	public function getInjectMethods() {
 		return $this->injectMethods;
 	}
 
 	/**
-	 * @return the $injectMethods
+	 * @return array $injectMethods
 	 */
 	public function hasInjectMethods() {
 		return (count($this->injectMethods) > 0);
 	}
+
+	/**
+	 * @return null|string
+	 */
+	public function getFactoryObjectName() {
+		return $this->factoryObjectName;
+	}
+
 }
+
+?>

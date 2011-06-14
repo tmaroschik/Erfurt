@@ -49,11 +49,6 @@ Erfurt\Log\SystemLoggerInterface:
 
 Erfurt\Object\ObjectManagerInterface:
   className: Erfurt\Object\ObjectManager
-  scope: singleton
-  autowiring: off
-
-Erfurt\Object\ObjectManager:
-  autowiring: off
 
 #                                                                          #
 # Session                                                                  #
@@ -61,15 +56,7 @@ Erfurt\Object\ObjectManager:
 
 Erfurt\Session\SessionInterface:
   className: Erfurt\Session\PhpSession
-  scope: singleton
-  properties:
-    settings:
-      setting: Erfurt
-    environment:
-      object: Erfurt\Utility\Environment
 
-#
-# Store
-#
-Erfurt\Store\Store:
-  scope: singleton
+
+Erfurt\Sparql\SimpleQuery:
+  factoryObjectName: Erfurt\Sparql\SimpleQueryFactory

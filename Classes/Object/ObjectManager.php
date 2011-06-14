@@ -98,7 +98,6 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 	 */
 	public function __construct($context) {
 		$this->context = $context;
-		$this->classInfoFactory = new ClassInfoFactory();
 	}
 
 	/**
@@ -117,6 +116,15 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 	 */
 	public function injectClassInfoCache(ClassInfoCache $classInfoCache) {
 		$this->classInfoCache = $classInfoCache;
+	}
+
+	/**
+	 * Injector method for a \Erfurt\Object\ClassInfoFactory
+	 *
+	 * @var \Erfurt\Object\ClassInfoFactory
+	 */
+	public function injectClassInfoFactory(\Erfurt\Object\ClassInfoFactory $classInfoFactory) {
+		$this->classInfoFactory = $classInfoFactory;
 	}
 
 	/**
@@ -214,6 +222,46 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 			$this->singletonInstances[$className] = $instance;
 		}
 		return $instance;
+	}
+
+	/**
+	 * Invokes the Factory defined in the object configuration of the specified object in order
+	 * to build an instance. Arguments which were defined in the object configuration are
+	 * passed to the factory method.
+	 *
+	 * @param string $className Name of the object to build
+	 * @param \Erfurt\Object\ClassInfo $classInfo
+	 * @param array $givenConstructorArguments
+	 * @return object The built object
+	 * @author Robert Lemke <robert@typo3.org>
+	 */
+	protected function instanciateObjectByFactory($className, ClassInfo $classInfo, array $givenConstructorArguments) {
+		$factory = $this->get($classInfo->getFactoryObjectName());
+		$factoryMethodName = 'create';
+
+		$factoryMethodArguments = array();
+		var_dump($givenConstructorArguments);
+		die();
+		foreach ($givenConstructorArguments as $index => $argumentInformation) {
+			switch ($argumentInformation['t']) {
+				case ObjectConfigurationArgument::ARGUMENT_TYPES_SETTING :
+					$settingPath = explode('.', $argumentInformation['v']);
+					$factoryMethodArguments[$index] = \F3\FLOW3\Utility\Arrays::getValueByPath($this->allSettings, $settingPath);
+				break;
+				case ObjectConfigurationArgument::ARGUMENT_TYPES_STRAIGHTVALUE :
+					$factoryMethodArguments[$index] = $argumentInformation['v'];
+				break;
+				case ObjectConfigurationArgument::ARGUMENT_TYPES_OBJECT :
+					$factoryMethodArguments[$index] = $this->get($argumentInformation['v']);
+				break;
+			}
+		}
+
+		if (count($factoryMethodArguments) === 0) {
+			return $factory->$factoryMethodName();
+		} else {
+			return call_user_func_array(array($factory, $factoryMethodName), $factoryMethodArguments);
+		}
 	}
 
 	/**

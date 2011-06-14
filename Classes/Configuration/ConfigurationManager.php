@@ -32,6 +32,7 @@ namespace Erfurt\Configuration;
 class ConfigurationManager implements \t3lib_Singleton {
 
 	const CONFIGURATION_TYPE_CACHES = 'Caches';
+	const CONFIGURATION_TYPE_OBJECTS = 'Objects';
 	const CONFIGURATION_TYPE_POLICY = 'Policy';
 	const CONFIGURATION_TYPE_PREFIXES = 'Prefixes';
 	const CONFIGURATION_TYPE_SETTINGS = 'Settings';
@@ -139,6 +140,7 @@ class ConfigurationManager implements \t3lib_Singleton {
 			case self::CONFIGURATION_TYPE_CACHES :
 			case self::CONFIGURATION_TYPE_POLICY :
 			case self::CONFIGURATION_TYPE_PREFIXES :
+			case self::CONFIGURATION_TYPE_OBJECTS :
 				if (!isset($this->configurations[$configurationType])) {
 					$this->loadConfiguration($configurationType, $this->packages);
 				}
@@ -263,6 +265,7 @@ class ConfigurationManager implements \t3lib_Singleton {
 				}
 			break;
 			case self::CONFIGURATION_TYPE_CACHES :
+			case self::CONFIGURATION_TYPE_OBJECTS :
 			case self::CONFIGURATION_TYPE_POLICY :
 			case self::CONFIGURATION_TYPE_PREFIXES :
 			case self::CONFIGURATION_TYPE_SIGNALSSLOTS :
@@ -281,7 +284,9 @@ class ConfigurationManager implements \t3lib_Singleton {
 			// merge in global configuration
 		switch ($configurationType) {
 			case self::CONFIGURATION_TYPE_CACHES :
+			case self::CONFIGURATION_TYPE_OBJECTS :
 			case self::CONFIGURATION_TYPE_POLICY :
+			case self::CONFIGURATION_TYPE_PREFIXES :
 			case self::CONFIGURATION_TYPE_SIGNALSSLOTS :
 				$this->configurations[$configurationType] = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($this->configurations[$configurationType], $this->configurationSource->load(EF_PATH_CONFIGURATION . $configurationType));
 				$this->configurations[$configurationType] = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($this->configurations[$configurationType], $this->configurationSource->load(EF_PATH_CONFIGURATION . $this->context . '/' . $configurationType));

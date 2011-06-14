@@ -16,5 +16,5 @@ Erfurt_Object_Classes:
   backend: Erfurt\Cache\Backend\FileBackend
 Erfurt_Object_ClassInfoCache:
   frontend: Erfurt\Cache\Frontend\VariableFrontend
-  backend: Erfurt\Cache\Backend\FileBackend
+  backend: Erfurt\Cache\Backend\NullBackend
 Erfurt_Object_Configuration: []

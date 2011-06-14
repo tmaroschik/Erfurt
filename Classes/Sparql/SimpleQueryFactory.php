@@ -51,7 +51,7 @@ class SimpleQueryFactory implements \Erfurt\Singleton {
 	 *
 	 * @param string $queryString
 	 */
-	public function buildFromQueryString($queryString) {
+	public function create($queryString) {
 		$parts = array(
 			'prologue' => array(),
 			'from' => array(),

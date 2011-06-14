@@ -34,6 +34,23 @@ namespace Erfurt\Object;
  */
 class ClassInfoFactory {
 
+
+	/**
+	 * Contains objectConfiguration
+	 *
+	 * @var array
+	 */
+	protected $objectConfiguration;
+
+	/**
+	 * Injector method for a \Erfurt\Configuration\ConfigurationManager
+	 *
+	 * @var \Erfurt\Configuration\ConfigurationManager
+	 */
+	public function injectConfigurationManager(\Erfurt\Configuration\ConfigurationManager $configurationManager) {
+		$this->objectConfiguration = $configurationManager->getConfiguration(\Erfurt\Configuration\ConfigurationManager::CONFIGURATION_TYPE_OBJECTS);
+	}
+
 	/**
 	 * Factory metod that builds a ClassInfo Object for the given classname - using reflection
 	 *
@@ -46,9 +63,27 @@ class ClassInfoFactory {
 		} catch (Exception $e) {
 			throw new Exception\UnknownObjectException('Could not analyse class:' . $className . ' maybe not loaded or no autoloader?', 1289386765);
 		}
+		$objectConfiguration = $this->getObjectConfiguration($className);
 		$constructorArguments = $this->getConstructorArguments($reflectedClass);
 		$injectMethods = $this->getInjectMethods($reflectedClass);
-		return new ClassInfo($className, $constructorArguments, $injectMethods);
+		if (!empty($objectConfiguration)) {
+			die();
+		} else {
+			return new ClassInfo($className, $constructorArguments, $injectMethods);
+		}
+	}
+
+	protected function getObjectConfiguration($objectClassName) {
+		$objectConfiguration = Array();
+		// Merge configuration of all defined parent objects and interfaces
+		$classNames = array_merge(array($objectClassName), class_parents($objectClassName), class_implements($objectClassName));
+		$classNames = array_reverse($classNames);
+		foreach ($classNames as $className) {
+			if (isset($this->objectConfiguration[$className])) {
+				$objectConfiguration = \Erfurt\Utility\Arrays::arrayMergeRecursiveOverrule($objectConfiguration, $this->objectConfiguration[$className]);
+			}
+		}
+		return $objectConfiguration;
 	}
 
 	/**
