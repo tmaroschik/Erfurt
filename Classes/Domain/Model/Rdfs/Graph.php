@@ -25,7 +25,7 @@ namespace Erfurt\Domain\Model\Rdfs;
  *
  * @scope prototype
  */
-class Graph extends \Erfurt\Domain\Graph {
+class Graph extends \Erfurt\Domain\Model\Rdf\Graph {
 
 	/**
 	 * Resource factory method

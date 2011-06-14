@@ -38,7 +38,7 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 	/**
 	 * @var array
 	 */
-	protected $allSettings = array();
+	protected $settings = array();
 
 	/**
 	 * internal cache for classinfos
@@ -66,6 +66,13 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 	 * @var ClassInfoFactory
 	 */
 	protected $classInfoFactory;
+
+	/**
+	 * Contains prefixes
+	 *
+	 * @var array
+	 */
+	protected $prefixes;
 
 	/**
 	 * holds references of singletons
@@ -100,7 +107,7 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 	 * @var array
 	 */
 	public function injectAllSettings(array $allSettings) {
-		$this->allSettings = $allSettings;
+		$this->settings = $allSettings;
 	}
 
 	/**
@@ -110,6 +117,15 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 	 */
 	public function injectClassInfoCache(ClassInfoCache $classInfoCache) {
 		$this->classInfoCache = $classInfoCache;
+	}
+
+	/**
+	 * Injector method for a array
+	 *
+	 * @var array
+	 */
+	public function injectAllPrefixes(array $allPrefixes) {
+		$this->prefixes = $allPrefixes;
 	}
 
 	/**
@@ -213,7 +229,9 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 		}
 		foreach ($classInfo->getInjectMethods() as $injectMethodName => $classNameToInject) {
 			if ($injectMethodName == 'injectSettings' && $classNameToInject == 'array') {
-				$instance->$injectMethodName($this->allSettings);
+				$instance->$injectMethodName($this->settings);
+			} else if ($injectMethodName == 'injectPrefixes' && $classNameToInject == 'array') {
+				$instance->$injectMethodName($this->prefixes);
 			} else {
 				$instanceToInject = $this->getInstanceInternal($classNameToInject);
 				if ($this->isSingleton($instance) && !($instanceToInject instanceof \Erfurt\Singleton)) {

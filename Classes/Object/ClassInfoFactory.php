@@ -95,7 +95,8 @@ class ClassInfoFactory {
 			foreach ($reflectionMethods as $reflectionMethod) {
 				if ($reflectionMethod->isPublic()
 					&& substr($reflectionMethod->getName(), 0, 6) === 'inject'
-					&& $reflectionMethod->getName() !== 'injectSettings') {
+					&& $reflectionMethod->getName() !== 'injectSettings'
+					&& $reflectionMethod->getName() !== 'injectPrefixes') {
 
 					$reflectionParameter = $reflectionMethod->getParameters();
 					if (isset($reflectionParameter[0])) {
@@ -104,7 +105,9 @@ class ClassInfoFactory {
 						}
 						$result[$reflectionMethod->getName()] = $reflectionParameter[0]->getClass()->getName();
 					}
-				} else if ($reflectionMethod->getName() == 'injectSettings') {
+				} else if (
+					$reflectionMethod->getName() == 'injectSettings'
+					|| $reflectionMethod->getName() == 'injectPrefixes') {
 					$result[$reflectionMethod->getName()] = 'array';
 				}
 			}

@@ -138,6 +138,7 @@ class ConfigurationManager implements \t3lib_Singleton {
 			case self::CONFIGURATION_TYPE_SIGNALSSLOTS :
 			case self::CONFIGURATION_TYPE_CACHES :
 			case self::CONFIGURATION_TYPE_POLICY :
+			case self::CONFIGURATION_TYPE_PREFIXES :
 				if (!isset($this->configurations[$configurationType])) {
 					$this->loadConfiguration($configurationType, $this->packages);
 				}
@@ -263,6 +264,7 @@ class ConfigurationManager implements \t3lib_Singleton {
 			break;
 			case self::CONFIGURATION_TYPE_CACHES :
 			case self::CONFIGURATION_TYPE_POLICY :
+			case self::CONFIGURATION_TYPE_PREFIXES :
 			case self::CONFIGURATION_TYPE_SIGNALSSLOTS :
 				$this->configurations[$configurationType] = array();
 				foreach ($packages as $package) {

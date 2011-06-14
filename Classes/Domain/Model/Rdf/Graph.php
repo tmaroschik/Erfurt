@@ -52,14 +52,7 @@ class Graph {
 	protected $graphIri = null;
 
 	/**
-	 * The injected knowledge base
-	 *
-	 * @var \Erfurt\KnowledgeBase
-	 */
-	protected $knowledgeBase;
-
-	/**
-	 * The injected knowledge base
+	 * The injected object manager
 	 *
 	 * @var \Erfurt\Object\ObjectManager
 	 */
@@ -71,6 +64,19 @@ class Graph {
 	 */
 	protected $namespaces = null;
 
+	/**
+	 * Contains the store
+	 *
+	 * @var \Erfurt\Store\Store
+	 */
+	protected $store;
+
+	/**
+	 * Contains systemOntologyIri
+	 *
+	 * @var string
+	 */
+	protected $systemOntologyIri;
 	/**
 	 * The graph's title property value
 	 * @var string
@@ -100,16 +106,26 @@ class Graph {
 	}
 
 	/**
-	 * Injector method for a \Erfurt\KnowledgeBase
+	 * Injector method for a array
 	 *
-	 * @var Erfurt\KnowledgeBase
+	 * @var array
 	 */
-	public function injectKnowledgeBase(\Erfurt\KnowledgeBase $knowledgeBase) {
-		$this->knowledgeBase = $knowledgeBase;
-		$this->namespaces = $knowledgeBase->getNamespaces();
-		if (isset($this->knowledgeBase->getSystemOntologyConfiguration()->properties->title)) {
-			$this->titleProperties = $this->knowledgeBase->getSystemOntologyConfiguration()->properties->title->toArray();
+	public function injectSettings(array $settings) {
+		if (isset($settings['Erfurt']['systemOntology']['schemaIri'])) {
+			$this->systemOntologyIri = $settings['Erfurt']['systemOntology']['schemaIri'];
 		}
+		if (isset($settings['Erfurt']['systemOntology']['properties']['title'])) {
+			$this->titleProperties = $settings['Erfurt']['systemOntology']['properties']['title'];
+		}
+	}
+
+	/**
+	 * Injector method for a \Erfurt\Namespaces\Namespaces
+	 *
+	 * @var \Erfurt\Namespaces\Namespaces
+	 */
+	public function injectNamespaces(\Erfurt\Namespaces\Namespaces $namespaces) {
+		$this->namespaces = $namespaces;
 	}
 
 	/**
@@ -119,6 +135,15 @@ class Graph {
 	 */
 	public function injectObjectManager(\Erfurt\Object\ObjectManager $objectManager) {
 		$this->objectManager = $objectManager;
+	}
+
+	/**
+	 * Injector method for a \Erfurt\Store\Store
+	 *
+	 * @var \Erfurt\Store\Store
+	 */
+	public function injectStore(\Erfurt\Store\Store $store) {
+		$this->store = $store;
 	}
 
 	/**
@@ -139,7 +164,7 @@ class Graph {
 	 * @param array $object
 	 */
 	public function addStatement($subject, $predicate, array $object) {
-		$this->getStore()->addStatement($this->graphIri, $subject, $predicate, $object);
+		$this->store->addStatement($this->graphIri, $subject, $predicate, $object);
 		return $this;
 	}
 
@@ -153,7 +178,7 @@ class Graph {
 	 * @param stdClass $statements
 	 */
 	public function addMultipleStatements(array $statements) {
-		$this->getStore()->addMultipleStatements($this->graphIri, $statements);
+		$this->store->addMultipleStatements($this->graphIri, $statements);
 		return $this;
 	}
 
@@ -180,7 +205,7 @@ class Graph {
 	 * @param string $object
 	 */
 	public function deleteStatement($subject, $predicate, $object) {
-		$this->getStore()->deleteMatchingStatements($this->graphIri, $subject, $predicate, $object);
+		$this->store->deleteMatchingStatements($this->graphIri, $subject, $predicate, $object);
 	}
 
 	/**
@@ -191,7 +216,7 @@ class Graph {
 	 * @param string $object
 	 */
 	public function deleteMultipleStatements(array $statements) {
-		$this->getStore()->deleteMultipleStatements($this->graphIri, $statements);
+		$this->store->deleteMultipleStatements($this->graphIri, $statements);
 	}
 
 	/**
@@ -205,7 +230,7 @@ class Graph {
 	 * @param string|null $objectSpec
 	 */
 	public function deleteMatchingStatements($subjectSpec, $predicateSpec, $objectSpec, array $options = array()) {
-		$this->getStore()->deleteMatchingStatements(
+		$this->store->deleteMatchingStatements(
 			$this->graphIri,
 			$subjectSpec,
 			$predicateSpec,
@@ -282,7 +307,7 @@ class Graph {
 						FILTER (sameTerm(?s, <' . $this->getGraphIri() . '>))
 					}'
 				);
-				if ($result = $this->getStore()->sparqlQuery($query)) {
+				if ($result = $this->store->sparqlQuery($query)) {
 					if (is_array($result) && is_array($result[0])) {
 						foreach ($titleProperties as $key => $iri) {
 							if (!empty($result[0][$key])) {
@@ -339,21 +364,20 @@ class Graph {
 			// User has no right to edit the graph.
 			return;
 		}
-		$sysOntIri = $this->knowledgeBase->getSystemOntologyConfiguration()->graphIri;
 		$options = $this->getOptions();
-		$store = $this->getStore();
+		$store = $this->store;
 		if (isset($options[$optionIri])) {
 			// In this case we need to remove the old values from sysont
 			$options = array(
 				'use_ac' => false, // We disable AC, for we need to write the system ontology.
 			);
-			$store->deleteMatchingStatements($sysOntIri, $this->graphIri, $optionIri, null, $options);
+			$store->deleteMatchingStatements($this->systemOntologyIri, $this->graphIri, $optionIri, null, $options);
 		}
 		if (null !== $value) {
 			$addArray = array();
 			$addArray[$this->graphIri] = array();
 			$addArray[$this->graphIri][$optionIri] = $value;
-			$store->addMultipleStatements($sysOntIri, $addArray, false);
+			$store->addMultipleStatements($this->systemOntologyIri, $addArray, false);
 		}
 		// TODO add this statement on graph add?!
 		// Add a statement graphIri a SysOnt:graph
@@ -363,7 +387,7 @@ class Graph {
 			'value' => 'http://ns.ontowiki.net/SysOnt/Graph',
 			'type' => 'iri'
 		);
-		$store->addMultipleStatements($sysOntIri, $addArray, false);
+		$store->addMultipleStatements($this->systemOntologyIri, $addArray, false);
 		// Reset the options
 		$this->graphOptions = null;
 	}
@@ -404,7 +428,7 @@ class Graph {
 	 */
 	protected function getOptions() {
 		if (null === $this->graphOptions) {
-			$store = $this->getStore();
+			$store = $this->store;
 			$this->graphOptions = $store->getGraphConfiguration($this->graphIri);
 		}
 		return $this->graphOptions;
@@ -503,12 +527,7 @@ class Graph {
 				$query->setFroms(array($this->graphIri));
 			}
 		}
-		return $this->getStore()->sparqlQuery($query, $options);
-	}
-
-
-	public function getStore() {
-		return $this->knowledgeBase->getStore();
+		return $this->store->sparqlQuery($query, $options);
 	}
 
 	/**
@@ -516,7 +535,7 @@ class Graph {
 	 * @return array with namespace as key and prefix as value
 	 */
 	public function getNamespacePrefixes() {
-		// $store = $this->getStore();
+		// $store = $this->store;
 		// return $store->getNamespacePrefixes($this->graphIri);
 		return $this->namespaces->getNamespacePrefixes($this->getGraphIri());
 	}
@@ -527,7 +546,7 @@ class Graph {
 	 * @return array with namespace as key and prefix as value
 	 */
 	public function getNamespacePrefix($namespace) {
-		// $store = $this->getStore();
+		// $store = $this->store;
 		// return $store->getNamespacePrefix($this->graphIri, $namespace);
 		return $this->namespaces->getNamespacePrefix($this->getGraphIri(), $namespace);
 	}
@@ -539,7 +558,7 @@ class Graph {
 	 */
 	public function addNamespacePrefix($prefix, $namespace) {
 		// $ns = $this
-		// $store = $this->getStore();
+		// $store = $this->store;
 		// $store->addNamespacePrefix($this->graphIri, $prefix, $namespace);
 		return $this->namespaces->addNamespacePrefix($this->getGraphIri(), $namespace, $prefix);
 	}
@@ -549,7 +568,7 @@ class Graph {
 	 * @param $prefix the prefix you want to remove
 	 */
 	public function deleteNamespacePrefix($prefix) {
-		// $store = $this->getStore();
+		// $store = $this->store;
 		// $store->deleteNamespacePrefix($this->graphIri, $prefix);
 		return $this->namespaces->deleteNamespacePrefix($this->getGraphIri(), $prefix);
 	}

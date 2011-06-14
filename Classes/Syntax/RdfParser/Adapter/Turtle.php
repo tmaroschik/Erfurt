@@ -613,7 +613,7 @@ class Turtle implements AdapterInterface {
 
 		$c = $this->_read();
 		#if (!$this->_isNameStartChar($c)) {
-		#    $this->_throwException('Illegal char.');
+		#    $this->throwException('Illegal char.');
 		#}
 
 		$result = $c;
@@ -651,7 +651,7 @@ class Turtle implements AdapterInterface {
 		$c = $this->_read();
 
 		#if ($c !== ':' && !$this->_isPrefixStartChar($c)) {
-		#    $this->_throwException('Expected ":" or letter.');
+		#    $this->throwException('Expected ":" or letter.');
 		#}
 
 		$namespace = null;

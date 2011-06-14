@@ -1439,6 +1439,7 @@ class Store implements \Erfurt\Singleton {
 	private function checkAuthorization($graphIri, $accessType = 'view', $useAc = true) {
 		return true;
 		// TODO REENABLE
+		// TODO really important
 		// check whether ac should be used (e.g. ac engine itself needs access to store without ac)
 		if ($useAc === false) {
 			$logger = $this->getErfurtLogger();

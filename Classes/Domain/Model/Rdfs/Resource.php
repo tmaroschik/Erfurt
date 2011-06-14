@@ -25,7 +25,7 @@ namespace Erfurt\Domain\Model\Rdfs;
  *
  * @scope prototype
  */
-class Resource extends \Erfurt\Domain\Resource {
+class Resource extends \Erfurt\Domain\Model\Rdf\Resource {
 
 }
 
