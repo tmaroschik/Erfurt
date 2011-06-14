@@ -73,7 +73,7 @@ class SimpleQueryFactory implements \Erfurt\Singleton {
 		foreach ($tokens as $key => $pattern) {
 			preg_match_all($pattern, $queryString, $parts[$key]);
 		}
-		$queryObject = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$queryObject = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		if (isset($parts['prologue'][0][0])) {
 			$queryObject->setProloguePart($parts['prologue'][0][0]); // whole match
 		}

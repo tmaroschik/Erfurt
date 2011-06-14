@@ -228,7 +228,7 @@ class QueryCache {
 	 * @param	  string   $graphIri  graphIri
 	 * @return	 string   $status	status of the process
 	 */
-	public function invalidateWithModelIri($graphIri) {
+	public function invalidateWithGraphIri($graphIri) {
 
 		$qids = $this->getBackend()->invalidateWithModelIri($graphIri);
 		$objectCache = $this->knowledgeBase->getCache();
@@ -283,19 +283,19 @@ class QueryCache {
 
 		}
 
-		if (!($subject instanceof \Erfurt\Domain\Resource)) {
+		if (!($subject instanceof \Erfurt\Domain\Model\Rdf\Resource)) {
 			$subject = null;
 		} else {
 			$subject = (string)$subject;
 		}
 
-		if (!($predicate instanceof \Erfurt\Domain\Resource)) {
+		if (!($predicate instanceof \Erfurt\Domain\Model\Rdf\Resource)) {
 			$predicate = null;
 		} else {
 			$predicate = (string)$predicate;
 		}
 
-		if (!($object instanceof \Erfurt\Domain\Resource)) {
+		if (!($object instanceof \Erfurt\Domain\Model\Rdf\Resource)) {
 			$object = null;
 		} else {
 			$object = (string)$object;
@@ -412,7 +412,7 @@ class QueryCache {
 	 */
 	private function parseQuery($queryString) {
 		#Creation of SPARQL Parser and parsing the query string
-		$parser = $this->objectManager->create('\Erfurt\Sparql\Parser');
+		$parser = $this->objectManager->create('Erfurt\Sparql\Parser');
 		$parsedQuery = $parser->parse($queryString);
 
 		#extract graphUris from FromPart and from FromNamedPart

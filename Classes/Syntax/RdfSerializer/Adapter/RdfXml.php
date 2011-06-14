@@ -93,15 +93,15 @@ class RdfXml implements AdapterInterface {
 
 		$this->rdfWriter->setMaxLevel(10);
 
-		$this->_serializeType('Ontology specific informations', Erfurt\Vocabulary\Owl::ONTOLOGY);
+		$this->_serializeType('Ontology specific informations', \Erfurt\Vocabulary\Owl::ONTOLOGY);
 		$this->rdfWriter->setMaxLevel(1);
 
-		$this->_serializeType('Classes', Erfurt\Vocabulary\Owl::OWL_CLASS);
+		$this->_serializeType('Classes', \Erfurt\Vocabulary\Owl::OWL_CLASS);
 
-		$this->_serializeType('Datatypes', Erfurt\Vocabulary\Rdfs::DATATYPE);
-		$this->_serializeType('Annotation properties', Erfurt\Vocabulary\Owl::ANNOTATION_PROPERTY);
-		$this->_serializeType('Datatype properties', Erfurt\Vocabulary\Owl::DATATYPE_PROPERTY);
-		$this->_serializeType('Object properties', Erfurt\Vocabulary\Owl::OBJECT_PROPERTY);
+		$this->_serializeType('Datatypes', \Erfurt\Vocabulary\Rdfs::DATATYPE);
+		$this->_serializeType('Annotation properties', \Erfurt\Vocabulary\Owl::ANNOTATION_PROPERTY);
+		$this->_serializeType('Datatype properties', \Erfurt\Vocabulary\Owl::DATATYPE_PROPERTY);
+		$this->_serializeType('Object properties', \Erfurt\Vocabulary\Owl::OBJECT_PROPERTY);
 
 		$this->serializeRest('Instances and untyped data');
 
@@ -237,10 +237,10 @@ class RdfXml implements AdapterInterface {
 	 * @param string $class The type which to serialize (e.g. owl:Class).
 	 */
 	protected function _serializeType($description, $class) {
-		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$query = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT DISTINCT ?s ?p ?o');
 		$query->addFrom($this->graphIri);
-		$query->setWherePart('WHERE { ?s ?p ?o . ?s <' . Erfurt\Vocabulary\Rdf::TYPE . '> <' . $class . '> }');
+		$query->setWherePart('WHERE { ?s ?p ?o . ?s <' . \Erfurt\Vocabulary\Rdf::TYPE . '> <' . $class . '> }');
 		$query->setOrderClause('?s ?p ?o');
 		$query->setLimit(1000);
 
@@ -283,13 +283,13 @@ class RdfXml implements AdapterInterface {
 	}
 
 	protected function serializeRest($description) {
-		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$query = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT DISTINCT ?s ?p ?o');
 		$query->addFrom($this->graphIri);
 
 		$where = 'WHERE
 		          { ?s ?p ?o .
-		          OPTIONAL { ?s <' . Erfurt\Vocabulary\Rdf::TYPE . '> ?o2  } .
+		          OPTIONAL { ?s <' . \Erfurt\Vocabulary\Rdf::TYPE . '> ?o2  } .
 	              FILTER (!bound(?o2) || (';
 
 		$count = count($this->renderedTypes);
@@ -345,7 +345,7 @@ class RdfXml implements AdapterInterface {
 
 	protected function _serializeResource($resource, $useAc = true, $level = 0) {
 
-		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$query = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT ?s ?p ?o');
 		$query->addFrom($this->graphIri);
 		$query->setWherePart('WHERE { ?s ?p ?o . FILTER (sameTerm(?s, <' . $resource . '>))}');
@@ -403,7 +403,7 @@ class RdfXml implements AdapterInterface {
 
 		// SCBD: Do the same for all Resources, that have the resource as object
 
-		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$query = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT ?s ?p ?o');
 		$query->addFrom($this->graphIri);
 		$query->setWherePart('WHERE { ?s ?p ?o . ?s ?p2 ?o2 . FILTER (sameTerm(?o2, <' . $resource . '>)) }');

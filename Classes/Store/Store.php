@@ -1,5 +1,5 @@
 <?php
-declare(ENCODING = 'utf-8');
+declare(ENCODING = 'utf-8') ;
 namespace Erfurt\Store;
 
 /*                                                                        *
@@ -27,14 +27,14 @@ namespace Erfurt\Store;
  * @api
  */
 
-define('STORE_RESULTFORMAT','result_format');
-define('STORE_RESULTFORMAT_PLAIN','plain');
-define('STORE_RESULTFORMAT_XML','xml');
-define('STORE_RESULTFORMAT_EXTENDED','extended');
-define('STORE_USE_AC','use_ac');
-define('STORE_USE_OWL_IMPORTS','use_owl_imports');
-define('STORE_USE_ADDITIONAL_IMPORTS','use_additional_imports');
-define('STORE_TIMEOUT','timeout');
+define('STORE_RESULTFORMAT', 'result_format');
+define('STORE_RESULTFORMAT_PLAIN', 'plain');
+define('STORE_RESULTFORMAT_XML', 'xml');
+define('STORE_RESULTFORMAT_EXTENDED', 'extended');
+define('STORE_USE_AC', 'use_ac');
+define('STORE_USE_OWL_IMPORTS', 'use_owl_imports');
+define('STORE_USE_ADDITIONAL_IMPORTS', 'use_additional_imports');
+define('STORE_TIMEOUT', 'timeout');
 class Store implements \Erfurt\Singleton {
 
 	const COUNT_NOT_SUPPORTED = -1;
@@ -82,18 +82,6 @@ class Store implements \Erfurt\Singleton {
 	const GRAPH_TYPE_OWL = 502;
 
 	/**
-	 * Username of the super user who gets unrestricted access
-	 * @var string
-	 */
-	protected $databaseUser;
-
-	/**
-	 * Password of the super user who gets unrestricted access
-	 * @var string
-	 */
-	protected $databasePassword;
-
-	/**
 	 * An RDF/PHP array containing additional configuration options for graphs
 	 * in the triple store. This information is stored in the local system
 	 * ontology.
@@ -101,12 +89,6 @@ class Store implements \Erfurt\Singleton {
 	 *
 	 */
 	protected $graphConfigurations;
-
-	/**
-	 * Store options
-	 * @var array
-	 */
-	protected $options = array();
 
 	/**
 	 * An Array holding the Namespace prefixes (An array of namespace IRIs (keys) and prefixes) for some graphs
@@ -129,36 +111,10 @@ class Store implements \Erfurt\Singleton {
 	protected $erfurtLogger;
 
 	/**
-	 * Access control instance
-	 * @var \Erfurt\AccessControl\Standard
-	 */
-	protected $accessControl;
-
-	/**
-	 * The name of the backend adapter instance in use.
-	 * @var string
-	 */
-	protected $backendName;
-
-	/**
 	 * The backend adapter instance in use.
-	 * @var \Erfurt_Store_Backend_Adapter_Interface
+	 * @var \Erfurt\Store\Adapter\AdapterInterface|\Erfurt\Store\Sql\Sqlnterface
 	 */
 	protected $backendAdapter;
-
-	/**
-	 * The injected event dispatcher
-	 *
-	 * @var \Erfurt\Event\Dispatcher
-	 */
-	protected $eventDispatcher;
-
-	/**
-	 * The injected knowledge base
-	 *
-	 * @var \Erfurt\KnowledgeBase
-	 */
-	protected $knowledgeBase;
 
 	/**
 	 * The injected knowledge base
@@ -176,6 +132,34 @@ class Store implements \Erfurt\Singleton {
 	);
 
 	/**
+	 * Contains signalSlotDispatcher
+	 *
+	 * @var \Erfurt\SignalSlot\Dispatcher
+	 */
+	protected $signalSlotDispatcher;
+
+	/**
+	 * Contains storeSettings
+	 *
+	 * @var array
+	 */
+	protected $storeSettings;
+
+	/**
+	 * Contains systemOntologySettings
+	 *
+	 * @var array
+	 */
+	protected $systemOntologySettings;
+
+	/**
+	 * Contains versioning
+	 *
+	 * @var \Erfurt\Versioning\Versioning
+	 */
+	protected $versioning;
+
+	/**
 	 * Number of queries committed
 	 * @var int
 	 */
@@ -185,21 +169,23 @@ class Store implements \Erfurt\Singleton {
 	private $importsClosure = array();
 
 	/**
-	 * Injector method for a \Erfurt\Event\Dispatcher
+	 * Injector method for a \Erfurt\SignalSlot\Dispatcher
 	 *
-	 * @var \Erfurt\Event\Dispatcher
+	 * @var \Erfurt\SignalSlot\Dispatcher
 	 */
-	public function injectEventDispatcher(\Erfurt\Event\Dispatcher $eventDispatcher) {
-		$this->eventDispatcher = $eventDispatcher;
+	public function injectSignalSlotDispatcher(\Erfurt\SignalSlot\Dispatcher $signalSlotDispatcher) {
+		$this->signalSlotDispatcher = $signalSlotDispatcher;
 	}
 
 	/**
-	 * Injector method for a \Erfurt\KnowledgeBase
+	 * Injector method for the store settings
 	 *
-	 * @var \Erfurt\KnowledgeBase
+	 * @var array
 	 */
-	public function injectKnowledgeBase(\Erfurt\KnowledgeBase $knowledgeBase) {
-		$this->knowledgeBase = $knowledgeBase;
+	public function injectSettings(array $settings) {
+		$erfurtSettings = $settings['Erfurt'];
+		$this->storeSettings = $erfurtSettings['store'];
+		$this->systemOntologySettings = $erfurtSettings['systemOntology'];
 	}
 
 	/**
@@ -212,37 +198,28 @@ class Store implements \Erfurt\Singleton {
 	}
 
 	/**
+	 * Injector method for a \Erfurt\Versioning
+	 *
+	 * @var \Erfurt\Versioning\Versioning
+	 */
+	public function injectVersioning(\Erfurt\Versioning\Versioning $versioning) {
+		$this->versioning = $versioning;
+	}
+
+	/**
 	 * Lifecycle method after all dependencies were injected
 	 *
 	 * @throws Exception\BackendMustBeSetException
 	 * @return void
 	 */
 	public function initializeObject() {
-			$storeConfiguration = $this->knowledgeBase->getStoreConfiguration();
-			// Backend must be set, else throw an exception.
-			if (isset($storeConfiguration->backend)) {
-				$backend = strtolower($storeConfiguration->backend);
-			} else {
-				throw new Exception\BackendMustBeSetException('Backend must be set in configuration.', 1302769905);
-			}
-			// Check configured schema and if not set set it as empty (e.g. virtuoso needs no special schema.
-			if (isset($storeConfiguration->schema)) {
-				$schema = $storeConfiguration->schema;
-			} else {
-				$schema = NULL;
-			}
-			// fetch backend specific options from config.
-			$backendOptions = array();
-			if ($backendConfig = $storeConfiguration->get($backend)) {
-				$backendOptions = $backendConfig->toArray();
-			}
-			// store config options
-			if (isset($storeConfiguration->sysont)) {
-				$storeOptions = $storeConfiguration->sysont->toArray();
-			} else {
-				$storeOptions = array();
-			}
-			$this->initializeBackend($storeOptions, $backend, $backendOptions, $schema);
+		// Backend must be set, else throw an exception.
+		if (!isset($this->storeSettings['backend'])) {
+			throw new Exception\BackendMustBeSetException('Backend must be set in configuration.', 1302769905);
+		}
+		// fetch backend specific options from config.
+		$backendOptions = (isset($this->storeSettings[$this->storeSettings['backend']])) ? $this->storeSettings[$this->storeSettings['backend']] : array();
+		$this->initializeBackend($this->storeSettings['backend'], $backendOptions);
 	}
 
 	/**
@@ -250,63 +227,15 @@ class Store implements \Erfurt\Singleton {
 	 *
 	 * @param string $backend virtuoso, mysqli, adodb, redland
 	 * @param array $backendOptions
-	 * @param string/null $schema rap
 	 *
 	 * @throws \Erfurt\Store\Exception\StoreException if store is not supported or store does not implement the store
 	 * adapter interface.
 	 */
-	public function initializeBackend($storeOptions, $backend, array $backendOptions = array(), $schema = null) {
-		while (list($optionName, $optionValue) = each($storeOptions)) {
-			$this->setOption($optionName, $optionValue);
-		}
-		if (isset($storeOptions['adapterInstance'])) {
-			$this->backendAdapter = $storeOptions['adapterInstance'];
-			$this->backendName = $backend;
-			return;
-		}
-		// store connection settings for super admin id
-		if (array_key_exists('username', $backendOptions)) {
-			$this->databaseUser = $backendOptions['username'];
-		}
-		if (array_key_exists('password', $backendOptions)) {
-			$this->databasePassword = $backendOptions['password'];
-		}
-		// build schema name
-		$schemaName = $schema ? ucfirst($schema) : '';
-		if ($backend === 'zenddb') {
-			$this->backendName = 'ZendDb';
-			// Use Ef schema as default for the ZendDb backend
-			if (null === $schema) {
-				$schemaName = 'Ef';
-			}
-			$className = '\Erfurt_Store_Adapter_'
-				 . $schemaName
-				 . $this->backendName;
-		} elseif ($backend === 'typo3') {
-			$this->backendName = 'Typo3';
-			$className = '\Erfurt\Store\Adapter\\'
-				 . $this->backendName;
-		} else {
-			$this->backendName = ucfirst($backend);
-			$className = '\Erfurt_Store_Adapter_'
-				 . $schemaName
-				 . $this->backendName;
-		}
-		// check class existence
-		if (!class_exists($className)) {
-			$msg = "Backend '$this->backendName' "
-				   . ($schema ? "with schema '$schemaName'" : "")
-				   . " not supported. No suitable backend adapter class found.";
-			throw new Exception\StoreException($msg);
-		}
+	public function initializeBackend($backend, array $backendOptions = array()) {
 		// instantiate backend adapter
-		$this->backendAdapter = $this->objectManager->create($className, $backendOptions);
-		// check interface conformance
-		// but do not check the comparer adapter since we use __call there
-		if ($backend != 'comparer') {
-			if (!($this->backendAdapter instanceof Adapter\AdapterInterface)) {
-				throw new Exception\StoreException('Adapter class must implement Adapter\AdapterInterface.');
-			}
+		$this->backendAdapter = $this->objectManager->create($backend, $backendOptions);
+		if (!$this->backendAdapter instanceof Adapter\AdapterInterface) {
+			throw new Exception\StoreException('Adapter class must implement Adapter\AdapterInterface.', 1307352883);
 		}
 	}
 
@@ -317,7 +246,6 @@ class Store implements \Erfurt\Singleton {
 	 */
 	public function setBackendAdapter(Adapter\AdapterInterface $adapter) {
 		$this->backendAdapter = $adapter;
-		$this->backendName = $adapter->getBackendName();
 	}
 
 	// ------------------------------------------------------------------------
@@ -334,26 +262,30 @@ class Store implements \Erfurt\Singleton {
 	 */
 	public function addMultipleStatements($graphIri, array $statementsArray, $useAc = true) {
 		// TODO inject logger
-		if (defined('_EFDEBUG')) {
-			$logger = $this->knowledgeBase->getLog();
-			$logger->info('Store: adding multiple statements: ' . print_r($statementsArray, true));
-		}
+		//		if (defined('_EFDEBUG')) {
+		//			$logger = $this->knowledgeBase->getLog();
+		//			$logger->info('Store: adding multiple statements: ' . print_r($statementsArray, true));
+		//		}
 		// check whether graph is available
 		if (!$this->isGraphAvailable($graphIri, $useAc)) {
-			throw new Exception\StoreException('Graph is not available.');
+			throw new Exception\StoreException('Graph is not available.', 1307352939);
 		}
 		// check whether graph is editable
-		if (!$this->checkAccessControl($graphIri, 'edit', $useAc)) {
-			throw new Exception\StoreException('No permissions to edit graph.');
+		if (!$this->checkAuthorization($graphIri, 'edit', $useAc)) {
+			throw new Exception\StoreException('No permissions to edit graph.', 1307352946);
 		}
 		$this->backendAdapter->addMultipleStatements($graphIri, $statementsArray);
 		//invalidate deprecated Cache Objects
-		$queryCache = $this->knowledgeBase->getQueryCache();
-		$queryCache->invalidateWithStatements($graphIri, $statementsArray);
-		$event = $this->objectManager->create('\Erfurt\Event\Event', 'onAddMultipleStatements');
-		$event->graphIri = $graphIri;
-		$event->statements = $statementsArray;
-		$event->trigger();
+		//TODO reenable cache
+		//		$queryCache = $this->knowledgeBase->getQueryCache();
+		//		$queryCache->invalidateWithStatements($graphIri, $statementsArray);
+		$this->signalSlotDispatcher->dispatch(
+			__CLASS__,
+			'onAddMultipleStatements',
+			array(
+				 'graphIri' => $graphIri,
+				 'statements' => $statementsArray,
+			));
 		$this->graphConfigurations = null;
 	}
 
@@ -370,27 +302,31 @@ class Store implements \Erfurt\Singleton {
 	 *
 	 * @throws \Erfurt\Exception Throws an exception if adding of statements fails.
 	 */
-	public function addStatement($graphIri, $subject, $predicate, $object, $useAcl = true) {
+	public function addStatement($graphIri, $subject, $predicate, $object, $needsAuthorization = true) {
 		// check whether graph is available
-		if ($useAcl && !$this->isGraphAvailable($graphIri)) {
-			throw new Exception\StoreException('Graph is not available.');
+		if ($needsAuthorization && !$this->isGraphAvailable($graphIri)) {
+			throw new Exception\StoreException('Graph is not available.', 1307353201);
 		}
 		// check whether graph is editable
-		if ($useAcl && !$this->checkAccessControl($graphIri, 'edit')) {
-			throw new Exception\StoreException('No permissions to edit graph.');
+		if ($needsAuthorization && !$this->checkAuthorization($graphIri, 'edit')) {
+			throw new Exception\StoreException('No permissions to edit graph.', 1307353204);
 		}
 		$this->backendAdapter->addStatement($graphIri, $subject, $predicate, $object);
 		//invalidate deprecateded Cache Objects
-		$queryCache = $this->knowledgeBase->getQueryCache();
-		$queryCache->invalidate($graphIri, $subject, $predicate, $object);
-		$event = $this->objectManager->create('\Erfurt\Event\Event', 'onAddStatement');
-		$event->graphIri = $graphIri;
-		$event->statement = array(
-			'subject' => $subject,
-			'predicate' => $predicate,
-			'object' => $object
-		);
-		$event->trigger();
+		//TODO reenable cache
+		//		$queryCache = $this->knowledgeBase->getQueryCache();
+		//		$queryCache->invalidate($graphIri, $subject, $predicate, $object);
+		$this->signalSlotDispatcher->dispatch(
+			__CLASS__,
+			'onAddStatement',
+			array(
+				 'graphIri' => $graphIri,
+				 'statement' => array(
+					 'subject' => $subject,
+					 'predicate' => $predicate,
+					 'object' => $object
+				 )
+			));
 		$this->graphConfigurations = null;
 	}
 
@@ -399,76 +335,91 @@ class Store implements \Erfurt\Singleton {
 	 * ontologies if necessary.
 	 */
 	public function checkSetup() {
-//		$logger = $this->knowledgeBase->getLog();
-		$sysOntSchema = $this->getOption('schemaIri');
-		$schemaLocation = $this->getOption('schemaLocation');
-		$schemaPath = preg_replace('/[\/\\\\]/', '/', EF_PATH_FRAMEWORK . $this->getOption('schemaPath'));
-		$sysOntGraph = $this->getOption('graphIri');
-		$graphLocation = $this->getOption('graphLocation');
-		$graphPath = preg_replace('/[\/\\\\]/', '/', EF_PATH_FRAMEWORK . $this->getOption('graphPath'));
 		$returnValue = true;
 		// check for system configuration graph
 		// We need to import this first, for the schema graph has namespaces definitions, which will be stored in the
 		// local config!
-		if (!$this->isGraphAvailable($sysOntGraph, false)) {
-//			$logger->info('System configuration graph not found. Loading graph ...');
-			$this->knowledgeBase->getVersioning()->enableVersioning(false);
-			$this->getNewGraph($sysOntGraph, '', 'owl', false);
+		if (!$this->isGraphAvailable($this->systemOntologySettings['graphIri'], false)) {
+			//			$logger->info('System configuration graph not found. Loading graph ...');
+			$this->versioning->enableVersioning(false);
+			$this->getNewGraph($this->systemOntologySettings['graphIri'], '', 'owl', false);
 			try {
-				if (is_readable($graphPath)) {
+				if (is_readable($this->systemOntologySettings['graphPath'])) {
 					// load SysOnt Graph from file
-					$this->importRdf($sysOntGraph, $graphPath, 'rdfxml',
-									 \Erfurt\Syntax\RdfParser::LOCATOR_FILE, false);
+					$this->importRdf(
+						$this->systemOntologySettings['graphIri'],
+						$this->systemOntologySettings['graphPath'],
+						'rdfxml',
+						\Erfurt\Syntax\RdfParser::LOCATOR_FILE,
+						false
+					);
 				} else {
 					// load SysOnt Graph from Web
-					$this->importRdf($sysOntGraph, $graphLocation, 'rdfxml',
-									 \Erfurt\Syntax\RdfParser::LOCATOR_URL, false);
+					$this->importRdf(
+						$this->systemOntologySettings['graphIri'],
+						$this->systemOntologySettings['graphLocation'],
+						'rdfxml',
+						\Erfurt\Syntax\RdfParser::LOCATOR_URL,
+						false
+					);
 				}
 			}
 			catch (\Erfurt\Exception $e) {
 				// clear query cache completly
-				$queryCache = $this->knowledgeBase->getQueryCache();
-				$queryCache->cleanUpCache(array('mode' => 'uninstall'));
+				// TODO reenable cache
+				//$queryCache = $this->knowledgeBase->getQueryCache();
+				//$queryCache->cleanUpCache(array('mode' => 'uninstall'));
 				// Delete the graph, for the import failed.
-				$this->backendAdapter->deleteGraph($sysOntGraph);
-				throw new Exception\StoreException("Import of '$sysOntGraph' failed -> " . $e->getMessage());
+				$this->backendAdapter->deleteGraph($this->systemOntologySettings['graphIri']);
+				throw new Exception\StoreException('Import of \'' . $this->systemOntologySettings['graphIri'] . '\' failed -> ' . $e->getMessage());
 			}
-			if (!$this->isGraphAvailable($sysOntGraph, false)) {
+			if (!$this->isGraphAvailable($this->systemOntologySettings['graphIri'], false)) {
 				throw new Exception\StoreException('Unable to load System Ontology graph.');
 			}
-			$this->knowledgeBase->getVersioning()->enableVersioning(true);
-//			$logger->info('System graph successfully loaded.');
+			$this->versioning->enableVersioning(true);
+			//			$logger->info('System graph successfully loaded.');
 			$returnValue = false;
 		}
 		// check for system ontology
-		if (!$this->isGraphAvailable($sysOntSchema, false)) {
-//			$logger->info('System schema graph not found. Loading graph ...');
-			$this->knowledgeBase->getVersioning()->enableVersioning(false);
-			$this->getNewGraph($sysOntSchema, '', 'owl', false);
+		if (!$this->isGraphAvailable($this->systemOntologySettings['schemaIri'], false)) {
+			//			$logger->info('System schema graph not found. Loading graph ...');
+			$this->versioning->enableVersioning(false);
+			$this->getNewGraph($this->systemOntologySettings['schemaIri'], '', 'owl', false);
 			try {
-				if (is_readable($schemaPath)) {
+				if (is_readable($this->systemOntologySettings['schemaPath'])) {
 					// load SysOnt from file
-					$this->importRdf($sysOntSchema, $schemaPath, 'rdfxml', \Erfurt\Syntax\RdfParser::LOCATOR_FILE,
-									 false);
+					$this->importRdf(
+						$this->systemOntologySettings['schemaIri'],
+						$this->systemOntologySettings['schemaPath'],
+						'rdfxml',
+						\Erfurt\Syntax\RdfParser::LOCATOR_FILE,
+						false
+					);
 				} else {
 					// load SysOnt from Web
-					$this->importRdf($sysOntSchema, $schemaLocation, 'rdfxml', \Erfurt\Syntax\RdfParser::LOCATOR_URL,
-									 false);
+					$this->importRdf(
+						$this->systemOntologySettings['schemaIri'],
+						$this->systemOntologySettings['schemaLocation'],
+						'rdfxml',
+						\Erfurt\Syntax\RdfParser::LOCATOR_URL,
+						false
+					);
 				}
 			}
 			catch (\Erfurt\Exception $e) {
 				// clear query cache completly
-				$queryCache = $this->knowledgeBase->getQueryCache();
-				$queryCache->cleanUpCache(array('mode' => 'uninstall'));
+				// TODO reenable cache
+				//$queryCache = $this->knowledgeBase->getQueryCache();
+				//$queryCache->cleanUpCache(array('mode' => 'uninstall'));
 				// Delete the graph, for the import failed.
-				$this->backendAdapter->deleteGraph($sysOntSchema);
-				throw new Exception\StoreException("Import of '$sysOntSchema' failed -> " . $e->getMessage());
+				$this->backendAdapter->deleteGraph($this->systemOntologySettings['schemaIri']);
+				throw new Exception\StoreException('Import of \'' . $this->systemOntologySettings['schemaIri'] . '\' failed -> ' . $e->getMessage());
 			}
-			if (!$this->isGraphAvailable($sysOntSchema, false)) {
+			if (!$this->isGraphAvailable($this->systemOntologySettings['schemaIri'], false)) {
 				throw new Exception\StoreException('Unable to load System Ontology schema.');
 			}
-			$this->knowledgeBase->getVersioning()->enableVersioning(true);
-//			$logger->info('System schema successfully loaded.');
+			$this->versioning->enableVersioning(true);
+			//			$logger->info('System schema successfully loaded.');
 			$returnValue = false;
 		}
 		if ($returnValue === false) {
@@ -508,28 +459,41 @@ class Store implements \Erfurt\Singleton {
 		if (!isset($options['use_ac'])) {
 			$options['use_ac'] = true;
 		}
-		if ($this->checkAccessControl($graphIri, 'edit', $options['use_ac'])) {
+		if ($this->checkAuthorization($graphIri, 'edit', $options['use_ac'])) {
 			try {
 				$ret = $this->backendAdapter->deleteMatchingStatements(
-					$graphIri, $subject, $predicate, $object, $options);
-				$queryCache = $this->knowledgeBase->getQueryCache();
-				$queryCache->invalidate($graphIri, $subject, $predicate, $object);
-				$event = $this->objectManager->create('\Erfurt\Event\Event', 'onDeleteMatchingStatements');
-				$event->graphIri = $graphIri;
-				$event->resource = $subject;
+					$graphIri,
+					$subject,
+					$predicate,
+					$object,
+					$options
+				);
+				// TODO: renable query cache
+				//$queryCache = $this->knowledgeBase->getQueryCache();
+				//$queryCache->invalidate($graphIri, $subject, $predicate, $object);
 				// just trigger if really data operations were performed
 				if ((int)$ret > 0) {
-					$event->trigger();
+					$this->signalSlotDispatcher->dispatch(
+						__CLASS__,
+						'onDeleteMatchingStatements',
+						array(
+							 'graphIri' => $graphIri,
+							 'resource' => $subject
+						));
 				}
 				return $ret;
 			}
 			catch (\Erfurt\Store\Adapter\Exception $e) {
 				// TODO: Create a exception for too many matching values
 				// In this case we log without storing the payload. No rollback supported for such actions.
-				$event = $this->objectManager->create('\Erfurt\Event\Event', 'onDeleteMatchingStatements');
-				$event->graphIri = $graphIri;
-				$event->resource = $subject;
-				$this->eventDispacher->trigger($event);
+				$this->signalSlotDispatcher->dispatch(
+					__CLASS__,
+					'onDeleteMatchingStatements',
+					array(
+						 'graphIri' => $graphIri,
+						 'resource' => $subject
+					)
+				);
 			}
 		}
 	}
@@ -548,44 +512,50 @@ class Store implements \Erfurt\Singleton {
 			throw new Exception\StoreException('Graph is not available.');
 		}
 		// check whether graph is editable
-		if (!$this->checkAccessControl($graphIri, 'edit')) {
+		if (!$this->checkAuthorization($graphIri, 'edit')) {
 			throw new Exception\StoreException('No permissions to edit graph.');
 		}
 		$this->backendAdapter->deleteMultipleStatements($graphIri, $statementsArray);
-		$queryCache = $this->knowledgeBase->getQueryCache();
-		$queryCache->invalidateWithStatements($graphIri, $statementsArray);
-		$event = $this->objectManager->create('\Erfurt\Event\Event', 'onDeleteMultipleStatements');
-		$event->graphIri = $graphIri;
-		$event->statements = $statementsArray;
-		$event->trigger();
+		// TODO reenable query cache
+		//		$queryCache = $this->knowledgeBase->getQueryCache();
+		//		$queryCache->invalidateWithStatements($graphIri, $statementsArray);
+		$this->signalSlotDispatcher->dispatch(
+			__CLASS__,
+			'onDeleteMultipleStatements',
+			array(
+				 'graphIri' => $graphIri,
+				 'statements' => $statementsArray
+			)
+		);
 	}
 
 	/**
 	 * @param string $graphIri The Iri, which identifies the graph.
-	 * @param boolean $useAc Whether to use access control or not.
+	 * @param boolean $needsAuthorization Whether to use access control or not.
 	 *
 	 * @throws \Erfurt\Exception Throws an exception if no permission, graph not existing or deletion fails.
 	 */
-	public function deleteGraph($graphIri, $useAc = true) {
+	public function deleteGraph($graphIri, $needsAuthorization = true) {
 		// check whether graph is available
-		if (!$this->isGraphAvailable($graphIri, $useAc)) {
+		if (!$this->isGraphAvailable($graphIri, $needsAuthorization)) {
 			throw new Exception\StoreException("Graph <$graphIri> is not available and therefore not removable.");
 		}
 		// check whether graph editing is allowed
-		if (!$this->checkAccessControl($graphIri, 'edit', $useAc)) {
+		if (!$this->checkAuthorization($graphIri, 'edit', $needsAuthorization)) {
 			throw new Exception\StoreException("No permissions to delete graph <$graphIri>.");
 		}
 		// delete graph
 		$this->backendAdapter->deleteGraph($graphIri);
 		// and history
-		$this->knowledgeBase->getVersioning()->deleteHistoryForGraph($graphIri);
-		$queryCache = $this->knowledgeBase->getQueryCache();
-		$queryCache->invalidateWithGraphIri($graphIri);
+		$this->versioning->deleteHistoryForGraph($graphIri);
+		// TODO reenable query cache
+		//		$queryCache = $this->knowledgeBase->getQueryCache();
+		//		$queryCache->invalidateWithGraphIri($graphIri);
 		// remove any statements about deleted graph from SysOnt
 		if ($this->knowledgeBase->getAcGraph() !== false) {
 			$acGraphIri = $this->knowledgeBase->getAcGraph()->getGraphIri();
 			// Only do that, if the deleted graph was not one of the sys graphs
-			if (($graphIri !== $this->getOption('graphIri')) && ($graphIri !== $this->getOption('schemaIri'))) {
+			if (($graphIri !== $this->systemOntologySettings('graphIri')) && ($graphIri !== $this->systemOntologySettings('schemaIri'))) {
 				$this->backendAdapter->deleteMatchingStatements(
 					$acGraphIri,
 					null,
@@ -599,7 +569,7 @@ class Store implements \Erfurt\Singleton {
 					null
 				);
 				// invalidate for the sysgraph too
-				$queryCache->invalidateWithGraphIri($acGraphIri);
+				//				$queryCache->invalidateWithGraphIri($acGraphIri);
 			}
 		}
 	}
@@ -652,31 +622,31 @@ class Store implements \Erfurt\Singleton {
 			// else execute Sparql Regex Fallback
 		else {
 			$ret = array();
-			$s_var = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'resourceIri');
-			$p_var = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'p');
-			$o_var = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'o');
-			$default_tpattern = $this->objectManager->create('\Erfurt\Sparql\Query2\Triple', $s_var, $p_var, $o_var);
+			$s_var = $this->objectManager->create('Erfurt\Sparql\Query2\Variable', 'resourceIri');
+			$p_var = $this->objectManager->create('Erfurt\Sparql\Query2\Variable', 'p');
+			$o_var = $this->objectManager->create('Erfurt\Sparql\Query2\Variable', 'o');
+			$default_tpattern = $this->objectManager->create('Erfurt\Sparql\Query2\Triple', $s_var, $p_var, $o_var);
 			$ret[] = $default_tpattern;
-			$filter = $this->objectManager->create('\Erfurt\Sparql\Query2\Filter',
-				$this->objectManager->create('\Erfurt\Sparql\Query2\ConditionalOrExpression',
+			$filter = $this->objectManager->create('Erfurt\Sparql\Query2\Filter',
+				$this->objectManager->create('Erfurt\Sparql\Query2\ConditionalOrExpression',
 					array(
 						 /*new \Erfurt\Sparql\Query2\Regex(
-													 $s_var,
-													 new \Erfurt\Sparql\Query2\RDFLiteral($stringSpec),
-													 $options['case_sensitive'] ? null : new \Erfurt\Sparql\Query2\RDFLiteral('i')
-												 ),*/
-						 $this->objectManager->create('\Erfurt\Sparql\Query2\Regex',
+						   $s_var,
+						   new \Erfurt\Sparql\Query2\RDFLiteral($stringSpec),
+						   $options['case_sensitive'] ? null : new \Erfurt\Sparql\Query2\RDFLiteral('i')
+						),*/
+						 $this->objectManager->create('Erfurt\Sparql\Query2\Regex',
 							 $o_var,
-							 $this->objectManager->create('\Erfurt\Sparql\Query2\RDFLiteral', $stringSpec),
-							 $options['case_sensitive'] ? null : $this->objectManager->create('\Erfurt\Sparql\Query2\RDFLiteral', 'i')
+							 $this->objectManager->create('Erfurt\Sparql\Query2\RDFLiteral', $stringSpec),
+							 $options['case_sensitive'] ? null : $this->objectManager->create('Erfurt\Sparql\Query2\RDFLiteral', 'i')
 						 )
 					)
 				)
 			);
 			if ($options['filter_properties']) {
-				$ss_var = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'ss');
-				$oo_var = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'oo');
-				$filterprop_tpattern = $this->objectManager->create('\Erfurt\Sparql\Query2\Triple', $ss_var, $s_var, $oo_var);
+				$ss_var = $this->objectManager->create('Erfurt\Sparql\Query2\Variable', 'ss');
+				$oo_var = $this->objectManager->create('Erfurt\Sparql\Query2\Variable', 'oo');
+				$filterprop_tpattern = $this->objectManager->create('Erfurt\Sparql\Query2\Triple', $ss_var, $s_var, $oo_var);
 				$ret[] = $filterprop_tpattern;
 				/*
 								$filter->getConstraint()->addElement(
@@ -702,12 +672,12 @@ class Store implements \Erfurt\Singleton {
 		$graphs = $this->backendAdapter->getAvailableGraphs();
 		// filter for access control and hidden graphs
 		foreach ($graphs as $graphIri => $true) {
-			if (!$this->checkAccessControl($graphIri)) {
+			if (!$this->checkAuthorization($graphIri)) {
 				unset($graphs[$graphIri]);
 			}
 			if ($withHidden === false) {
 				$graphConfig = $this->getGraphConfiguration($graphIri);
-				$hiddenProperty = $this->getOption('propertiesHidden');
+				$hiddenProperty = $this->systemOntologySettings['properties']['hidden'];
 				if (isset($graphConfig[$hiddenProperty])) {
 					$hidden = current($graphConfig[$hiddenProperty]);
 					if ((boolean)$hidden['value']) {
@@ -717,24 +687,6 @@ class Store implements \Erfurt\Singleton {
 			}
 		}
 		return $graphs;
-	}
-
-	/**
-	 * Returns the db connection username
-	 *
-	 * @return string
-	 */
-	public function getDatabaseUser() {
-		return $this->databaseUser;
-	}
-
-	/**
-	 * Returns the db connection password
-	 *
-	 * @return string
-	 */
-	public function getDatabasePassword() {
-		return $this->databasePassword;
 	}
 
 	public function getImportsClosure($graphIri, $withHiddenImports = true, $useAC = true) {
@@ -768,13 +720,13 @@ class Store implements \Erfurt\Singleton {
 	 *
 	 * @param string $graphIri
 	 */
-	private function _getImportsClosure($graphIri, $withHiddenImports = true, $useAC = true) {
+	private function _getImportsClosure($graphIri, $withHiddenImports = true, $needsAuthorization = true) {
 		$currentLevel = $this->backendAdapter->getImportsClosure($graphIri);
 		if ($currentLevel == array($graphIri)) {
 			return $currentLevel;
 		}
 		if ($withHiddenImports === true) {
-			$importsIri = $this->getOption('propertiesHiddenImports');
+			$importsIri = $this->systemOntologySettings['properties']['hiddenImports'];
 			$graphConfig = $this->getGraphConfiguration($graphIri);
 			if (isset($graphConfig[$importsIri])) {
 				foreach ($graphConfig[$importsIri] as $valueArray) {
@@ -833,21 +785,21 @@ class Store implements \Erfurt\Singleton {
 			$graphInstance = $this->backendAdapter->getGraph($graphIri);
 		} else {
 			// use generic implementation
-			$owlQuery = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+			$owlQuery = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 			$owlQuery->setProloguePart('ASK')
 					->addFrom($graphIri)
-					->setWherePart('{<' . $graphIri . '> <' . Erfurt\Vocabulary\Rdf::NS . 'type> <' . Erfurt\Vocabulary\Owl::ONTOLOGY . '>.}');
+					->setWherePart('{<' . $graphIri . '> <' . \Erfurt\Vocabulary\Rdf::NS . 'type> <' . \Erfurt\Vocabulary\Owl::ONTOLOGY . '>.}');
 			// TODO: cache this
 			if ($this->sparqlAsk($owlQuery, $useAc)) {
 				// instantiate OWL graph
-				$graphInstance = $this->objectManager->create('\Erfurt\Domain\Model\Owl\Graph', $graphIri);
+				$graphInstance = $this->objectManager->create('Erfurt\Domain\Model\Owl\Graph', $graphIri);
 			} else {
 				// instantiate RDF-S graph
-				$graphInstance = $this->objectManager->create('\Erfurt\Domain\Model\Rdfs\Graph', $graphIri);
+				$graphInstance = $this->objectManager->create('Erfurt\Domain\Model\Rdfs\Graph', $graphIri);
 			}
 		}
 		// check for edit possibility
-		if ($this->checkAccessControl($graphIri, 'edit', $useAc)) {
+		if ($this->checkAuthorization($graphIri, 'edit', $useAc)) {
 			$graphInstance->setEditable(true);
 		} else {
 			$graphInstance->setEditable(false);
@@ -887,9 +839,10 @@ class Store implements \Erfurt\Singleton {
 			throw new Exception\StoreException($message);
 		}
 		// check action access
-		if ($useAc && !$this->knowledgeBase->isActionAllowed('GraphManagement')) {
-			throw new Exception\StoreException("Failed creating the graph. Action not allowed!");
-		}
+		// TODO reenable AC
+//		if ($useAc && !$this->knowledgeBase->isActionAllowed('GraphManagement')) {
+//			throw new Exception\StoreException("Failed creating the graph. Action not allowed!");
+//		}
 		try {
 			$this->backendAdapter->createGraph($graphIri, $type);
 		}
@@ -973,10 +926,11 @@ class Store implements \Erfurt\Singleton {
 	 * @throws \Erfurt\Exception
 	 */
 	public function importRdf($graphIri, $data, $type = 'auto', $locator = \Erfurt\Syntax\RdfParser::LOCATOR_FILE,
-		$useAc = true) {
-		$queryCache = $this->knowledgeBase->getQueryCache();
-		$queryCache->invalidateWithGraphIri($graphIri);
-		if (!$this->checkAccessControl($graphIri, 'edit', $useAc)) {
+							  $needsAuthentication = true) {
+		// TODO reenable cache
+//		$queryCache = $this->knowledgeBase->getQueryCache();
+//		$queryCache->invalidateWithGraphIri($graphIri);
+		if (!$this->checkAuthorization($graphIri, 'edit', $needsAuthentication)) {
 			throw new Exception\StoreException("Import failed. Graph <$graphIri> not found or not writable.");
 		}
 		if ($type === 'auto') {
@@ -1058,8 +1012,8 @@ class Store implements \Erfurt\Singleton {
 			$this->backendAdapter->init();
 			return $result;
 		} else {
-			$parser = $this->objectManager->create('\Erfurt\Syntax\RdfParser', $type);
-			$retVal = $parser->parseToStore($data, $locator, $graphIri, $useAc);
+			$parser = $this->objectManager->create('Erfurt\Syntax\RdfParser', $type);
+			$retVal = $parser->parseToStore($data, $locator, $graphIri, $needsAuthentication);
 			// After import re-initialize the backend (e.g. zenddb: fetch graph infos again)
 			$this->backendAdapter->init();
 			return $retVal;
@@ -1073,7 +1027,7 @@ class Store implements \Erfurt\Singleton {
 	 * @return boolean Returns true if graph exists and is available for the user ($useAc === true).
 	 */
 	public function isGraphAvailable($graphIri, $useAc = true) {
-		if ($this->backendAdapter->isGraphAvailable($graphIri) && $this->checkAccessControl($graphIri, 'view', $useAc)) {
+		if ($this->backendAdapter->isGraphAvailable($graphIri) && $this->checkAuthorization($graphIri, 'view', $useAc)) {
 			return true;
 		}
 		return false;
@@ -1105,26 +1059,6 @@ class Store implements \Erfurt\Singleton {
 			return $this->backendAdapter->listTables($prefix);
 		}
 		// TODO: use default SQL store
-	}
-
-	/**
-	 * Sets store options.
-	 *
-	 * @param string $optionName
-	 * @param string|array $optionValue
-	 */
-	public function setOption($optionName, $optionValue) {
-		if (is_string($optionValue)) {
-			$this->options[$optionName] = $optionValue;
-		} else {
-			if (is_array($optionValue)) {
-				while (list($subName, $subValue) = each($optionValue)) {
-					$subOptionName = $optionName
-									 . ucfirst($subName);
-					$this->setOption($subOptionName, $subValue);
-				}
-			}
-		}
 	}
 
 	/**
@@ -1193,7 +1127,7 @@ class Store implements \Erfurt\Singleton {
 			$queryObject = \Erfurt\Sparql\SimpleQuery::initWithString($queryObject);
 		}
 		if (!($queryObject instanceof \Erfurt\Sparql\Query2 || $queryObject instanceof \Erfurt\Sparql\SimpleQuery)) {
-			throw new \Exception("Argument 1 passed to " . get_class($this) . '::sparqlQuery must be instance of \Erfurt\Sparql\Query2, \Erfurt\Sparql\SimpleQuery or string', 1303224590);
+			throw new \Exception("Argument 1 passed to " . __CLASS__ . '::sparqlQuery must be instance of \Erfurt\Sparql\Query2, \Erfurt\Sparql\SimpleQuery or string', 1303224590);
 		}
 		/*
 				 * clone the Query2 Object to not modify the original one
@@ -1282,7 +1216,7 @@ class Store implements \Erfurt\Singleton {
 				$queryObject->setWherePart('{FILTER(false)}');
 			} else {
 				if ($queryObject instanceof \Erfurt\Sparql\Query2) {
-					$ggp = $this->objectManager->create('\Erfurt\Sparql\Query2GroupGraphPattern');
+					$ggp = $this->objectManager->create('Erfurt\Sparql\Query2GroupGraphPattern');
 					$ggp->addFilter(false); //unsatisfiable
 					$queryObject->setWhere($ggp);
 				}
@@ -1291,9 +1225,9 @@ class Store implements \Erfurt\Singleton {
 		//querying SparqlEngine or retrieving Result from QueryCache
 		//TODO for query cache, please refactor
 		$resultFormat = $options[STORE_RESULTFORMAT];
-		$queryCache = $this->knowledgeBase->getQueryCache();
-		$sparqlResult = $queryCache->load((string)$queryObject, $resultFormat);
-		if ($sparqlResult == \Erfurt\Cache\Frontend\QueryCache::ERFURT_CACHE_NO_HIT) {
+//		$queryCache = $this->knowledgeBase->getQueryCache();
+//		$sparqlResult = $queryCache->load((string)$queryObject, $resultFormat);
+//		if ($sparqlResult == \Erfurt\Cache\Frontend\QueryCache::ERFURT_CACHE_NO_HIT) {
 			// TODO: check if adapter supports requested result format
 			$startTime = microtime(true);
 			$sparqlResult = $this->backendAdapter->sparqlQuery($queryObject, $options);
@@ -1308,8 +1242,8 @@ class Store implements \Erfurt\Singleton {
 				}
 				$logger->debug("SPARQL *****************" . round((1000 * $duration), 2) . " msec " . $slow . "\n" . $queryObject);
 			}
-			$queryCache->save((string)$queryObject, $resultFormat, $sparqlResult, $duration);
-		}
+//			$queryCache->save((string)$queryObject, $resultFormat, $sparqlResult, $duration);
+//		}
 		return $sparqlResult;
 	}
 
@@ -1344,7 +1278,7 @@ class Store implements \Erfurt\Singleton {
 		if (null === $this->graphConfigurations) {
 			$sysOntGraphIri = $this->getOption('graphIri');
 			// Fetch the graph configurations
-			$queryObject = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+			$queryObject = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 			$queryObject->setProloguePart('SELECT ?s ?p ?o');
 			$queryObject->setFrom(array($sysOntGraphIri));
 			$queryObject->setWherePart('WHERE { ?s ?p ?o . ?s a <http://ns.ontowiki.net/SysOnt/Graph> }');
@@ -1442,7 +1376,7 @@ class Store implements \Erfurt\Singleton {
 				return $backendResult;
 			}
 		}
-		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$query = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT DISTINCT ?graph')
 				->setWherePart('WHERE {GRAPH ?graph {<' . $resourceIri . '> ?p ?o.}}');
 		$graphResult = array();
@@ -1502,7 +1436,9 @@ class Store implements \Erfurt\Singleton {
 	 *
 	 * @return boolean Returns whether view as the case may be edit is allowed for the graph or not.
 	 */
-	private function checkAccessControl($graphIri, $accessType = 'view', $useAc = true) {
+	private function checkAuthorization($graphIri, $accessType = 'view', $useAc = true) {
+		return true;
+		// TODO REENABLE
 		// check whether ac should be used (e.g. ac engine itself needs access to store without ac)
 		if ($useAc === false) {
 			$logger = $this->getErfurtLogger();

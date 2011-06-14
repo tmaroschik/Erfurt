@@ -61,7 +61,7 @@ class Typo3 {
 	protected $databaseConnection;
 
 	/**
-	 * The injected knowledge base
+	 * The injected object manager
 	 *
 	 * @var \Erfurt\Object\ObjectManager
 	 */
@@ -243,11 +243,11 @@ class Typo3 {
 	 * @return array/string  array of triple arrays, or XML.
 	 * Format depends on $resultform parameter.
 	 */
-	public function queryModel(Sparql\Query $query, $resultform = 'plain') {
+	public function queryGraph(Sparql\Query $query, $resultform = 'plain') {
 		$this->query = $query;
-		$qsimp = $this->objectManager->create('\Erfurt\Sparql\EngineDb\QuerySimplifier');
+		$qsimp = $this->objectManager->create('Erfurt\Sparql\EngineDb\QuerySimplifier');
 		$qsimp->simplify($this->query);
-		$queryOptimizer = $this->objectManager->create('\Erfurt\Sparql\EngineDb\QueryOptimizer', $this);
+		$queryOptimizer = $this->objectManager->create('Erfurt\Sparql\EngineDb\QueryOptimizer', $this);
 		$result = $queryOptimizer->optimize($this->query);
 		if ($result instanceof \Erfurt\Sparql\Query) {
 			$this->query = $result;
@@ -255,27 +255,27 @@ class Typo3 {
 		$resultform = strtolower($resultform);
 		switch ($resultform) {
 			case 'xml':
-				$rc = $this->objectManager->create('\Erfurt\Sparql\EngineDb\ResultRenderer\Xml');
+				$rc = $this->objectManager->create('Erfurt\Sparql\EngineDb\ResultRenderer\Xml');
 				break;
 			//throw new Erfurt_Exception('XML result format not supported yet.');
 			//$this->rc = new ResultRenderer\RapZendDb_Xml();
 			//break;
 			case 'extended':
-				$rc = $this->objectManager->create('\Erfurt\Sparql\EngineDb\ResultRenderer\Extended');
+				$rc = $this->objectManager->create('Erfurt\Sparql\EngineDb\ResultRenderer\Extended');
 				break;
 			case 'json':
-				$rc = $this->objectManager->create('\Erfurt\Sparql\EngineDb\ResultRenderer\Json');
+				$rc = $this->objectManager->create('Erfurt\Sparql\EngineDb\ResultRenderer\Json');
 				break;
 			case 'plain':
 			default:
-				$rc = $this->objectManager->create('\Erfurt\Sparql\EngineDb\ResultRenderer\Plain');
+				$rc = $this->objectManager->create('Erfurt\Sparql\EngineDb\ResultRenderer\Plain');
 		}
 		if (is_array($result)) {
 			$result = $rc->convertFromDbResults($result['data'], $this->query, $this, $result['vars']);
 			return $result;
 		}
-		$this->sg = $this->objectManager->create('\Erfurt\Sparql\EngineDb\SqlGenerator\Adapter\Typo3', $this->query, $this->arModelIdMapping);
-		$this->ts = $this->objectManager->create('\Erfurt\Sparql\EngineDb\TypeSorter', $this->query, $this);
+		$this->sg = $this->objectManager->create('Erfurt\Sparql\EngineDb\SqlGenerator\Adapter\Typo3', $this->query, $this->arModelIdMapping);
+		$this->ts = $this->objectManager->create('Erfurt\Sparql\EngineDb\TypeSorter', $this->query, $this);
 		$this->_setOptions();
 		$arSqls = $this->sg->createSql();
 		#var_dump($arSqls);exit;

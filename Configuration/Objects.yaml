@@ -1,0 +1,75 @@
+#                                                                          #
+# Object Configuration for the Erfurt Framework                             #
+#                                                                          #
+# This file contains the default object configuration for the Erfurt        #
+# Framework. Because it is loaded at a very early stage during ini-        #
+# tialization, this configuration cannot be overriden by other con-        #
+# figuration files.                                                        #
+#                                                                          #
+
+# @package Erfurt
+
+DateTime:
+  scope: prototype
+  autowiring: off
+
+#                                                                          #
+# Cache                                                                    #
+#                                                                          #
+
+Erfurt\Cache\CacheFactory:
+  arguments:
+    1:
+      setting: Erfurt.context
+
+#                                                                          #
+# Log                                                                      #
+#                                                                          #
+
+Erfurt\Log\Backend\FileBackend:
+  autowiring: off
+Erfurt\Log\Backend\NullBackend:
+  autowiring: off
+Erfurt\Log\SystemLoggerInterface:
+  scope: singleton
+  factoryObjectName: Erfurt\Log\LoggerFactory
+  arguments:
+    1:
+      value: 'Erfurt_System'
+    2:
+      value: 'Erfurt\Log\Logger'
+    3:
+      value: 'Erfurt\Log\Backend\FileBackend'
+    4:
+      setting: Erfurt.log.systemLogger.backendOptions
+
+#                                                                          #
+# Object                                                                   #
+#                                                                          #
+
+Erfurt\Object\ObjectManagerInterface:
+  className: Erfurt\Object\ObjectManager
+  scope: singleton
+  autowiring: off
+
+Erfurt\Object\ObjectManager:
+  autowiring: off
+
+#                                                                          #
+# Session                                                                  #
+#                                                                          #
+
+Erfurt\Session\SessionInterface:
+  className: Erfurt\Session\PhpSession
+  scope: singleton
+  properties:
+    settings:
+      setting: Erfurt
+    environment:
+      object: Erfurt\Utility\Environment
+
+#
+# Store
+#
+Erfurt\Store\Store:
+  scope: singleton

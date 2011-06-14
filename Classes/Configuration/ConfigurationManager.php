@@ -29,7 +29,7 @@ namespace Erfurt\Configuration;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class ConfigurationManager {
+class ConfigurationManager implements \t3lib_Singleton {
 
 	const CONFIGURATION_TYPE_CACHES = 'Caches';
 	const CONFIGURATION_TYPE_POLICY = 'Policy';
@@ -79,15 +79,13 @@ class ConfigurationManager {
 
 	/**
 	 * Constructs the configuration manager
-	 *
-	 * @param string $context The application context to fetch configuration for
 	 */
-	public function __construct($context) {
-		$this->context = $context;
-		if (!is_dir(EF_PATH_CONFIGURATION . $context)) {
-			\Erfurt\Utility\Files::createDirectoryRecursively(EF_PATH_CONFIGURATION . $context);
+	public function __construct() {
+		$this->context = EF_CONTEXT;
+		if (!is_dir(EF_PATH_CONFIGURATION . EF_CONTEXT)) {
+			\Erfurt\Utility\Files::createDirectoryRecursively(EF_PATH_CONFIGURATION . EF_CONTEXT);
 		}
-		$this->includeCachedConfigurationsPathAndFilename = EF_PATH_CONFIGURATION . $context . '/IncludeCachedConfigurations.php';
+		$this->includeCachedConfigurationsPathAndFilename = EF_PATH_CONFIGURATION . EF_CONTEXT . '/IncludeCachedConfigurations.php';
 		$this->loadConfigurationCache();
 	}
 
@@ -157,10 +155,13 @@ class ConfigurationManager {
 					}
 					$configuration = &$this->configurations[self::CONFIGURATION_TYPE_SETTINGS];
 					break;
+				} else {
+					$configuration = &$this->configurations[self::CONFIGURATION_TYPE_SETTINGS][$packageKey];
+					break;
 				}
 
 			default :
-				throw new \Erfurt\Configuration\Exception\InvalidConfigurationTypeException('Invalid configuration type "' . $configurationType . '"', 1206031879);
+				throw new \Erfurt\Configuration\Exception\InvalidConfigurationTypeException('Invalid configuration type "' . $configurationType . '"', 1307365066);
 		}
 		if ($configurationPath === NULL) {
 			return $configuration;
@@ -231,10 +232,10 @@ class ConfigurationManager {
 
 		switch ($configurationType) {
 			case self::CONFIGURATION_TYPE_SETTINGS :
-				if (isset($packages['FLOW3'])) {
-					$flow3Package = $packages['FLOW3'];
-					unset($packages['FLOW3']);
-					array_unshift($packages, $flow3Package);
+				if (isset($packages['Erfurt'])) {
+					$erfurtPackage = $packages['Erfurt'];
+					unset($packages['Erfurt']);
+					array_unshift($packages, $erfurtPackage);
 				}
 				$settings = array();
 
@@ -256,8 +257,8 @@ class ConfigurationManager {
 					$this->configurations[self::CONFIGURATION_TYPE_SETTINGS] = $settings;
 				}
 
-				if (!isset($this->configurations[self::CONFIGURATION_TYPE_SETTINGS]['FLOW3']['core']['context'])) {
-					$this->configurations[self::CONFIGURATION_TYPE_SETTINGS]['FLOW3']['core']['context'] = $this->context;
+				if (!isset($this->configurations[self::CONFIGURATION_TYPE_SETTINGS]['Erfurt']['core']['context'])) {
+					$this->configurations[self::CONFIGURATION_TYPE_SETTINGS]['Erfurt']['core']['context'] = $this->context;
 				}
 			break;
 			case self::CONFIGURATION_TYPE_CACHES :

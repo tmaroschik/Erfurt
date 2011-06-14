@@ -43,7 +43,7 @@ class RDFSClass {
 			$owApp = OntoWiki_Application::getInstance();
 			$store = $owApp->erfurt->getStore();
 			$graph = $owApp->selectedModel;
-			$types = array_keys($store->getTransitiveClosure($graph->getModelIri(), Erfurt\Vocabulary\Rdfs::SUBCLASSOF, array($iri->getIri()), true));
+			$types = array_keys($store->getTransitiveClosure($graph->getModelIri(), \Erfurt\Vocabulary\Rdfs::SUBCLASSOF, array($iri->getIri()), true));
 			foreach ($types as $type) {
 				$this->subclasses[] = new Query2\IriRef($type);
 			}

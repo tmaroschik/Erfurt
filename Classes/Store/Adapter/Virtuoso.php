@@ -203,7 +203,7 @@ class Erfurt_Store_Adapter_Virtuoso implements Erfurt_Store_Adapter_Interface, E
         require_once 'Erfurt/Store.php';
         if ($type === Erfurt_Store::GRAPH_TYPE_OWL) {
             // add statement <graph> a owl:Ontology
-            $owlInsert = sprintf('INSERT INTO GRAPH <%s> {<%s> a <%s>.}', $graphUri, $graphUri, Erfurt\Vocabulary\Owl::ONTOLOGY);
+            $owlInsert = sprintf('INSERT INTO GRAPH <%s> {<%s> a <%s>.}', $graphUri, $graphUri, \Erfurt\Vocabulary\Owl::ONTOLOGY);
             $this->_execSparql($owlInsert);
         }
         
@@ -862,7 +862,7 @@ class Erfurt_Store_Adapter_Virtuoso implements Erfurt_Store_Adapter_Interface, E
                     SELECT ?o' . 
                     $from . '
                     WHERE {
-                        ?model <' . Erfurt\Vocabulary\Owl::NS . 'imports> ?o. 
+                        ?model <' . \Erfurt\Vocabulary\Owl::NS . 'imports> ?o. 
                         FILTER (' . implode(' || ', $filter) . ')
                     }';
 

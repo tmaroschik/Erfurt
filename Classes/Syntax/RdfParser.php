@@ -80,7 +80,7 @@ class RdfParser {
 			case 'rdfxml':
 			case 'xml':
 			case 'rdf':
-				$this->parserAdapter = $this->objectManager->create('\Erfurt\Syntax\RdfParser\Adapter\RdfXml');
+				$this->parserAdapter = $this->objectManager->create('Erfurt\Syntax\RdfParser\Adapter\RdfXml');
 				break;
 			case 'turtle':
 			case 'ttl':
@@ -88,11 +88,11 @@ class RdfParser {
 			case 'ntriple':
 			case 'n3':
 			case 'rdfn3':
-				$this->parserAdapter = $this->objectManager->create('\Erfurt\Syntax\RdfParser\Adapter\Turtle');
+				$this->parserAdapter = $this->objectManager->create('Erfurt\Syntax\RdfParser\Adapter\Turtle');
 				break;
 			case 'json':
 			case 'rdfjson':
-				$this->parserAdapter = $this->objectManager->create('\Erfurt\Syntax\RdfParser\Adapter\RdfJson');
+				$this->parserAdapter = $this->objectManager->create('Erfurt\Syntax\RdfParser\Adapter\RdfJson');
 				break;
 			default:
 				throw new RdfParserException("Format '$format' not supported");

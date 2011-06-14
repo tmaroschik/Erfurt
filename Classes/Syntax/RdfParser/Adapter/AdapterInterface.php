@@ -33,9 +33,9 @@ interface AdapterInterface {
 
 	public function parseFromUrl($url);
 
-	public function parseFromDataStringToStore($dataString, $graphUri, $useAc = true);
+	public function parseFromDataStringToStore($dataString, $graphUri, $needsAuthentication = true);
 
-	public function parseFromFilenameToStore($filename, $graphUri, $useAc = true);
+	public function parseFromFilenameToStore($filename, $graphUri, $needsAuthentication = true);
 
 	public function parseFromUrlToStore($filename, $graphUri, $useAc = true);
 

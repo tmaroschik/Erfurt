@@ -158,7 +158,7 @@ class Resource extends Node {
 	 * @return string the representation of this resource in a specified notation
 	 */
 	public function serialize($notation = 'xml') {
-		$serializer = $this->objectManager->create('\Erfurt\Syntax\RdfSerializer', $notation); /** @var \Erfurt\Syntax\RdfSerializer $serializer */
+		$serializer = $this->objectManager->create('Erfurt\Syntax\RdfSerializer', $notation); /** @var \Erfurt\Syntax\RdfSerializer $serializer */
 		return $serializer->serializeResourceToString($this->getIri(), $this->graph->getGraphIri(), true);
 	}
 
@@ -228,7 +228,7 @@ class Resource extends Node {
 
 	protected function fetchDescription($maxDepth) {
 		/** @var \Erfurt\Sparql\SimpleQuery $query */
-		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$query = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT ?p ?o')
 				->setWherePart(sprintf('{<%s> ?p ?o . }', $this->getIri()));
 		$description = array();

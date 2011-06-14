@@ -1,23 +1,20 @@
 Default:
-  # The path to a cache folder.
-  path: 'cache'
+  frontend: Erfurt\Cache\Frontend\VariableFrontend
+  backend: Erfurt\Cache\Backend\FileBackend
+  backendOptions:
+    defaultLifetime: 0
 
-  # Clear the cache if you switch from 0 to 1
-  enable: 0
-
-  # lifetime: -1
-
-  # database, sqllite
-  type: 'database'
-
-  sqlite:
-    # sqlite only
-    dbname: 'ef_cache.sqlitedb'
-
-  query:
-    enable: y
-
-    # logging: n
-
-    # maybe in the near future further backends will be implemented
-    type: 'database'
+##
+# Definition of caches used by Erfurt:
+#
+Erfurt_Cache_ResourceFiles: []
+Erfurt_Configuration: []
+Erfurt_Core:
+  frontend: Erfurt\Cache\Frontend\StringFrontend
+Erfurt_Object_Classes:
+  frontend: Erfurt\Cache\Frontend\PhpFrontend
+  backend: Erfurt\Cache\Backend\FileBackend
+Erfurt_Object_ClassInfoCache:
+  frontend: Erfurt\Cache\Frontend\VariableFrontend
+  backend: Erfurt\Cache\Backend\FileBackend
+Erfurt_Object_Configuration: []

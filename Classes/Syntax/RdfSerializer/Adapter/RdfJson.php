@@ -66,7 +66,7 @@ class RdfJson implements AdapterInterface {
 		$triples = array();
 		$store = $this->knowledgeBase->getStore();
 
-		$sparql = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$sparql = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$sparql->setProloguePart('SELECT ?s ?p ?o');
 		$sparql->addFrom($graphUri);
 		$sparql->setWherePart('WHERE { ?s ?p ?o . FILTER (sameTerm(?s, <' . $resourceUri . '>)) }');
@@ -140,7 +140,7 @@ class RdfJson implements AdapterInterface {
 		$triples = array();
 		$store = $this->knowledgeBase->getStore();
 
-		$sparql = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$sparql = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$sparql->setProloguePart('SELECT ?s ?p ?o');
 		$sparql->addFrom($graphUri);
 		$sparql->setWherePart('WHERE { ?s ?p ?o }');

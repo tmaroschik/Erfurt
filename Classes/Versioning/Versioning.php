@@ -103,7 +103,7 @@ class Versioning implements \Erfurt\Singleton {
 	 */
 	public function initializeObject() {
 		// register for events
-		$eventDispatcher = $this->objectManager->get('\Erfurt\Event\Dispatcher');
+		$eventDispatcher = $this->objectManager->get('Erfurt\Event\Dispatcher');
 		$eventDispatcher->register('onAddStatement', $this);
 		$eventDispatcher->register('onAddMultipleStatements', $this);
 		$eventDispatcher->register('onDeleteMatchingStatements', $this);

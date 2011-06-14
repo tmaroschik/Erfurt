@@ -367,8 +367,8 @@ class Parser {
 					if (strlen(current($this->tokens)) === 2) {
 						next($this->tokens);
 					}
-					$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
-					$node = $literalFactory->createFromLabel(substr($node, 1, -1));
+					$literalFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\LiteralFactory');
+					$node = $literalFactory->buildFromLabel(substr($node, 1, -1));
 					$node->setDatatype(
 						$this->query->getFullUri(
 							substr(current($this->tokens), 2)
@@ -377,16 +377,16 @@ class Parser {
 				}
 				break;
 			case '@':
-				$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\Literal');
-				$node = $literalFactory->createFromLabelAndLanguage(
+				$literalFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\Literal');
+				$node = $literalFactory->buildFromLabelAndLanguage(
 					substr($node, $nSubstrLength, -$nSubstrLength),
 					substr(current($this->tokens), $nSubstrLength)
 				);
 				break;
 			default:
 				prev($this->tokens);
-				$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
-				$node = $literalFactory->createFromLabel(substr($node, $nSubstrLength, -$nSubstrLength));
+				$literalFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\LiteralFactory');
+				$node = $literalFactory->buildFromLabel(substr($node, $nSubstrLength, -$nSubstrLength));
 				break;
 		}
 	}
@@ -407,32 +407,32 @@ class Parser {
 		$patternInt = "/^-?[0-9]+$/";
 		$match = preg_match($patternInt, $node, $hits);
 		if ($match > 0) {
-			$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
-			$node = $literalFactory->createFromLabel($hits[0]);
-			$node->setDatatype(Erfurt\Vocabulary\Xsd::NS . 'integer');
+			$literalFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\LiteralFactory');
+			$node = $literalFactory->buildFromLabel($hits[0]);
+			$node->setDatatype(\Erfurt\Vocabulary\Xsd::NS . 'integer');
 			return true;
 		}
 		$patternBool = "/^(true|false)$/";
 		$match = preg_match($patternBool, $node, $hits);
 		if ($match > 0) {
-			$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
-			$node = $literalFactory->createFromLabel($hits[0]);
-			$node->setDatatype(Erfurt\Vocabulary\Xsd::NS . 'boolean');
+			$literalFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\LiteralFactory');
+			$node = $literalFactory->buildFromLabel($hits[0]);
+			$node->setDatatype(\Erfurt\Vocabulary\Xsd::NS . 'boolean');
 			return true;
 		}
 		$patternType = "/^a$/";
 		$match = preg_match($patternType, $node, $hits);
 		if ($match > 0) {
-			$ressourceFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\ResourceFactory');
-			$node = $ressourceFactory->createFromNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'type');
+			$ressourceFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\ResourceFactory');
+			$node = $ressourceFactory->buildFromNamespaceAndLocalName(\Erfurt\Vocabulary\Rdf::NS, 'type');
 			return true;
 		}
 		$patternDouble = "/^-?[0-9]+.[0-9]+[e|E]?-?[0-9]*/";
 		$match = preg_match($patternDouble, $node, $hits);
 		if ($match > 0) {
-			$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
-			$node = $literalFactory->createFromLabel($hits[0]);
-			$node->setDatatype(Erfurt\Vocabulary\Xsd::NS . 'double');
+			$literalFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\LiteralFactory');
+			$node = $literalFactory->buildFromLabel($hits[0]);
+			$node->setDatatype(\Erfurt\Vocabulary\Xsd::NS . 'double');
 			return true;
 		}
 		return false;
@@ -525,9 +525,9 @@ class Parser {
 		$this->_fastForward();
 		$i = 0;
 		$emptyList = true;
-		$rdfRest = \Erfurt\Domain\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'rest');
-		$rdfFirst = \Erfurt\Domain\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'first');
-		$rdfNil = \Erfurt\Domain\Resource::initWithNamespaceAndLocalName(Erfurt\Vocabulary\Rdf::NS, 'nil');
+		$rdfRest = \Erfurt\Domain\Resource::initWithNamespaceAndLocalName(\Erfurt\Vocabulary\Rdf::NS, 'rest');
+		$rdfFirst = \Erfurt\Domain\Resource::initWithNamespaceAndLocalName(\Erfurt\Vocabulary\Rdf::NS, 'first');
+		$rdfNil = \Erfurt\Domain\Resource::initWithNamespaceAndLocalName(\Erfurt\Vocabulary\Rdf::NS, 'nil');
 		while (current($this->tokens) !== ')') {
 			if ($i > 0) {
 				$trp[] = new QueryTriple($this->_parseNode($tmpLabel), $rdfRest,
@@ -1053,12 +1053,12 @@ class Parser {
 		} else {
 			$datatype = '';
 			if (is_string($node) && strpos($node, '.') !== false) {
-				$datatype = Erfurt\Vocabulary\Xsd::NS . 'integer';
+				$datatype = \Erfurt\Vocabulary\Xsd::NS . 'integer';
 			} else {
-				$datatype = Erfurt\Vocabulary\Xsd::NS . 'decimal';
+				$datatype = \Erfurt\Vocabulary\Xsd::NS . 'decimal';
 			}
-			$literalFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\LiteralFactory');
-			$node = $literalFactory->createFromLabel($node);
+			$literalFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\LiteralFactory');
+			$node = $literalFactory->buildFromLabel($node);
 			$node->setDatatype($datatype);
 		}
 	}
@@ -1137,18 +1137,18 @@ class Parser {
 		if ($this->_iriCheck($node)) {
 			$base = $this->query->getBase();
 			if ($base != null) {
-				$ressourceFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\ResourceFactory');
-				$node = $ressourceFactory->createFromNamespaceAndLocalName(substr($base, 1, -1), substr($node, 1, -1));
+				$ressourceFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\ResourceFactory');
+				$node = $ressourceFactory->buildFromNamespaceAndLocalName(substr($base, 1, -1), substr($node, 1, -1));
 			} else {
-				$ressourceFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\ResourceFactory');
-				$node = $ressourceFactory->createFromIri(substr($node, 1, -1));
+				$ressourceFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\ResourceFactory');
+				$node = $ressourceFactory->buildFromIri(substr($node, 1, -1));
 			}
 			return $node;
 		} else {
 			if ($this->_qnameCheck($node)) {
 				$node = $this->query->getFullUri($node);
-				$ressourceFactory = $this->objectManager->get('\Erfurt\Domain\Model\Rdf\ResourceFactory');
-				$node = $ressourceFactory->createFromIri($node);
+				$ressourceFactory = $this->objectManager->get('Erfurt\Domain\Model\Rdf\ResourceFactory');
+				$node = $ressourceFactory->buildFromIri($node);
 				return $node;
 			} else {
 				if ($this->_literalCheck($node)) {

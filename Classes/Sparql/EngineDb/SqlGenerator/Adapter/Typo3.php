@@ -34,11 +34,6 @@ use \Erfurt\Sparql\EngineDb;
 class Typo3 extends EngineDb\SqlGenerator {
 
 	/**
-	 * @var \Erfurt\KnowledgeBase
-	 */
-	protected $knowledgeBase;
-
-	/**
 	 * The injected knowledge base
 	 *
 	 * @var \Erfurt\Object\ObjectManager
@@ -206,15 +201,6 @@ class Typo3 extends EngineDb\SqlGenerator {
 	}
 
 	/**
-	 * Injector method for a \Erfurt\KnowledgeBase
-	 *
-	 * @var \Erfurt\KnowledgeBase
-	 */
-	public function injectKnowledgeBase(\Erfurt\KnowledgeBase $knowledgeBase) {
-		$this->knowledgeBase = $knowledgeBase;
-	}
-
-	/**
 	 *   Creates an SQL query string from the given Sparql query object.
 	 *
 	 * @internal uses $query variable
@@ -228,7 +214,7 @@ class Typo3 extends EngineDb\SqlGenerator {
 		$arFrom = array();
 		$arWhere = array();
 		$strResultForm = $this->query->getResultForm();
-		$filterGen = $this->objectManager->create('\Erfurt\Sparql\EngineDb\FilterGenerator', $this);
+		$filterGen = $this->objectManager->create('Erfurt\Sparql\EngineDb\FilterGenerator', $this);
 		switch ($strResultForm) {
 			case 'construct':
 				$arResultVars = $this->query->getConstructPatternVariables();
@@ -528,10 +514,10 @@ class Typo3 extends EngineDb\SqlGenerator {
 		//receive tableName from QueryCache ; if QueryCache dont have some special views
 		//the original tableName will be chosen
 		$tableName = $this->tblStatements;
-		if ($viewName = $this->knowledgeBase->getQueryCache()
-				->getMaterializedViewName($subject, $predicate, $object)) {
-			$tableName = $viewName;
-		}
+//		if ($viewName = $this->knowledgeBase->getQueryCache()
+//				->getMaterializedViewName($subject, $predicate, $object)) {
+//			$tableName = $viewName;
+//		}
 		if ($this->nUnionTriplePatternCount == 0) {
 			//first FROM
 			$strFrom = $tableName . ' as ' . $strTablePrefix;

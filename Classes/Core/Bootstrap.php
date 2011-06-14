@@ -1,4 +1,6 @@
 <?php
+declare(ENCODING = 'utf-8');
+namespace Erfurt\Core;
 /***************************************************************
  *  Copyright notice
  *
@@ -22,6 +24,14 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+	// Those are needed before the autoloader is active
+require_once(__DIR__ . '/../Utility/Files.php');
+require_once(__DIR__ . '/../Package/PackageInterface.php');
+require_once(__DIR__ . '/../Package/Package.php');
+require_once(__DIR__ . '/../Package/PackageManagerInterface.php');
+require_once(__DIR__ . '/../Package/PackageManager.php');
+require_once(__DIR__ . '/../Cache/CacheManager.php');
+
 /**
  * This is the bootstrap for the framework. It defines basic environmental conditions.
  *
@@ -37,6 +47,71 @@ class Bootstrap {
 	const MAXIMUM_PHP_VERSION = '5.99.9';
 
 	/**
+	 * Contains cacheFactory
+	 *
+	 * @var \Erfurt\Cache\CacheFactory
+	 */
+	protected $cacheFactory;
+
+	/**
+	 * Contains cacheManager
+	 *
+	 * @var \Erfurt\Cache\CacheManager
+	 */
+	protected $cacheManager;
+
+	/**
+	 * @var \Erfurt\Core\ClassLoader
+	 */
+	protected $classLoader;
+
+	/**
+	 * The application context
+	 * @var string
+	 */
+	protected $context;
+
+	/**
+	 * @var \Erfurt\Configuration\ConfigurationManager
+	 */
+	protected $configurationManager;
+
+	/**
+	 * @var \Erfurt\Utility\Environment
+	 */
+	protected $environment;
+
+	/**
+	 * Contains objectManager
+	 *
+	 * @var \Erfurt\Object\ObjectManager
+	 */
+	protected $objectManager;
+
+	/**
+	 * The same instance like $objectManager, but static, for use in the proxy classes.
+	 *
+	 * @var \F3\FLOW3\Object\ObjectManagerInterface
+	 * @see initializeObjectManager(), getObjectManager()
+	 */
+	static public $staticObjectManager;
+
+	/**
+	 * Contains packageManager
+	 *
+	 * @var \Erfurt\Package\PackageManager
+	 */
+	protected $packageManager;
+
+	/**
+	 * The settings for Erfurt
+	 * @var array
+	 */
+	protected $settings;
+
+	/**
+	 * Contains signalSlotDispatcher
+	 *
 	 * @var \Erfurt\SignalSlot\Dispatcher
 	 */
 	protected $signalSlotDispatcher;
@@ -52,19 +127,41 @@ class Bootstrap {
 	public function __construct($context) {
 		$this->defineConstants();
 		$this->ensureRequiredEnvironment();
+
+		$this->context = $context;
+		if ($this->context !== 'Production' && $this->context !== 'Development' && $this->context !== 'Testing') {
+			exit('Erfurt: Unknown context "' . $this->context . '" provided, currently only "Production", "Development" and "Testing" are supported. (Error #1254216868)' . PHP_EOL);
+		} else {
+			define('EF_CONTEXT', $context);
+		}
+
+		if ($this->context === 'Testing') {
+			require_once('PHPUnit/Autoload.php');
+			require_once(EF_PATH_FRAMEWORK . 'Tests/BaseTestCase.php');
+//			require_once(EF_PATH_FRAMEWORK . 'Tests/FunctionalTestCase.php');
+		}
 	}
 
 	/**
 	 * Initializes the framework
 	 *
 	 * @return void
-	 * @author Thomas Maroschik <tmaroschik@dfau.de>
+	 * @author Thomas Maroschik <tmroschik@dfau.de>
 	 * @api
 	 */
 	public function run() {
 		$this->initializeClassLoader();
+		$this->initializePackageManagement();
 		$this->initializeConfiguration();
-		$this->initializeObjectManager();
+		$this->initializeSignalsSlots();
+		$this->initializeCacheManagement();
+
+		$classInfoCache = new \Erfurt\Object\ClassInfoCache();
+		$classInfoCache->injectCache($this->cacheManager->getCache('Erfurt_Object_ClassInfoCache'));
+		$this->objectManager = new \Erfurt\Object\ObjectManager($this->context);
+		$this->objectManager->injectAllSettings($this->configurationManager->getConfiguration(\Erfurt\Configuration\ConfigurationManager::CONFIGURATION_TYPE_SETTINGS));
+		$this->objectManager->injectClassInfoCache($classInfoCache);
+		self::$staticObjectManager = $this->objectManager;
 	}
 
 	/**
@@ -73,14 +170,20 @@ class Bootstrap {
 	 * @author Thomas Maroschik <tmaroschik@dfau.de>
 	 */
 	protected function defineConstants() {
-			if (!defined('EF_PATH_FRAMEWORK')) {
-			define('EF_PATH_FRAMEWORK', \realpath(__DIR__ . '../../../') . '/');
+		if (!defined('EF_PATH_ROOT')) {
+			define('EF_PATH_ROOT', \Erfurt\Utility\Files::getUnixStylePath(realpath(__DIR__ . '/../../../../..') . '/'));
 		}
-		if (!defined('ZEND_BASE')) {
-			define('ZEND_BASE', \realpath(__DIR__ . '../../../Zend') . '/');
+		if (!defined('EF_PATH_FRAMEWORK')) {
+			define('EF_PATH_FRAMEWORK', \Erfurt\Utility\Files::getUnixStylePath(realpath(__DIR__ . '/../../') . '/'));
 		}
 		if (!defined('EF_PATH_CONFIGURATION')) {
-			define('EF_PATH_CONFIGURATION', EF_PATH_FRAMEWORK  . 'Configuration/');
+			define('EF_PATH_CONFIGURATION', EF_PATH_ROOT  . 'Configuration/');
+		}
+		if (!defined('EF_PATH_DATA')) {
+			define('EF_PATH_DATA', EF_PATH_ROOT  . 'Data/');
+		}
+		if (!defined('EF_PATH_PACKAGES')) {
+			define('EF_PATH_PACKAGES', EF_PATH_ROOT  . 'Packages/');
 		}
 	}
 
@@ -91,8 +194,49 @@ class Bootstrap {
 	 * @author Thomas Maroschik <tmaroschik@dfau.de>
 	 */
 	protected function initializeClassLoader() {
+		/** @define "EF_PATH_FRAMEWORK" ".." */
 		require(EF_PATH_FRAMEWORK . 'Classes/Core/ClassLoader.php');
-		spl_autoload_register(array(new Erfurt\Core\ClassLoader(), 'loadClass'));
+		$this->classLoader = new \Erfurt\Core\ClassLoader();
+		spl_autoload_register(array($this->classLoader, 'loadClass'), TRUE, TRUE);
+	}
+
+	/**
+	 * Initializes the package system and loads the package configuration and settings
+	 * provided by the packages.
+	 *
+	 * @return void
+	 * @author Robert Lemke <robert@typo3.org>
+	 * @see initialize()
+	 */
+	protected function initializePackageManagement() {
+		$this->packageManager =  new \Erfurt\Package\PackageManager();
+		$this->packageManager->initialize($this);
+
+		$activePackages = $this->packageManager->getActivePackages();
+
+		$this->classLoader->setPackages($activePackages);
+	}
+
+	/**
+	 * Initializes the configuration manager and the Erfurt settings
+	 *
+	 * @return void
+	 * @author Robert Lemke <robert@typo3.org>
+	 * @see initialize()
+	 */
+	protected function initializeConfiguration() {
+		$this->configurationManager = new \Erfurt\Configuration\ConfigurationManager($this->context);
+		$this->configurationManager->injectConfigurationSource(new \Erfurt\Configuration\Source\YamlSource());
+		$this->configurationManager->setPackages($this->packageManager->getActivePackages());
+
+		// TODO elaborate why this is needed
+		$this->configurationManager->getConfiguration(\Erfurt\Configuration\ConfigurationManager::CONFIGURATION_TYPE_SETTINGS);
+		$this->settings = $this->configurationManager->getConfiguration(\Erfurt\Configuration\ConfigurationManager::CONFIGURATION_TYPE_SETTINGS, 'Erfurt');
+
+		$this->environment = new \Erfurt\Utility\Environment($this->context);
+		$this->environment->setTemporaryDirectoryBase($this->settings['utility']['environment']['temporaryDirectoryBase']);
+
+		$this->configurationManager->injectEnvironment($this->environment);
 	}
 
 	/**
@@ -125,6 +269,29 @@ class Bootstrap {
 	}
 
 	/**
+	 * Initializes the cache framework
+	 *
+	 * @return void
+	 * @author Robert Lemke <robert@typo3.org>
+	 * @see initialize()
+	 */
+	protected function initializeCacheManagement() {
+		$this->cacheManager = new \Erfurt\Cache\CacheManager();
+		$this->cacheManager->setCacheConfigurations($this->configurationManager->getConfiguration(\Erfurt\Configuration\ConfigurationManager::CONFIGURATION_TYPE_CACHES));
+
+		$this->cacheFactory = new \Erfurt\Cache\CacheFactory($this->context, $this->cacheManager, $this->environment);
+	}
+
+	/**
+	 * Returns the object manager
+	 *
+	 * @return \Erfurt\Object\ObjectManager
+	 */
+	public function getObjectManager() {
+		return $this->objectManager;
+	}
+
+	/**
 	 * Checks PHP version and other parameters of the environment
 	 *
 	 * @return void
@@ -153,12 +320,12 @@ class Bootstrap {
 			exit('Erfurt requires the PHP setting "magic_quotes_gpc" set to Off. (Error #1224003190)');
 		}
 
-//		if (!is_dir(ERFURT_PATH_DATA)) {
-//			mkdir(ERFURT_PATH_DATA);
-//		}
-//		if (!is_dir(ERFURT_PATH_DATA . 'Persistent')) {
-//			mkdir(ERFURT_PATH_DATA . 'Persistent');
-//		}
+		if (!is_dir(EF_PATH_DATA)) {
+			mkdir(EF_PATH_DATA);
+		}
+		if (!is_dir(EF_PATH_DATA . 'Persistent')) {
+			mkdir(EF_PATH_DATA . 'Persistent');
+		}
 	}
 
 }

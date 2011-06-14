@@ -27,17 +27,6 @@ namespace Erfurt;
  * @api
  */
 class KnowledgeBase implements \Erfurt\Singleton {
-	/**
-	 * Constant that contains the minimum required php version.
-	 * @var string
-	 */
-	const MIN_PHP_VERSION = '5.2.0';
-
-	/**
-	 * Constant that contains the minimum required zend framework version.
-	 * @var string
-	 */
-	const MIN_ZEND_VERSION = '1.5.0';
 
 	// ------------------------------------------------------------------------
 	// --- protected properties -------------------------------------------------
@@ -56,7 +45,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	protected $accessControlGraph;
 
 	/**
-	 * @var \Erfurt\Authentication\Authentication
+	 * @var \Erfurt\Security\Authentication\Authentication
 	 */
 	protected $authentication;
 
@@ -73,55 +62,11 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	protected $cacheBackend;
 
 	/**
-	 * Contains an instance of the configuration object.
-	 * @var \Zend_Config
+	 * Contains an instance of the configuration manager.
+	 *
+	 * @var \Erfurt\Configuration\ConfigurationManager
 	 */
-	protected $configuration;
-
-	/**
-	 * @var \Erfurt\Configuration\AccessControlConfiguration
-	 */
-	protected $accessControlConfiguration;
-
-	/**
-	 * @var \Erfurt\Configuration\AuthenticationConfiguration
-	 */
-	protected $authenticationConfiguration;
-
-	/**
-	 * @var \Erfurt\Configuration\CacheConfiguration
-	 */
-	protected $cacheConfiguration;
-
-	/**
-	 * @var \Erfurt\Configuration\GeneralConfiguration
-	 */
-	protected $generalConfiguration;
-
-	/**
-	 * @var \Erfurt\Configuration\NamespacesConfiguration
-	 */
-	protected $namespacesConfiguration;
-
-	/**
-	 * @var \Erfurt\Configuration\SessionConfiguration
-	 */
-	protected $sessionConfiguration;
-
-	/**
-	 * @var \Erfurt\Configuration\StoreConfiguration
-	 */
-	protected $storeConfiguration;
-
-	/**
-	 * @var \Erfurt\Configuration\SystemOntologyConfiguration
-	 */
-	protected $systemOntologyConfiguration;
-
-	/**
-	 * @var \Erfurt\Configuration\IriConfiguration
-	 */
-	protected $iriConfiguration;
+	protected $configurationManager;
 
 	/**
 	 * The injected knowledge base
@@ -171,97 +116,25 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 * Override Erfurt App constructor
 	 */
 	public function __construct() {
-
+		throw new \BadFunctionCallException('This class is deprecated.');
 	}
 
 	/**
-	 * Injector method for a \Erfurt\Authentication\Authentication
+	 * Injector method for a \Erfurt\Security\Authentication\Authentication
 	 *
-	 * @var \Erfurt\Authentication\Authentication
+	 * @var \Erfurt\Security\Authentication\Authentication
 	 */
-	public function injectAuthentication(\Erfurt\Authentication\Authentication $authentication) {
+	public function injectAuthentication(\Erfurt\Security\Authentication\Authentication $authentication) {
 		$this->authentication = $authentication;
 	}
 
 	/**
-	 * Injector method for a AccessControlConfiguration
+	 * Injector method for a \Erfurt\Configuration\ConfigurationManager
 	 *
-	 * @var \Erfurt\Configuration\AccessControlConfiguration
+	 * @var \Erfurt\Configuration\ConfigurationManager
 	 */
-	public function injectAccessControlConfiguration(Configuration\AccessControlConfiguration $accessControlConfiguration) {
-		$this->accessControlConfiguration = $accessControlConfiguration;
-	}
-
-	/**
-	 * Injector method for a AuthenticationConfiguration
-	 *
-	 * @var \Erfurt\Configuration\AuthenticationConfiguration
-	 */
-	public function injectAuthenticationConfiguration(Configuration\AuthenticationConfiguration $authenticationConfiguration) {
-		$this->authenticationConfiguration = $authenticationConfiguration;
-	}
-
-	/**
-	 * Injector method for a CacheConfiguration
-	 *
-	 * @var \Erfurt\Configuration\CacheConfiguration
-	 */
-	public function injectCacheConfiguration(Configuration\CacheConfiguration $cacheConfiguration) {
-		$this->cacheConfiguration = $cacheConfiguration;
-	}
-
-	/**
-	 * Injector method for a GeneralConfiguration
-	 *
-	 * @var \Erfurt\Configuration\GeneralConfiguration
-	 */
-	public function injectGeneralConfiguration(Configuration\GeneralConfiguration $generalConfiguration) {
-		$this->generalConfiguration = $generalConfiguration;
-	}
-
-	/**
-	 * Injector method for a NamespacesConfiguration
-	 *
-	 * @var \Erfurt\Configuration\NamespacesConfiguration
-	 */
-	public function injectNamespacesConfiguration(Configuration\NamespacesConfiguration $namespacesConfiguration) {
-		$this->namespacesConfiguration = $namespacesConfiguration;
-	}
-
-	/**
-	 * Injector method for a SessionConfiguration
-	 *
-	 * @var \Erfurt\Configuration\SessionConfiguration
-	 */
-	public function injectSessionConfiguration(Configuration\SessionConfiguration $sessionConfiguration) {
-		$this->sessionConfiguration = $sessionConfiguration;
-	}
-
-	/**
-	 * Injector method for a StoreConfiguration
-	 *
-	 * @var \Erfurt\Configuration\StoreConfiguration
-	 */
-	public function injectStoreConfiguration(Configuration\StoreConfiguration $storeConfiguration) {
-		$this->storeConfiguration = $storeConfiguration;
-	}
-
-	/**
-	 * Injector method for a SystemOntologyConfiguration
-	 *
-	 * @var \Erfurt\Configuration\SystemOntologyConfiguration
-	 */
-	public function injectSystemOntologyConfiguration(Configuration\SystemOntologyConfiguration $systemOntologyConfiguration) {
-		$this->systemOntologyConfiguration = $systemOntologyConfiguration;
-	}
-
-	/**
-	 * Injector method for a IriConfiguration
-	 *
-	 * @var \Erfurt\Configuration\IriConfiguration
-	 */
-	public function injectIriConfiguration(Configuration\IriConfiguration $iriConfiguration) {
-		$this->iriConfiguration = $iriConfiguration;
+	public function injectConfigurationManager(\Erfurt\Configuration\ConfigurationManager $configurationManager) {
+		$this->configurationManager = $configurationManager;
 	}
 
 	/**
@@ -293,7 +166,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 */
 	protected function initializeObject() {
 		// Check for debug mode.
-		$configuration = $this->getConfiguration();
+		$configuration = $this->getConfigurationManager();
 		// Set the configured time zone.
 		if (isset($configuration->timezone) && ((boolean)$configuration->timezone !== false)) {
 			date_default_timezone_set($configuration->timezone);
@@ -333,7 +206,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 			$userIri,
 			\Erfurt\Vocabulary\Rdf::TYPE,
 			array(
-				 'value' => $this->configuration->ac->user->class,
+				 'value' => $this->configurationManager->ac->user->class,
 				 'type' => 'iri'
 			),
 			false
@@ -347,7 +220,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 			$store->addStatement(
 				$acGraphIri,
 				$userIri,
-				$this->configuration->ac->user->mail,
+				$this->configurationManager->ac->user->mail,
 				array(
 					 'value' => $email,
 					 'type' => 'iri'
@@ -372,7 +245,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 			$store->addStatement(
 				$acGraphIri,
 				$group,
-				$this->configuration->ac->group->membership,
+				$this->configurationManager->ac->group->membership,
 				array(
 					 'value' => $userIri,
 					 'type' => 'iri'
@@ -402,7 +275,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 			$userIri,
 			\Erfurt\Vocabulary\Rdf::TYPE,
 			array(
-				 'value' => $this->configuration->ac->user->class,
+				 'value' => $this->configurationManager->ac->user->class,
 				 'type' => 'iri'
 			),
 			false
@@ -410,11 +283,11 @@ class KnowledgeBase implements \Erfurt\Singleton {
 		$store->addStatement(
 			$acGraphIri,
 			$userIri,
-			$this->configuration->ac->user->name,
+			$this->configurationManager->ac->user->name,
 			array(
 				 'value' => $username,
 				 'type' => 'literal',
-				 'datatype' => Erfurt\Vocabulary\Xsd::NS . 'string'
+				 'datatype' => \Erfurt\Vocabulary\Xsd::NS . 'string'
 			),
 			false
 		);
@@ -425,7 +298,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 		$store->addStatement(
 			$acGraphIri,
 			$userIri,
-			$this->configuration->ac->user->mail,
+			$this->configurationManager->ac->user->mail,
 			array(
 				 'value' => $email,
 				 'type' => 'iri'
@@ -435,7 +308,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 		$store->addStatement(
 			$acGraphIri,
 			$userIri,
-			$this->configuration->ac->user->pass,
+			$this->configurationManager->ac->user->pass,
 			array(
 				 'value' => sha1($password),
 				 'type' => 'literal'
@@ -446,7 +319,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 			$store->addStatement(
 				$acGraphIri,
 				$userGroupIri,
-				$this->configuration->ac->group->membership,
+				$this->configurationManager->ac->group->membership,
 				array(
 					 'value' => $userIri,
 					 'type' => 'iri'
@@ -519,7 +392,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 */
 	public function getAccessControl() {
 		if (NULL === $this->accessControl) {
-			$this->accessControl = $this->objectManager->create('\Erfurt\AccessControl\Standard');
+			$this->accessControl = $this->objectManager->create('Erfurt\AccessControl\Standard');
 		}
 		return $this->accessControl;
 	}
@@ -568,7 +441,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 				'lifetime' => $lifetime,
 				'automatic_serialization' => true
 			);
-			$this->cache = $this->objectManager->create('\Erfurt\Cache\Frontend\ObjectCache', $frontendOptions);
+			$this->cache = $this->objectManager->create('Erfurt\Cache\Frontend\ObjectCache', $frontendOptions);
 			$backend = $this->getCacheBackend();
 			$this->cache->setBackend($backend);
 		}
@@ -606,11 +479,11 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 * @return \Zend_Config
 	 * @throws \Erfurt\Exception( Throws an exception if no config is loaded.
 	 */
-	public function getConfiguration() {
-		if (NULL === $this->configuration) {
+	public function getConfigurationManager() {
+		if (NULL === $this->configurationManager) {
 			throw new Exception\ConfigurationNotLoadedException('Configuration was not loaded.', 1302769700);
 		} else {
-			return $this->configuration;
+			return $this->configurationManager;
 		}
 	}
 
@@ -746,7 +619,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 * @return \Erfurt\Event\Dispatcher
 	 */
 	public function getEventDispatcher() {
-		$eventDispatcher = $this->objectManager->get('\Erfurt\Event\Dispatcher');
+		$eventDispatcher = $this->objectManager->get('Erfurt\Event\Dispatcher');
 		return $eventDispatcher;
 	}
 
@@ -790,7 +663,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 * @return Zend_Log
 	 */
 	public function getLog($logIdentifier = 'erfurt') {
-		return $this->objectManager->get('\Erfurt\Log\NullLogger');
+		return $this->objectManager->get('Erfurt\Log\NullLogger');
 	}
 
 	/**
@@ -806,7 +679,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 						->getNamespacesConfiguration()->toArray() : array(),
 				'reserved_names' => isset($this->getIriConfiguration()->schemata) ? $this->getIriConfiguration()->schemata->toArray() : array()
 			);
-			$this->namespaces = $this->objectManager->create('\Erfurt\Namespaces\Namespaces', $namespacesOptions);
+			$this->namespaces = $this->objectManager->create('Erfurt\Namespaces\Namespaces', $namespacesOptions);
 		}
 		return $this->namespaces;
 	}
@@ -818,7 +691,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 */
 	public function getQueryCache() {
 		if (NULL === $this->queryCache) {
-			$this->queryCache = $this->objectManager->create('\Erfurt\Cache\Frontend\QueryCache');
+			$this->queryCache = $this->objectManager->create('Erfurt\Cache\Frontend\QueryCache');
 			$backend = $this->getQueryCacheBackend();
 			$this->queryCache->setBackend($backend);
 		}
@@ -872,7 +745,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 * @return array Returns a list of users.
 	 */
 	public function getUsers() {
-		$tempAdapter = $this->objectManager->create('\Erfurt\Authentication\Adapter\Rdf');
+		$tempAdapter = $this->objectManager->create('Erfurt\Authentication\Adapter\Rdf');
 		return $tempAdapter->getUsers();
 	}
 
@@ -883,7 +756,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 */
 	public function getVersioning() {
 		if (NULL === $this->versioning) {
-			$this->versioning = $this->objectManager->create('\Erfurt\Versioning\Versioning');
+			$this->versioning = $this->objectManager->create('Erfurt\Versioning\Versioning');
 		}
 		return $this->versioning;
 	}
@@ -907,7 +780,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 	 * @return \Zend_Auth_Result
 	 */
 	public function verifyOpenIdResult($get) {
-		$adapter = $this->objectManager->create('\Erfurt\Authentication\Adapter\OpenId', NULL, NULL, NULL, $get);
+		$adapter = $this->objectManager->create('Erfurt\Authentication\Adapter\OpenId', NULL, NULL, NULL, $get);
 		$result = $this->getAuthentication()->authenticate($adapter);
 		if (!$result->isValid()) {
 			$this->getAuthentication()->clearIdentity();
@@ -925,7 +798,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 		if (NULL === $this->cacheBackend) {
 			// TODO: fix cache, temporarily disabled
 			if (!isset($this->getCacheConfiguration()->enable) || !(boolean)$this->getCacheConfiguration()->enable) {
-				$this->cacheBackend = $this->objectManager->create('\Erfurt\Cache\Backend\Null');
+				$this->cacheBackend = $this->objectManager->create('Erfurt\Cache\Backend\Null');
 			}
 				// cache is enabled
 			else {
@@ -936,7 +809,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 					// check the type an whether type is supported
 					switch (strtolower($this->getCacheConfiguration()->type)) {
 						case 'database':
-							$this->cacheBackend = $this->objectManager->create('\Erfurt\Cache\Backend\Database');
+							$this->cacheBackend = $this->objectManager->create('Erfurt\Cache\Backend\Database');
 							break;
 						case 'sqlite':
 							if (isset($this->getCacheConfiguration()->sqlite->dbname)) {
@@ -969,7 +842,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 		if (NULL === $this->queryCacheBackend) {
 			$backendOptions = array();
 			if (!isset($this->getCacheConfiguration()->query->enable) || ((boolean)$this->getCacheConfiguration()->query->enable === false)) {
-				$this->queryCacheBackend = $this->objectManager->create('\Erfurt\Cache\Backend\QueryCache\Null');
+				$this->queryCacheBackend = $this->objectManager->create('Erfurt\Cache\Backend\QueryCache\Null');
 			} else {
 				// cache is enabled
 				// check for the cache type and throw an exception if cache type is not set
@@ -980,7 +853,7 @@ class KnowledgeBase implements \Erfurt\Singleton {
 					// check the type an whether type is supported
 					switch (strtolower($this->getCacheConfiguration()->query->type)) {
 						case 'database':
-							$this->queryCacheBackend = $this->objectManager->create('\Erfurt\Cache\Backend\QueryCache\Database');
+							$this->queryCacheBackend = $this->objectManager->create('Erfurt\Cache\Backend\QueryCache\Database');
 							break;
 						#                       case 'file':
 						#                            $this->queryCacheBackend = new Erfurt_Cache_Backend_QueryCache_File();

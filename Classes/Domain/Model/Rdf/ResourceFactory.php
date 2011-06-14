@@ -49,13 +49,13 @@ class ResourceFactory implements \Erfurt\Singleton {
 	 */
 	public function buildFromIri($iri) {
 		/** @var \Erfurt\Domain\Model\Rdf\Resource $resource  */
-		$resource = $this->objectManager->create('\Erfurt\Domain\Model\Rdf\Resource', $iri);
+		$resource = $this->objectManager->create('Erfurt\Domain\Model\Rdf\Resource', $iri);
 		return $resource;
 	}
 
 	public function buildFromNamespaceAndLocalName($namespace, $local) {
 		/** @var \Erfurt\Domain\Model\Rdf\Resource $resource  */
-		$resource = $this->objectManager->create('\Erfurt\Domain\Model\Rdf\Resource', $namespace . $local);
+		$resource = $this->objectManager->create('Erfurt\Domain\Model\Rdf\Resource', $namespace . $local);
 		return $resource;
 	}
 
@@ -65,7 +65,7 @@ class ResourceFactory implements \Erfurt\Singleton {
 	 */
 	public function buildBlankNode($id) {
 		/** @var \Erfurt\Domain\Model\Rdf\Resource $resource  */
-		$resource = $this->objectManager->create('\Erfurt\Domain\Model\Rdf\Resource', $id);
+		$resource = $this->objectManager->create('Erfurt\Domain\Model\Rdf\Resource', $id);
 		$resource->setIsBlankNode(true);
 		return $resource;
 	}

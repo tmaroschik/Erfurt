@@ -38,7 +38,7 @@ namespace Erfurt\Utility;
  * @scope singleton
  * @api
  */
-class Environment {
+class Environment implements \Erfurt\Singleton {
 
 	/**
 	 * @var string
@@ -95,13 +95,11 @@ class Environment {
 	 * Initializes the environment instance. Copies the superglobals $_SERVER,
 	 * $_GET, $_POST, $_FILES to local variables.
 	 *
-	 * @param string $context The FLOW3 context
 	 * @return void
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
-	public function __construct($context) {
-		$this->context = $context;
-
+	public function __construct() {
+		$this->context = EF_CONTEXT;
 		$this->SERVER = $_SERVER;
 		$this->GET = $_GET;
 		$this->POST = $_POST;

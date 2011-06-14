@@ -84,9 +84,9 @@ class Turtle implements AdapterInterface {
 		$this->handleGraph($graphIri, $useAc);
 
 		$query->setLimit(1000); //needed?
-		$s = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'resourceIri');
-		$p = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'p');
-		$o = $this->objectManager->create('\Erfurt\Sparql\Query2\Variable', 'o');
+		$s = $this->objectManager->create('Erfurt\Sparql\Query2\Variable', 'resourceIri');
+		$p = $this->objectManager->create('Erfurt\Sparql\Query2\Variable', 'p');
+		$o = $this->objectManager->create('Erfurt\Sparql\Query2\Variable', 'o');
 		if (strstr((string)$query, '?resourceIri ?p ?o') === false) {
 			if ($query instanceof \Erfurt\Sparql\Query2) {
 				$query->addTriple($s, $p, $o);
@@ -147,7 +147,7 @@ class Turtle implements AdapterInterface {
 
 	public function serializeGraphToString($graphIri, $pretty = false, $useAc = true) {
 		//construct query
-		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$query = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT ?resourceIri ?p ?o');
 		$query->addFrom($graphIri);
 		$query->setWherePart('WHERE { ?resourceIri ?p ?o . }');
@@ -157,7 +157,7 @@ class Turtle implements AdapterInterface {
 	}
 
 	public function serializeResourceToString($resource, $graphIri, $pretty = false, $useAc = true, array $additional = array()) {
-		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$query = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT ?resourceIri ?p ?o');
 		$query->addFrom($graphIri);
 		$query->setWherePart('WHERE { ?resourceIri ?p ?o . FILTER (sameTerm(?resourceIri, <' . $resource . '>))}'); //why not as subject
@@ -318,7 +318,7 @@ class Turtle implements AdapterInterface {
 			$this->resultString .= str_repeat(' ', $this->lastWrittenSubjectLength + 1);
 		}
 
-		if ($p === Erfurt\Vocabulary\Rdf::TYPE) {
+		if ($p === \Erfurt\Vocabulary\Rdf::TYPE) {
 			$this->write('a');
 		} else {
 			$this->_writeIri($p);

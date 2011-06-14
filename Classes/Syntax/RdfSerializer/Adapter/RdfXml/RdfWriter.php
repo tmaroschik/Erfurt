@@ -127,7 +127,7 @@ class RdfWriter {
 		$this->resetState();
 		$this->useAc = $useAc;
 		$this->stringWriter = $stringWriter;
-		$this->stringWriter->setDoctype(Erfurt\Vocabulary\Rdf::NS, 'RDF');
+		$this->stringWriter->setDoctype(\Erfurt\Vocabulary\Rdf::NS, 'RDF');
 	}
 
 	/**
@@ -176,21 +176,21 @@ class RdfWriter {
 		$this->level++;
 		$propertyMap = $pArray;
 
-		if (isset($propertyMap[Erfurt\Vocabulary\Rdf::TYPE]) && count($propertyMap[Erfurt\Vocabulary\Rdf::TYPE]) > 0) {
-			if ($propertyMap[Erfurt\Vocabulary\Rdf::TYPE][0]['type'] === 'iri') {
-				$this->startElement($propertyMap[Erfurt\Vocabulary\Rdf::TYPE][0]['value']);
-				unset($propertyMap[Erfurt\Vocabulary\Rdf::TYPE][0]);
-				$propertyMap[Erfurt\Vocabulary\Rdf::TYPE] = array_values($propertyMap[Erfurt\Vocabulary\Rdf::TYPE]);
+		if (isset($propertyMap[\Erfurt\Vocabulary\Rdf::TYPE]) && count($propertyMap[\Erfurt\Vocabulary\Rdf::TYPE]) > 0) {
+			if ($propertyMap[\Erfurt\Vocabulary\Rdf::TYPE][0]['type'] === 'iri') {
+				$this->startElement($propertyMap[\Erfurt\Vocabulary\Rdf::TYPE][0]['value']);
+				unset($propertyMap[\Erfurt\Vocabulary\Rdf::TYPE][0]);
+				$propertyMap[\Erfurt\Vocabulary\Rdf::TYPE] = array_values($propertyMap[\Erfurt\Vocabulary\Rdf::TYPE]);
 			}
 		} else {
-			$this->stringWriter->startElement(Erfurt\Vocabulary\Rdf::NS, 'Description');
+			$this->stringWriter->startElement(\Erfurt\Vocabulary\Rdf::NS, 'Description');
 		}
 
 		// add identifier
 		if ($sType === 'bnode') {
-			$this->stringWriter->addAttribute(Erfurt\Vocabulary\Rdf::NS, 'nodeID', 'b' . substr($s, 2));
+			$this->stringWriter->addAttribute(\Erfurt\Vocabulary\Rdf::NS, 'nodeID', 'b' . substr($s, 2));
 		} else {
-			$this->stringWriter->addAttribute(Erfurt\Vocabulary\Rdf::NS, 'about', $s);
+			$this->stringWriter->addAttribute(\Erfurt\Vocabulary\Rdf::NS, 'about', $s);
 		}
 
 		// write short literal properties
@@ -241,9 +241,9 @@ class RdfWriter {
 			$this->stringWriter->setAd($ad);
 		}
 
-		$this->stringWriter->addEntity('xsd', Erfurt\Vocabulary\Xsd::NS);
+		$this->stringWriter->addEntity('xsd', \Erfurt\Vocabulary\Xsd::NS);
 		$this->stringWriter->startDocument();
-		$this->stringWriter->startElement(Erfurt\Vocabulary\Rdf::NS, 'RDF');
+		$this->stringWriter->startElement(\Erfurt\Vocabulary\Rdf::NS, 'RDF');
 	}
 
 	public function linefeed($count = 1) {
@@ -296,7 +296,7 @@ class RdfWriter {
 
 		// Node is either anonymous or rdf:Nil
 		if ($node['type'] === 'iri') {
-			if ($node['value'] === Erfurt\Vocabulary\Rdf::NIL) {
+			if ($node['value'] === \Erfurt\Vocabulary\Rdf::NIL) {
 				return true;
 			}
 			return false;
@@ -326,7 +326,7 @@ class RdfWriter {
 	 */
 	private function propertyBNode($value) {
 		if ($value['type'] === 'bnode') {
-			$this->stringWriter->addAttribute(Erfurt\Vocabulary\Rdf::NS, 'nodeID', 'b' . substr($value['value'], 2));
+			$this->stringWriter->addAttribute(\Erfurt\Vocabulary\Rdf::NS, 'nodeID', 'b' . substr($value['value'], 2));
 			return true;
 		} else {
 			return false;
@@ -347,7 +347,7 @@ class RdfWriter {
 
 		$listArray = $this->_getListArray();
 
-		while ($current !== Erfurt\Vocabulary\Rdf::NIL) {
+		while ($current !== \Erfurt\Vocabulary\Rdf::NIL) {
 			$this->rendered[$current] = true;
 			$propertyMap = $listArray[$current];
 			$first = $propertyMap['first'];
@@ -357,16 +357,16 @@ class RdfWriter {
 		}
 
 		// write list
-		$this->stringWriter->addAttribute(Erfurt\Vocabulary\Rdf::NS, 'parseType', 'Collection');
+		$this->stringWriter->addAttribute(\Erfurt\Vocabulary\Rdf::NS, 'parseType', 'Collection');
 		foreach ($elements as $e) {
 			if ($this->shouldNest($e)) {
 				$this->serializeSubject($e);
 			} else {
-				$this->stringWriter->startElement(Erfurt\Vocabulary\Rdf::NS, 'Description');
+				$this->stringWriter->startElement(\Erfurt\Vocabulary\Rdf::NS, 'Description');
 				if ($e['type'] === 'bnode') {
-					$this->stringWriter->addAttribute(Erfurt\Vocabulary\Rdf::NS, 'nodeID', 'b' . $e['value']);
+					$this->stringWriter->addAttribute(\Erfurt\Vocabulary\Rdf::NS, 'nodeID', 'b' . $e['value']);
 				} else {
-					$this->stringWriter->addAttribute(Erfurt\Vocabulary\Rdf::NS, 'about', $e['value']);
+					$this->stringWriter->addAttribute(\Erfurt\Vocabulary\Rdf::NS, 'about', $e['value']);
 				}
 				$this->stringWriter->endElement();
 			}
@@ -387,7 +387,7 @@ class RdfWriter {
 			} else {
 				if (isset($value['datatype'])) {
 					$datatype = $value['datatype'];
-					$this->stringWriter->addAttribute(Erfurt\Vocabulary\Rdf::NS, 'datatype', $datatype);
+					$this->stringWriter->addAttribute(\Erfurt\Vocabulary\Rdf::NS, 'datatype', $datatype);
 				}
 			}
 
@@ -419,7 +419,7 @@ class RdfWriter {
 	 */
 	private function propertyReference($value) {
 		if ($value['type'] === 'iri') {
-			$this->stringWriter->addAttribute(Erfurt\Vocabulary\Rdf::NS, 'resource', $value['value']);
+			$this->stringWriter->addAttribute(\Erfurt\Vocabulary\Rdf::NS, 'resource', $value['value']);
 			return true;
 		} else {
 			return false;
@@ -509,10 +509,10 @@ class RdfWriter {
 
 	protected function sparqlForListResources() {
 
-		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');
+		$query = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');
 		$query->setProloguePart('SELECT ?s ?first ?rest');
 		$query->addFrom($this->graphIri);
-		$query->setWherePart('WHERE { ?s <' . Erfurt\Vocabulary\Rdf::FIRST . '> ?first . ?s <' . Erfurt\Vocabulary\Rdf::REST . '> ?rest }');
+		$query->setWherePart('WHERE { ?s <' . \Erfurt\Vocabulary\Rdf::FIRST . '> ?first . ?s <' . \Erfurt\Vocabulary\Rdf::REST . '> ?rest }');
 
 		$result = $this->store->sparqlQuery($query, array(
 														  'result_format' => 'extended',

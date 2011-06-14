@@ -1,5 +1,5 @@
 <?php
-declare(ENCODING = 'utf-8');
+declare(ENCODING = 'utf-8') ;
 namespace Erfurt\Syntax\RdfParser\Adapter;
 
 /*                                                                        *
@@ -20,78 +20,139 @@ namespace Erfurt\Syntax\RdfParser\Adapter;
  * If not, see http://www.gnu.org/copyleft/gpl.html.                      *
  *                                                                        */
 /**
- * @author    Philipp Frischmuth <pfrischmuth@googlemail.com>
+ * @author	Philipp Frischmuth <pfrischmuth@googlemail.com>
  * @copyright Copyright (c) 2008 {@link http://aksw.org aksw}
  * @license   http://opensource.org/licenses/gpl-license.php GNU General Public License (GPL)
  * @version   $Id: RdfXml.php 4283 2009-10-12 11:26:57Z c.riess.dev $
  */
 class RdfXml implements AdapterInterface {
 
-	protected $_data = null;
-	protected $_offset = 0;
-	protected $_currentElementIsEmpty = false;
+	const BLANK_NODE_PREFIX = 'node';
 
-	const BNODE_PREFIX = 'node';
+	/**
+	 * @var string
+	 */
+	protected $data = null;
 
-	protected $_bnodeCounter = 0;
+	/**
+	 * @var int
+	 */
+	protected $offset = 0;
 
-	protected $_elementStack = array();
-	protected $_currentXmlLang = null;
+	/**
+	 * @var bool
+	 */
+	protected $currentElementIsEmpty = false;
 
-	protected $_statements = array();
+	/**
+	 * @var int
+	 */
+	protected $blankNodeCounter = 0;
 
-	protected $_xmlParser = null;
-	protected $_baseIri = null;
+	/**
+	 * @var array
+	 */
+	protected $elementStack = array();
 
-	protected $_currentCharData = null;
+	/**
+	 * @var string
+	 */
+	protected $currentXmlLang = null;
 
-	protected $_parseToStore = false;
-	protected $_graphIri = null;
-	protected $_useAc = true;
-	protected $_stmtCounter = 0;
+	/**
+	 * @var array
+	 */
+	protected $statements = array();
 
-	protected $_rdfElementParsed = false;
+	/**
+	 * @var resource
+	 */
+	protected $xmlParser = null;
 
-	protected $_namespaces = array();
+	/**
+	 * @var string
+	 */
+	protected $baseIri = null;
+
+	/**
+	 * @var string
+	 */
+	protected $currentCharData = null;
+
+	/**
+	 * @var bool
+	 */
+	protected $parseToStore = false;
+
+	/**
+	 * @var string
+	 */
+	protected $graphIri = null;
+
+	/**
+	 * @var bool
+	 */
+	protected $needsAuthentication = true;
+
+	/**
+	 * @var bool
+	 */
+	protected $statementCounter = 0;
+
+	/**
+	 * @var bool
+	 */
+	protected $rdfElementParsed = false;
+
+	/**
+	 * @var array
+	 */
+	protected $namespaces = array();
 
 	/**
 	 * The injected knowledge base
 	 *
-	 * @var \Erfurt\KnowledgeBase
+	 * @var \Erfurt\Object\ObjectManager
 	 */
-	protected $knowledgeBase;
+	protected $objectManager;
 
 	/**
-	 * Injector method for a \Erfurt\KnowledgeBase
+	 * Injector method for a \Erfurt\Object\ObjectManager
 	 *
-	 * @var \Erfurt\KnowledgeBase
+	 * @var \Erfurt\Object\ObjectManager
 	 */
-	public function injectKnowledgeBase(\Erfurt\KnowledgeBase $knowledgeBase) {
-		$this->knowledgeBase = $knowledgeBase;
+	public function injectObjectManager(\Erfurt\Object\ObjectManager $objectManager) {
+		$this->objectManager = $objectManager;
 	}
 
+	/**
+	 * @throws \Erfurt\Syntax\RdfParserException
+	 * @param string $dataString
+	 * @param string $baseIri
+	 * @return array
+	 */
 	public function parseFromDataString($dataString, $baseIri = null) {
 		if (null !== $baseIri) {
-			$this->_baseIri = $baseIri;
+			$this->baseIri = $baseIri;
 		}
-
-		$xmlParser = $this->_getXmlParser();
-
-		$this->_data = $dataString;
+		$xmlParser = $this->getXmlParser();
+		$this->data = $dataString;
 		xml_parse($xmlParser, $dataString);
-
 		if (xml_get_error_code($xmlParser) !== 0) {
 			throw new \Erfurt\Syntax\RdfParserException(
 				'Parsing failed: ' . xml_error_string(xml_get_error_code($xmlParser))
 			);
 		}
-
-		return $this->_statements;
+		return $this->statements;
 	}
 
+	/**
+	 * @throws \Erfurt\Syntax\RdfParserException
+	 * @param string $filename
+	 * @return array
+	 */
 	public function parseFromFilename($filename) {
-		$this->_baseIri = $filename;
-
+		$this->baseIri = $filename;
 		stream_context_get_default(array(
 										'http' => array(
 											'header' => "Accept: application/rdf+xml"
@@ -101,71 +162,76 @@ class RdfXml implements AdapterInterface {
 										'http' => array(
 											'header' => ""
 										)));
-
 		if ($fileHandle === false) {
 			throw new \Erfurt\Syntax\RdfParserException("Failed to open file with filename '$filename'");
 		}
-
-		$xmlParser = $this->_getXmlParser();
-
+		$xmlParser = $this->getXmlParser();
 		// Let's parse.
 		while ($data = fread($fileHandle, 4096)) {
-			$this->_data = $data;
+			$this->data = $data;
 			xml_parse($xmlParser, $data, feof($fileHandle));
-			$this->_offset++;
+			$this->offset++;
 		}
-
 		fclose($fileHandle);
-
-		return $this->_statements;
+		return $this->statements;
 	}
 
-	public function parseFromFilenameToStore($filename, $graphIri, $useAc = true) {
-		$this->_parseToStore = true;
-		$this->_graphIri = $graphIri;
-		$this->_useAc = $useAc;
+	/**
+	 * @param string $filename
+	 * @param string $graphIri
+	 * @param bool $needsAuthentication
+	 * @return bool
+	 */
+	public function parseFromFilenameToStore($filename, $graphIri, $needsAuthentication = true) {
+		$this->parseToStore = true;
+		$this->graphIri = $graphIri;
+		$this->needsAuthentication = $needsAuthentication;
 		$this->parseFromFilename($filename);
-
-		$this->_writeStatementsToStore();
-		$this->_addNamespacesToStore();
-
-		return true;
+		$this->writeStatementsToStore();
+		$this->addNamespacesToStore();
+		return TRUE;
 	}
 
-	public function parseFromDataStringToStore($data, $graphIri, $useAc = true, $baseIri = null) {
-		$this->_parseToStore = true;
-		$this->_graphIri = $graphIri;
-		$this->_useAc = $useAc;
+	/**
+	 * @param string $data
+	 * @param string $graphIri
+	 * @param bool $needsAuthentication
+	 * @param null $baseIri
+	 * @return bool
+	 */
+	public function parseFromDataStringToStore($data, $graphIri, $needsAuthentication = true, $baseIri = null) {
+		$this->parseToStore = true;
+		$this->graphIri = $graphIri;
+		$this->needsAuthentication = $needsAuthentication;
 		$this->parseFromDataString($data, $baseIri);
-
-		$this->_writeStatementsToStore();
-		$this->_addNamespacesToStore();
-
-		return true;
+		$this->writeStatementsToStore();
+		$this->addNamespacesToStore();
+		return TRUE;
 	}
 
+	/**
+	 * @param string $url
+	 * @return array
+	 */
 	public function parseFromUrl($url) {
-		$this->_baseIri = $url;
-
-		$client = $this->knowledgeBase->getHttpClient($url, array(
-																	  'maxredirects' => 10,
-																	  'timeout' => 30
-																 ));
-
+		$this->baseIri = $url;
+		$client = $this->objectManager->getHttpClient($url, array(
+																 'maxredirects' => 10,
+																 'timeout' => 30
+															));
 		$client->setHeaders('Accept', 'application/rdf+xml, text/plain');
 		$response = $client->request();
-
 		return $this->parseFromDataString($response->getBody());
 	}
 
 	public function parseFromUrlToStore($url, $graphIri, $useAc = true) {
-		$this->_parseToStore = true;
-		$this->_graphIri = $graphIri;
-		$this->_useAc = $useAc;
+		$this->parseToStore = true;
+		$this->graphIri = $graphIri;
+		$this->needsAuthentication = $useAc;
 		$this->parseFromUrl($url);
 
-		$this->_writeStatementsToStore();
-		$this->_addNamespacesToStore();
+		$this->writeStatementsToStore();
+		$this->addNamespacesToStore();
 
 		return true;
 	}
@@ -175,7 +241,7 @@ class RdfXml implements AdapterInterface {
 
 		xml_parse($xmlParser, $data);
 
-		return $this->_namespaces;
+		return $this->namespaces;
 	}
 
 	public function parseNamespacesFromFilename($filename) {
@@ -189,14 +255,14 @@ class RdfXml implements AdapterInterface {
 
 		// Let's parse.
 		while ($data = fread($fileHandle, 4096)) {
-			$this->_data = $data;
+			$this->data = $data;
 			xml_parse($xmlParser, $data, feof($fileHandle));
-			$this->_offset++;
+			$this->offset++;
 		}
 
 		fclose($fileHandle);
 
-		return $this->_namespaces;
+		return $this->namespaces;
 	}
 
 	public function parseNamespacesFromUrl($url) {
@@ -210,14 +276,14 @@ class RdfXml implements AdapterInterface {
 	 * @return array
 	 */
 	public function getNamespaces() {
-		return $this->_namespaces;
+		return $this->namespaces;
 	}
 
-	protected function _addNamespacesToStore() {
-		$erfurtNamespaces = $this->knowledgeBase->getNamespaces();
-		foreach ($this->_namespaces as $ns => $prefix) {
+	protected function addNamespacesToStore() {
+		$erfurtNamespaces = $this->objectManager->getNamespaces();
+		foreach ($this->namespaces as $ns => $prefix) {
 			try {
-				$erfurtNamespaces->addNamespacePrefix($this->_graphIri, $ns, $prefix);
+				$erfurtNamespaces->addNamespacePrefix($this->graphIri, $ns, $prefix);
 			}
 			catch (\Erfurt\Namespaces\Exception $e) {
 				// We need to catch the store exception, for the namespace component throws exceptions in case a prefix
@@ -233,22 +299,22 @@ class RdfXml implements AdapterInterface {
 			throw new \Erfurt\Syntax\RdfParserException('Invalid element name: ' . $name . '.');
 		}
 
-		if ($name === Erfurt\Vocabulary\Rdf::NS . 'RDF') {
-			if (isset($attrs[(Erfurt\Vocabulary\Xml::NS . 'base')])) {
-				$this->_baseIri = $attrs[(Erfurt\Vocabulary\Xml::NS . 'base')];
+		if ($name === \Erfurt\Vocabulary\Rdf::NS . 'RDF') {
+			if (isset($attrs[(\Erfurt\Vocabulary\Xml::NS . 'base')])) {
+				$this->baseIri = $attrs[(\Erfurt\Vocabulary\Xml::NS . 'base')];
 			}
 			return;
 		}
 
-		$idx = xml_get_current_byte_index($parser) - $this->_offset * 4096;
-		if (($idx >= 0) && ($this->_data[$idx] . $this->_data[$idx + 1]) === '/>') {
-			$this->_currentElementIsEmpty = true;
+		$idx = xml_get_current_byte_index($parser) - $this->offset * 4096;
+		if (($idx >= 0) && ($this->data[$idx] . $this->data[$idx + 1]) === '/>') {
+			$this->currentElementIsEmpty = true;
 		} else {
-			$this->_currentElementIsEmpty = false;
+			$this->currentElementIsEmpty = false;
 		}
 
 		if (isset($attrs['http://www.w3.org/XML/1998/namespacelang'])) {
-			$this->_currentXmlLang = $attrs['http://www.w3.org/XML/1998/namespacelang'];
+			$this->currentXmlLang = $attrs['http://www.w3.org/XML/1998/namespacelang'];
 		}
 
 		if ($this->_topElemIsProperty()) {
@@ -261,7 +327,7 @@ class RdfXml implements AdapterInterface {
 	}
 
 	protected function _topElemIsProperty() {
-		if (count($this->_elementStack) === 0 ||
+		if (count($this->elementStack) === 0 ||
 			$this->_peekStack(0) instanceof RdfXml\PropertyElement) {
 
 			return true;
@@ -273,12 +339,12 @@ class RdfXml implements AdapterInterface {
 	protected function _endElement($parser, $name) {
 		$this->_handleCharDataStatement();
 
-		if ($this->_currentElementIsEmpty) {
-			$this->_currentElementIsEmpty = false;
+		if ($this->currentElementIsEmpty) {
+			$this->currentElementIsEmpty = false;
 			return;
 		}
 
-		if ($name === Erfurt\Vocabulary\Rdf::NS . 'RDF') {
+		if ($name === \Erfurt\Vocabulary\Rdf::NS . 'RDF') {
 			return;
 		}
 
@@ -286,7 +352,7 @@ class RdfXml implements AdapterInterface {
 
 		if ($topElement instanceof RdfXml\NodeElement) {
 			if ($topElement->isVolatile()) {
-				array_pop($this->_elementStack);
+				array_pop($this->elementStack);
 			}
 		} else {
 			if (null === $topElement) {
@@ -299,31 +365,31 @@ class RdfXml implements AdapterInterface {
 				if (null === $lastListResource) {
 					$subject = $this->_peekStack(1);
 
-					$this->_addStatement($subject->getResource(), $topElement->getIri(), Erfurt\Vocabulary\Rdf::NIL, 'iri');
-					$this->_handleReification(Erfurt\Vocabulary\Rdf::NIL);
+					$this->_addStatement($subject->getResource(), $topElement->getIri(), \Erfurt\Vocabulary\Rdf::NIL, 'iri');
+					$this->_handleReification(\Erfurt\Vocabulary\Rdf::NIL);
 				} else {
-					$this->_addStatement($lastListResource, Erfurt\Vocabulary\Rdf::REST, Erfurt\Vocabulary\Rdf::NIL, 'iri');
+					$this->_addStatement($lastListResource, \Erfurt\Vocabulary\Rdf::REST, \Erfurt\Vocabulary\Rdf::NIL, 'iri');
 				}
 			}
 		}
 
-		array_pop($this->_elementStack);
-		$this->_currentXmlLang = null;
+		array_pop($this->elementStack);
+		$this->currentXmlLang = null;
 	}
 
 	protected function _characterData($parser, $data) {
-		if (null !== $this->_currentCharData) {
-			$this->_currentCharData .= $data;
+		if (null !== $this->currentCharData) {
+			$this->currentCharData .= $data;
 		} else {
-			$this->_currentCharData = $data;
+			$this->currentCharData = $data;
 		}
 	}
 
 	protected function _handleCharDataStatement() {
 		#var_dump($this->_currentCharData);exit;
-		if (null !== $this->_currentCharData) {
-			if (trim($this->_currentCharData) === '') {
-				$this->_currentCharData = null;
+		if (null !== $this->currentCharData) {
+			if (trim($this->currentCharData) === '') {
+				$this->currentCharData = null;
 				return;
 			}
 
@@ -341,12 +407,12 @@ class RdfXml implements AdapterInterface {
 			$dt = $propElem->getDatatype();
 
 			$subjectElem = $this->_peekStack(1);
-			$this->_addStatement($subjectElem->getResource(), $propElem->getIri(), trim($this->_currentCharData), 'literal',
-								 $this->_currentXmlLang, $dt);
+			$this->_addStatement($subjectElem->getResource(), $propElem->getIri(), trim($this->currentCharData), 'literal',
+				$this->currentXmlLang, $dt);
 
-			$this->_handleReification(trim($this->_currentCharData));
+			$this->_handleReification(trim($this->currentCharData));
 
-			$this->_currentCharData = null;
+			$this->currentCharData = null;
 		}
 	}
 
@@ -360,7 +426,7 @@ class RdfXml implements AdapterInterface {
 		$nodeElem = new RdfXml\NodeElement($nodeResource);
 
 
-		if (count($this->_elementStack) > 0) {
+		if (count($this->elementStack) > 0) {
 			// Node can be the object or part of an rdf:List
 			$subject = $this->_peekStack(1);
 			$predicate = $this->_peekStack(0);
@@ -375,10 +441,10 @@ class RdfXml implements AdapterInterface {
 					$this->_handleReification($newListResource);
 				} else {
 					// Not the first element in the list.
-					$this->_addStatement($lastListResource, Erfurt\Vocabulary\Rdf::REST, $newListResource);
+					$this->_addStatement($lastListResource, \Erfurt\Vocabulary\Rdf::REST, $newListResource);
 				}
 
-				$this->_addStatement($newListResource, Erfurt\Vocabulary\Rdf::FIRST, $nodeResource);
+				$this->_addStatement($newListResource, \Erfurt\Vocabulary\Rdf::FIRST, $nodeResource);
 				$predicate->setLastListResource($newListResource);
 			} else {
 				$this->_addStatement($subject->getResource(), $predicate->getIri(), $nodeResource);
@@ -386,22 +452,22 @@ class RdfXml implements AdapterInterface {
 			}
 		}
 
-		if ($name !== Erfurt\Vocabulary\Rdf::NS . 'Description') {
+		if ($name !== \Erfurt\Vocabulary\Rdf::NS . 'Description') {
 			// Element name is the type of the iri.
-			$this->_addStatement($nodeResource, Erfurt\Vocabulary\Rdf::TYPE, $name, 'iri');
+			$this->_addStatement($nodeResource, \Erfurt\Vocabulary\Rdf::TYPE, $name, 'iri');
 		}
 
-		$type = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::TYPE);
+		$type = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::TYPE);
 		if (null !== $type) {
 			$className = $this->_resolveIri($type);
-			$this->_addStatement($nodeResource, Erfurt\Vocabulary\Rdf::TYPE, $className, 'iri');
+			$this->_addStatement($nodeResource, \Erfurt\Vocabulary\Rdf::TYPE, $className, 'iri');
 		}
 
 		// Process all remaining attributes of this element.
 		$this->_processSubjectAttributes($nodeResource, $attrs);
 
-		if (!$this->_currentElementIsEmpty) {
-			$this->_elementStack[] = $nodeElem;
+		if (!$this->currentElementIsEmpty) {
+			$this->elementStack[] = $nodeElem;
 		}
 	}
 
@@ -409,24 +475,24 @@ class RdfXml implements AdapterInterface {
 		$propIri = $name;
 
 		// List expansion rule
-		if ($propIri === Erfurt\Vocabulary\Rdf::NS . 'li') {
+		if ($propIri === \Erfurt\Vocabulary\Rdf::NS . 'li') {
 			$subject = $this->_peekStack(0);
-			$propIri = Erfurt\Vocabulary\Rdf::NS . '_' . $subject->getNextLiCounter();
+			$propIri = \Erfurt\Vocabulary\Rdf::NS . '_' . $subject->getNextLiCounter();
 		}
 
 		// Push the property on the stack.
 		$predicate = new RdfXml\PropertyElement($propIri);
-		$this->_elementStack[] = $predicate;
+		$this->elementStack[] = $predicate;
 
 		// Check, whether the prop has a reification id.
-		$id = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'ID');
+		$id = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::NS . 'ID');
 		if (null !== $id) {
 			$iri = $this->_buildIriFromId($id);
 			$predicate->setReificationIri($iri);
 		}
 
 		// Check for rdf:parseType attribute.
-		$parseType = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'parseType');
+		$parseType = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::NS . 'parseType');
 		if (null !== $parseType) {
 			switch ($parseType) {
 				case 'Resource':
@@ -435,20 +501,20 @@ class RdfXml implements AdapterInterface {
 
 					$this->_addStatement($subject->getResource(), $propIri, $objectResource, 'bnode');
 
-					if ($this->_currentElementIsEmpty) {
+					if ($this->currentElementIsEmpty) {
 						$this->_handleReification($objectResource);
 					} else {
 						$object = new RdfXml\NodeElement($objectResource);
 						$object->setIsVolatile(true);
-						$this->_elementStack[] = $object;
+						$this->elementStack[] = $object;
 					}
 
 					break;
 				case 'Collection':
-					if ($this->_currentElementIsEmpty) {
+					if ($this->currentElementIsEmpty) {
 						$subject = $this->_peekStack(1);
-						$this->_addStatement($subject->getResource(), $propIri, Erfurt\Vocabulary\Rdf::NIL, 'iri');
-						$this->_handleReification(Erfurt\Vocabulary\Rdf::NIL);
+						$this->_addStatement($subject->getResource(), $propIri, \Erfurt\Vocabulary\Rdf::NIL, 'iri');
+						$this->_handleReification(\Erfurt\Vocabulary\Rdf::NIL);
 					} else {
 						$predicate->setParseAsCollection(true);
 					}
@@ -456,10 +522,10 @@ class RdfXml implements AdapterInterface {
 					break;
 
 				case 'Literal':
-					if ($this->_currentElementIsEmpty) {
+					if ($this->currentElementIsEmpty) {
 						$subject = $this->_peekStack(1);
 						$this->_addStatement($subject->getResource(), $propIri,
-											 '', 'literal', null, Erfurt\Vocabulary\Rdf::NS . 'XmlLiteral');
+							'', 'literal', null, \Erfurt\Vocabulary\Rdf::NS . 'XmlLiteral');
 						$this->_handleReification('');
 					} else {
 						$predicate->setDatatype($value);
@@ -470,18 +536,18 @@ class RdfXml implements AdapterInterface {
 		} else {
 			// No parseType
 
-			if ($this->_currentElementIsEmpty) {
-				if (count($attrs) === 0 || (count($attrs) === 1 && isset($attrs[Erfurt\Vocabulary\Rdf::NS . 'datatype']))) {
+			if ($this->currentElementIsEmpty) {
+				if (count($attrs) === 0 || (count($attrs) === 1 && isset($attrs[\Erfurt\Vocabulary\Rdf::NS . 'datatype']))) {
 					// Element has no attributes, or only the optional
 					// rdf:ID and/or rdf:datatype attributes.
 					$subject = $this->_peekStack(1);
 
 					$dt = null;
-					if (isset($attrs[Erfurt\Vocabulary\Rdf::NS . 'datatype'])) {
-						$dt = $attrs[Erfurt\Vocabulary\Rdf::NS . 'datatype'];
+					if (isset($attrs[\Erfurt\Vocabulary\Rdf::NS . 'datatype'])) {
+						$dt = $attrs[\Erfurt\Vocabulary\Rdf::NS . 'datatype'];
 					}
 
-					$this->_addStatement($subject->getResource(), $propIri, '', 'literal', $this->_currentXmlLang, $dt);
+					$this->_addStatement($subject->getResource(), $propIri, '', 'literal', $this->currentXmlLang, $dt);
 					$this->_handleReification('');
 				} else {
 					$resourceRes = $this->_getPropertyResource($attrs);
@@ -495,11 +561,11 @@ class RdfXml implements AdapterInterface {
 					$this->_addStatement($subject->getResource(), $propIri, $resourceRes);
 					$this->_handleReification($resourceRes);
 
-					$type = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::TYPE);
+					$type = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::TYPE);
 					if (null !== $type) {
 						$className = $this->_resolveIri($type);
 
-						$this->_addStatement($resourceRes, Erfurt\Vocabulary\Rdf::TYPE, $className);
+						$this->_addStatement($resourceRes, \Erfurt\Vocabulary\Rdf::TYPE, $className);
 					}
 
 					$this->_processSubjectAttributes($resourceRes, $attrs);
@@ -507,30 +573,30 @@ class RdfXml implements AdapterInterface {
 			} else {
 				// Not an empty element.
 
-				$datatype = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'datatype');
+				$datatype = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::NS . 'datatype');
 				if (null !== $datatype) {
 					$predicate->setDatatype($datatype);
 				}
 
 				// Check for about attribute
-				#$about = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS.'about');
+				#$about = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::NS.'about');
 				#if (null !== $about) {
 				#    $aboutIri = $this->_resolveIri($about);
-				#    $this->_addStatement($aboutIri, Erfurt\Vocabulary\Rdf::TYPE, $predicate, 'iri');
+				#    $this->_addStatement($aboutIri, \Erfurt\Vocabulary\Rdf::TYPE, $predicate, 'iri');
 				// TODO phil    #
 				#    $this->_processSubjectAttributes($aboutIri, $attrs);
 				#}
 			}
 		}
 		#var_dump($this->_currentElementIsEmpty);
-		if ($this->_currentElementIsEmpty) {
-			array_pop($this->_elementStack);
+		if ($this->currentElementIsEmpty) {
+			array_pop($this->elementStack);
 		}
 	}
 
 	protected function _getPropertyResource(&$attrs) {
-		$resource = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'resource');
-		$nodeId = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'nodeID');
+		$resource = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::NS . 'resource');
+		$nodeId = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::NS . 'nodeID');
 
 		if (null !== $resource) {
 			return $this->_resolveIri($resource);
@@ -545,16 +611,16 @@ class RdfXml implements AdapterInterface {
 
 	protected function _processSubjectAttributes($subject, &$attrs) {
 		foreach ($attrs as $key => $value) {
-			$this->_addStatement($subject, $key, $value, 'literal', $this->_currentXmlLang, null);
+			$this->_addStatement($subject, $key, $value, 'literal', $this->currentXmlLang, null);
 		}
 	}
 
 	protected function _addStatement($s, $p, $o, $oType = null, $lang = null, $dType = null) {
-		if (!isset($this->_statements["$s"])) {
-			$this->_statements["$s"] = array();
+		if (!isset($this->statements["$s"])) {
+			$this->statements["$s"] = array();
 		}
-		if (!isset($this->_statements["$s"]["$p"])) {
-			$this->_statements["$s"]["$p"] = array();
+		if (!isset($this->statements["$s"]["$p"])) {
+			$this->statements["$s"]["$p"] = array();
 		}
 
 		if (null === $oType) {
@@ -579,27 +645,27 @@ class RdfXml implements AdapterInterface {
 			}
 		}
 
-		$this->_statements["$s"]["$p"][] = $objectArray;
-		++$this->_stmtCounter;
+		$this->statements["$s"]["$p"][] = $objectArray;
+		++$this->statementCounter;
 
-		if ($this->_parseToStore && $this->_stmtCounter >= 1000) {
+		if ($this->parseToStore && $this->statementCounter >= 1000) {
 			// Write the statements
-			$this->_writeStatementsToStore();
+			$this->writeStatementsToStore();
 		}
 	}
 
-	protected function _writeStatementsToStore() {
+	protected function writeStatementsToStore() {
 		// Check whether graph exists.
-		$store = $this->knowledgeBase->getStore();
+		$store = $this->objectManager->getStore();
 
-		if (!$store->isGraphAvailable($this->_graphIri, $this->_useAc)) {
-			throw new \Exception('Graph with iri ' . $this->_graphIri . ' not available.');
+		if (!$store->isGraphAvailable($this->graphIri, $this->needsAuthentication)) {
+			throw new \Exception('Graph with iri ' . $this->graphIri . ' not available.');
 		}
 
-		if (count($this->_statements) > 0) {
-			$store->addMultipleStatements($this->_graphIri, $this->_statements, $this->_useAc);
-			$this->_statements = array();
-			$this->_stmtCounter = 0;
+		if (count($this->statements) > 0) {
+			$store->addMultipleStatements($this->graphIri, $this->statements, $this->needsAuthentication);
+			$this->statements = array();
+			$this->statementCounter = 0;
 		}
 	}
 
@@ -616,16 +682,16 @@ class RdfXml implements AdapterInterface {
 	protected function _reifyStatement($reifNode, $s, $p, $o) {
 		// TODO handle literals and bnodes the right way...
 
-		$this->_addStatement($reifNode, Erfurt\Vocabulary\Rdf::TYPE, Erfurt\Vocabulary\Rdf::NS . 'Statement');
-		$this->_addStatement($reifNode, Erfurt\Vocabulary\Rdf::NS . 'subject', $s);
-		$this->_addStatement($reifNode, Erfurt\Vocabulary\Rdf::NS . 'predicate', $p);
-		$this->_addStatement($reifNode, Erfurt\Vocabulary\Rdf::NS . 'object', $o);
+		$this->_addStatement($reifNode, \Erfurt\Vocabulary\Rdf::TYPE, \Erfurt\Vocabulary\Rdf::NS . 'Statement');
+		$this->_addStatement($reifNode, \Erfurt\Vocabulary\Rdf::NS . 'subject', $s);
+		$this->_addStatement($reifNode, \Erfurt\Vocabulary\Rdf::NS . 'predicate', $p);
+		$this->_addStatement($reifNode, \Erfurt\Vocabulary\Rdf::NS . 'object', $o);
 	}
 
 	protected function _getNodeResource(&$attrs) {
-		$id = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'ID');
-		$about = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'about');
-		$nodeId = $this->_removeAttribute($attrs, Erfurt\Vocabulary\Rdf::NS . 'nodeID');
+		$id = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::NS . 'ID');
+		$about = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::NS . 'about');
+		$nodeId = $this->_removeAttribute($attrs, \Erfurt\Vocabulary\Rdf::NS . 'nodeID');
 
 		// We could throw an exception if more than one of the above attributes
 		// are given, but we want to be as tolerant as possible, so we use the
@@ -683,7 +749,7 @@ class RdfXml implements AdapterInterface {
 	}
 
 	protected function _checkSchemas($about) {
-		$schemataArray = $this->knowledgeBase->getIriConfiguration()->schemata->toArray();
+		$schemataArray = $this->objectManager->getIriConfiguration()->schemata->toArray();
 
 		$regExp = '/^(' . implode(':|', $schemataArray) . ').*$/';
 		if (preg_match($regExp, $about)) {
@@ -697,7 +763,7 @@ class RdfXml implements AdapterInterface {
 
 		if (null === $id) {
 			while (true) {
-				$id = self::BNODE_PREFIX . ++$this->_bnodeCounter;
+				$id = self::BLANK_NODE_PREFIX . ++$this->blankNodeCounter;
 
 				if (!isset($this->_usedBnodeIds[$id])) {
 					break;
@@ -710,8 +776,8 @@ class RdfXml implements AdapterInterface {
 	}
 
 	protected function _getBaseIri() {
-		if (null !== $this->_baseIri) {
-			return $this->_baseIri;
+		if (null !== $this->baseIri) {
+			return $this->baseIri;
 		} else {
 			return false;
 		}
@@ -722,10 +788,10 @@ class RdfXml implements AdapterInterface {
 	}
 
 	protected function _peekStack($distanceFromTop = 0) {
-		$count = count($this->_elementStack);
+		$count = count($this->elementStack);
 		$pos = $count - 1 - $distanceFromTop;
 		if ($count > 0 && $pos >= 0) {
-			return $this->_elementStack[$pos];
+			return $this->elementStack[$pos];
 		} else {
 			return null;
 		}
@@ -742,25 +808,28 @@ class RdfXml implements AdapterInterface {
 		return $xmlParser;
 	}
 
-	private function _getXmlParser() {
-		if (null === $this->_xmlParser) {
-			$this->_xmlParser = xml_parser_create_ns(null, '');
+	/**
+	 * @return resource
+	 */
+	private function getXmlParser() {
+		if (null === $this->xmlParser) {
+			$this->xmlParser = xml_parser_create_ns(null, '');
 
 			// Disable case folding, for we need the iris.
-			xml_parser_set_option($this->_xmlParser, XML_OPTION_CASE_FOLDING, 0);
+			xml_parser_set_option($this->xmlParser, XML_OPTION_CASE_FOLDING, 0);
 
-			xml_parser_set_option($this->_xmlParser, XML_OPTION_SKIP_WHITE, 1);
+			xml_parser_set_option($this->xmlParser, XML_OPTION_SKIP_WHITE, 1);
 
-			xml_set_default_handler($this->_xmlParser, array($this, '_handleDefault'));
+			xml_set_default_handler($this->xmlParser, array($this, '_handleDefault'));
 
 			// Set the handler method for namespace definitions
-			xml_set_start_namespace_decl_handler($this->_xmlParser, array($this, '_handleNamespaceDeclaration'));
+			xml_set_start_namespace_decl_handler($this->xmlParser, array($this, '_handleNamespaceDeclaration'));
 
 			//$this->_setNamespaceDeclarationHandler('_handleNamespaceDeclaration');
 
 			//xml_set_end_namespace_decl_handler($xmlParser, array(&$this, '_handleNamespaceDeclaration'));
 
-			xml_set_character_data_handler($this->_xmlParser, array($this, '_characterData'));
+			xml_set_character_data_handler($this->xmlParser, array($this, '_characterData'));
 
 			//xml_set_external_entity_ref_handler($this->_xmlParser, array($this, '_handleExternalEntityRef'));
 
@@ -769,13 +838,13 @@ class RdfXml implements AdapterInterface {
 			//xml_set_unparsed_entity_decl_handler($this->_xmlParser, array($this, '_handleUnparsedEntityDecl'));
 
 			xml_set_element_handler(
-				$this->_xmlParser,
+				$this->xmlParser,
 				array($this, '_startElement'),
 				array($this, '_endElement')
 			);
 		}
 
-		return $this->_xmlParser;
+		return $this->xmlParser;
 	}
 
 	protected function _handleDefault($parser, $data) {
@@ -787,9 +856,9 @@ class RdfXml implements AdapterInterface {
 		$prefix = (string)$prefix;
 		$iri = (string)$iri;
 
-		if (!$this->_rdfElementParsed) {
+		if (!$this->rdfElementParsed) {
 			if ($prefix != '' && $iri != '') {
-				$this->_namespaces[$iri] = $prefix;
+				$this->namespaces[$iri] = $prefix;
 			}
 		}
 	}

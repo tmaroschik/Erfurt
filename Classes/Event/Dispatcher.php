@@ -50,7 +50,7 @@ class Dispatcher implements \Erfurt\Singleton {
 	const DEFAULT_PRIORITY = 10;
 
 	/**
-	 * @var Zend_Logger
+	 * @var \Erfurt\Log\NullLogger
 	 */
 	protected $logger = null;
 
@@ -64,15 +64,14 @@ class Dispatcher implements \Erfurt\Singleton {
 	 */
 	protected $registeredEvents = array();
 
-	/**
-	 * Injector method for a \Erfurt\KnowledgeBase
-	 *
-	 * @var \Erfurt\KnowledgeBase
-	 */
-	public function injectKnowledgeBase(\Erfurt\KnowledgeBase $knowledgeBase) {
-		$this->knowledgeBase = $knowledgeBase;
-		$this->logger = $this->knowledgeBase->getLog();
-	}
+//	/**
+//	 * Injector method for a \Erfurt\Log\NullLogger
+//	 *
+//	 * @var \Erfurt\Log\NullLogger
+//	 */
+//	public function injectLogger(\Erfurt\Log\NullLogger $logger) {
+//		$this->logger = $logger;
+//	}
 
 	/**
 	 * Binds an event handler (class or object) to a specified event.
@@ -97,7 +96,7 @@ class Dispatcher implements \Erfurt\Singleton {
 		if (is_object($handler)) {
 			// simply store handling object
 			$this->registerHandler($eventName, $handler, $priority);
-			$this->logger->info('Dispatcher: ' . get_class($handler) . " registered for event '$eventName'");
+//			$this->logger->info('Dispatcher: ' . get_class($handler) . " registered for event '$eventName'");
 		} else {
 			if (is_array($handler)) {
 				// or check mandatory parameters

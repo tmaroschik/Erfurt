@@ -114,14 +114,14 @@ class RdfSerializer {
 		$format = self::normalizeFormat($format);
 		switch ($format) {
 			case 'rdfxml':
-				$this->serializerAdapter = $this->objectManager->create('\Erfurt\Syntax\RdfSerializer\Adapter\RdfXml');
+				$this->serializerAdapter = $this->objectManager->create('Erfurt\Syntax\RdfSerializer\Adapter\RdfXml');
 				break;
 			case 'turtle':
 			case 'rdfn3':
-				$this->serializerAdapter = $this->objectManager->create('\Erfurt\Syntax\RdfSerializer\Adapter\Turtle');
+				$this->serializerAdapter = $this->objectManager->create('Erfurt\Syntax\RdfSerializer\Adapter\Turtle');
 				break;
 			case 'rdfjson':
-				$this->serializerAdapter = $this->objectManager->create('\Erfurt\Syntax\RdfSerializer\Adapter\RdfJson');
+				$this->serializerAdapter = $this->objectManager->create('Erfurt\Syntax\RdfSerializer\Adapter\RdfJson');
 				break;
 			default:
 				throw new RdfSerializerException("Format '$format' not supported");

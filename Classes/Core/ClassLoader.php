@@ -28,33 +28,53 @@ namespace Erfurt\Core;
 class ClassLoader {
 
 	/**
+	 * An array of \Erfurt\Package\Package objects
+	 * @var array
+	 */
+	protected $packages = array();
+
+	/**
 	 * Loads php files containing classes or interfaces found in the classes directory of
-	 * a package and and erfurt classes
+	 * a package and specifically registered classes.
 	 *
 	 * @param string $className Name of the class/interface to load
 	 * @return void
-	 * @author Thomas Maroschik <tmaroschik@dfau.de>
+	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function loadClass($className) {
 		$classNameParts = explode('\\', $className);
-		if (substr($classNameParts[0], 0, 6) == 'Erfurt') {
-			if ($classNameParts[1] == 'Tests') {
-				$classFilePathAndName = EF_PATH_FRAMEWORK . 'Tests/';
-				$classFilePathAndName .= implode(array_slice($classNameParts, 2, -1), '/') . '/';
+		if (is_array($classNameParts) && $classNameParts[0] === 'Erfurt' && isset($this->packages[$classNameParts[0]])) {
+			if ($classNameParts[1] === 'Tests' && $classNameParts[2] === 'Functional') {
+				$classFilePathAndName = $this->packages[$classNameParts[1]]->getFunctionalTestsPath();
+				$classFilePathAndName .= implode(array_slice($classNameParts, 3, -1), '/') . '/';
+				$classFilePathAndName .= end($classNameParts) . '.php';
 			} else {
-				$classFilePathAndName = EF_PATH_FRAMEWORK . 'Classes/';
+				$classFilePathAndName = $this->packages[$classNameParts[0]]->getClassesPath();
 				$classFilePathAndName .= implode(array_slice($classNameParts, 1, -1), '/') . '/';
+				$classFilePathAndName .= end($classNameParts) . '.php';
 			}
-			$classFilePathAndName .= end($classNameParts) . '.php';
-		} elseif (substr($classNameParts[0], 0, 4) == 'Zend') {
-			$classNameParts = explode('_', $classNameParts[0]);
-			$classFilePathAndName = ZEND_BASE;
+		}
+
+		if (!isset($classFilePathAndName) && $this->packages === array() && $classNameParts[0] === 'Erfurt') {
+			$classFilePathAndName = EF_PATH_FRAMEWORK . 'Classes/';
 			$classFilePathAndName .= implode(array_slice($classNameParts, 1, -1), '/') . '/';
 			$classFilePathAndName .= end($classNameParts) . '.php';
 		}
+
 		if (isset($classFilePathAndName) && file_exists($classFilePathAndName)) {
-			require_once($classFilePathAndName);
+			require($classFilePathAndName);
 		}
+	}
+
+	/**
+	 * Sets the available packages
+	 *
+	 * @param array $packages An array of \Erfurt\Package\Package objects
+	 * @return void
+	 * @author Robert Lemke <robert@typo3.org>
+	 */
+	public function setPackages(array $packages) {
+		$this->packages = $packages;
 	}
 
 }

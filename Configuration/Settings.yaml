@@ -9,7 +9,7 @@ Erfurt:
     compileConfigurationFiles: y
 
   # Logging
-  log:
+  logging:
     #
     # Enables logging up to a certain level. The specified logs folder needs to
     # be writable. To disable logging at all set this option to false. If the
@@ -43,28 +43,27 @@ Erfurt:
       host: localhost
 
   # System Configuration
-  sysont:
+  systemOntology:
 
     # System configuration ontology
-    schemaUri: 'http://ns.ontowiki.net/SysOnt/'
+    schemaIri: 'http://ns.ontowiki.net/SysOnt/'
     schemaLocation: 'http://ontowiki.googlecode.com/svn/trunk/erfurt/src/Erfurt/include/rdf'
-    schemaPath: 'include/rdf'
+    schemaPath: 'Resources/Private/Ontologies/SysOnt.rdf'
 
     # System configuration graph (local)
-    graphUri: 'http://localhost/OntoWiki/Config/'
+    graphIri: 'http://localhost/OntoWiki/Config/'
     graphLocation: 'http://ontowiki.googlecode.com/svn/trunk/erfurt/src/Erfurt/include/SysOntLocal.rdf'
-    graphPath: 'include/SysOntLocal.rdf'
+    graphPath: 'Resources/Private/Ontologies/SysOntLocal.rdf'
 
     # System configuration properties
     properties:
-
       hiddenImports: 'http://ns.ontowiki.net/SysOnt/hiddenImports'
       hidden: 'http://ns.ontowiki.net/SysOnt/hidden'
       isLarge: 'http://ns.ontowiki.net/SysOnt/isLarge'
       prefix: 'http://ns.ontowiki.net/SysOnt/prefix'
 
   # Authentication Configuration
-  auth:
+  authentication:
     foafssl:
       idp:
         serviceUrl: 'https://  org/srv/idp'
@@ -90,16 +89,16 @@ Erfurt:
       agentCertFilename: '/etc/apache2/localhost.pem'
 
   # Access Control Configuration
-  ac:
+  accessControl:
     allowDatabaseUser: y
     deactivateLogin: n
 
     # Access Control Schema Configuartion
     # Note: If you change these values, you have to change your access control graph too!
-    graphUri: 'http://localhost/OntoWiki/Config/'
-    baseUri: 'http://ns.ontowiki.net/SysOnt/'
+    graphIri: 'http://localhost/OntoWiki/Config/'
+    baseIri: 'http://ns.ontowiki.net/SysOnt/'
 
-    # Schema URIs which define properties and classes for auth. and registration
+    # Schema IRIs which define properties and classes for auth. and registration
     user:
       class: 'http://rdfs.org/sioc/ns#User'
       name: 'http://xmlns.com/foaf/  1/accountName'
@@ -109,13 +108,13 @@ Erfurt:
       anonymousUser: 'http://ns.ontowiki.net/SysOnt/Anonymous'
       recoveryHash: 'http://ns.ontowiki.net/SysOnt/recoveryHash'
 
-    # Schema URIs which define properties and classes for grouping
+    # Schema IRIs which define properties and classes for grouping
     group:
       class: 'http://rdfs.org/sioc/ns#Usergroup'
       membership: 'http://rdfs.org/sioc/ns#has_member'
       subgroup: 'http://ns.ontowiki.net/SysOnt/subGroup'
 
-    # Schema URIs which define Model Class and Model Access Control Relations
+    # Schema IRIs which define Model Class and Model Access Control Relations
     graphs:
       class: 'http://ns.ontowiki.net/SysOnt/Model'
       grantEdit: 'http://ns.ontowiki.net/SysOnt/grantModelEdit'
@@ -124,7 +123,7 @@ Erfurt:
       denyView: 'http://ns.ontowiki.net/SysOnt/denyModelView'
       anyGraph: 'http://ns.ontowiki.net/SysOnt/AnyModel'
 
-    # Schema URIs which define Action Class and Action Access Control Relations
+    # Schema IRIs which define Action Class and Action Access Control Relations
     action:
       class: 'http://ns.ontowiki.net/SysOnt/Action'
       deny: 'http://ns.ontowiki.net/SysOnt/denyAccess'
@@ -135,14 +134,14 @@ Erfurt:
 
       # Access Control Configuartion
       config:
-        - uri: 'http://ns.ontowiki.net/SysOnt/RegisterNewUser'
+        - iri: 'http://ns.ontowiki.net/SysOnt/RegisterNewUser'
           spec:
             defaultGroup: 'http://localhost/OntoWiki/Config/DefaultUserGroup'
             mailvalidation: 'yes'
             uidregexp: '/^[[:alnum:]]+$/'
             passregexp: ''
 
-        - uri: 'http://ns.ontowiki.net/SysOnt/Login'
+        - iri: 'http://ns.ontowiki.net/SysOnt/Login'
           spec:
             type: 'RDF'
 
@@ -157,10 +156,10 @@ Erfurt:
     localname:
         recovery: 'erfurt-identity-recovery'
 
-  # [RFC4395] defines an IANA-maintained registry of URI Schemes.
-  # These registries include the Permanent and Provisional URI Schemes.
+  # [RFC4395] defines an IANA-maintained registry of IRI Schemes.
+  # These registries include the Permanent and Provisional IRI Schemes.
   # see http://www.iana.org/assignments/uri-schemes.html for the list
-  uri:
+  iri:
     schemata:
       - 'aaa'
       - 'aaas'
@@ -175,7 +174,7 @@ Erfurt:
       - 'fax'
       - 'file'
       - 'ftp'
-  	#- 'go'
+     #- 'go'
       - 'gopher'
       - 'h323'
       - 'http'
@@ -237,6 +236,15 @@ Erfurt:
       - 'snews'
       - 'videotex'
       - 'wais'
-      # these are additional uri schemes (not iana listed but also supported)
+      # these are additional iri schemes (not iana listed but also supported)
       - 'ldaps'
       - 'icq'
+
+  utility:
+    environment:
+
+      # Defines the base directory which FLOW3 may use for storing different kinds
+      # of temporary files.
+      # The directory must be writable and FLOW3 will automatically create a sub
+      # directory named with a hash which will contain the actual temporary files.
+      temporaryDirectoryBase: %EF_PATH_DATA%Temporary/

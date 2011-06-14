@@ -27,6 +27,7 @@ namespace Erfurt\Store\Adapter;
  */
 use \Erfurt\Sparql;
 class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
+
 	/**
 	 * @array
 	 */
@@ -45,16 +46,16 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	/**
 	 * The injected knowledge base
 	 *
-	 * @var \Erfurt\KnowledgeBase
-	 */
-	protected $knowledgeBase;
-
-	/**
-	 * The injected knowledge base
-	 *
 	 * @var \Erfurt\Object\ObjectManager
 	 */
 	protected $objectManager;
+
+	/**
+	 * The injected environment
+	 *
+	 * @var \Erfurt\Utility\Environment
+	 */
+	protected $environment;
 
 	/**
 	 * @var array
@@ -78,25 +79,21 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	}
 
 	/**
-	 * Injector method for a \Erfurt\KnowledgeBase
-	 *
-	 * @var \Erfurt\KnowledgeBase
-	 */
-	public function injectKnowledgeBase(\Erfurt\KnowledgeBase $knowledgeBase) {
-		$this->knowledgeBase = $knowledgeBase;
-		// load title properties for graph titles
-//		if (isset($this->knowledgeBase->getConfiguration()->properties->title)) {
-//			$this->titleProperties = $this->knowledgeBase->getConfiguration()->properties->title->toArray();
-//		}
-	}
-
-	/**
 	 * Injector method for a \Erfurt\Object\ObjectManager
 	 *
 	 * @var \Erfurt\Object\ObjectManager
 	 */
 	public function injectObjectManager(\Erfurt\Object\ObjectManager $objectManager) {
 		$this->objectManager = $objectManager;
+	}
+
+	/**
+	 * Injector method for a \Erfurt\Utility\Environment
+	 *
+	 * @var \Erfurt\Utility\Environment
+	 */
+	public function injectEnvironment(\Erfurt\Utility\Environment $environment) {
+		$this->environment = $environment;
 	}
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
@@ -218,10 +215,10 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 			}
 		}
 		$sqlQuery .= implode(',', $insertArray);
-		if (defined('_EFDEBUG')) {
-			$logger = $this->knowledgeBase->getLog();
-			$logger->info('ZendDb multiple statements added: ' . $counter);
-		}
+//		if (defined('_EFDEBUG')) {
+//			$logger = $this->knowledgeBase->getLog();
+//			$logger->info('ZendDb multiple statements added: ' . $counter);
+//		}
 		if ($counter > 0) {
 			$this->sqlQuery($sqlQuery);
 		}
@@ -259,7 +256,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 
 	/** @see \Erfurt\Store\Adapter\AdapterInterface */
 	public function countWhereMatches($graphIris, $whereSpec, $countSpec, $distinct = false) {
-		$query = $this->objectManager->create('\Erfurt\Sparql\SimpleQuery');;
+		$query = $this->objectManager->create('Erfurt\Sparql\SimpleQuery');;
 		if (!$distinct) {
 			$query->setProloguePart("COUNT DISTINCT $countSpec"); // old way: distinct has no effect !!!
 		} else {
@@ -320,11 +317,12 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 //			$this->databaseConnection->exec_UPDATEquery('tx_semantic_graph', 'id = graphId', $updateData);
 		}
 		// invalidate the cache and fetch graph infos again
-		$cache = $this->knowledgeBase->getCache();
-		$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('graph_info'));
+// TODO reenable cache
+//		$cache = $this->knowledgeBase->getCache();
+//		$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('graph_info'));
 		$this->graphInfoCache = null;
 		if ($type === \Erfurt\Store\Store::GRAPH_TYPE_OWL) {
-			$this->addStatement($graphIri, $graphIri, Erfurt\Vocabulary\Rdf::TYPE, array('type' => 'iri', 'value' => Erfurt\Vocabulary\Owl::ONTOLOGY));
+			$this->addStatement($graphIri, $graphIri, \Erfurt\Vocabulary\Rdf::TYPE, array('type' => 'iri', 'value' => \Erfurt\Vocabulary\Owl::ONTOLOGY));
 			$this->graphInfoCache = null;
 		}
 	}
@@ -470,8 +468,8 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 		$this->databaseConnection->delete('tx_semantic_iri', "g = $graphId");
 		$this->databaseConnection->delete('tx_semantic_literal', "g = $graphId");
 		// invalidate the cache and fetch graph infos again
-		$cache = $this->knowledgeBase->getCache();
-		$tags = array('graph_info', $graphInfoCache[$graphIri]['graphId']);
+//		$cache = $this->knowledgeBase->getCache();
+//		$tags = array('graph_info', $graphInfoCache[$graphIri]['graphId']);
 		#$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, $tags);
 		$this->graphCache = array();
 		$this->graphInfoCache = null;
@@ -547,12 +545,12 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 		}
 		// choose the right type for the graph instance and instanciate it
 		if ($graphInfoCache[$graphIri]['type'] === 'owl') {
-			$m = $this->objectManager->create('\Erfurt\Domain\Model\Owl\Graph', $graphIri, $baseIri);
+			$m = $this->objectManager->create('Erfurt\Domain\Model\Owl\Graph', $graphIri, $baseIri);
 		} else {
 			if ($this->graphInfoCache[$graphIri]['type'] === 'rdfs') {
-				$m = $this->objectManager->create('\Erfurt\Domain\Model\Rdfs\Graph', $graphIri, $baseIri);
+				$m = $this->objectManager->create('Erfurt\Domain\Model\Rdfs\Graph', $graphIri, $baseIri);
 			} else {
-				$m = $this->objectManager->create('\Erfurt\Domain\Model\Rdf\Graph', $graphIri, $baseIri);
+				$m = $this->objectManager->create('Erfurt\Domain\Model\Rdf\Graph', $graphIri, $baseIri);
 			}
 		}
 		$this->graphCache[$graphIri] = $m;
@@ -599,11 +597,12 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 //			$this->databaseConnection->update('tx_semantic_graph', $updateData, "id = graphId");
 		}
 		// invalidate the cache and fetch graph infos again
-		$cache = $this->knowledgeBase->getCache();
-		$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('graph_info'));
+// TODO reenable cache
+//		$cache = $this->knowledgeBase->getCache();
+//		$cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, array('graph_info'));
 		$this->graphInfoCache = null;
 		if ($type === 'owl') {
-			$this->addStatement($graphIri, $graphIri, Erfurt\Vocabulary\Rdf::TYPE, array('type' => 'iri', 'value' => Erfurt\Vocabulary\Owl::ONTOLOGY));
+			$this->addStatement($graphIri, $graphIri, \Erfurt\Vocabulary\Rdf::TYPE, array('type' => 'iri', 'value' => \Erfurt\Vocabulary\Owl::ONTOLOGY));
 			$this->graphInfoCache = null;
 		}
 		// instanciate the graph
@@ -625,12 +624,12 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	public function importRdf($graphIri, $data, $type, $locator) {
 		// TODO fix or remove
 		if ($this->databaseConnection instanceof \t3lib_DB) {
-			$parser = $this->objectManager->create('\Erfurt\Syntax\RdfParser', $type);
+			$parser = $this->objectManager->create('Erfurt\Syntax\RdfParser', $type);
 			$parsedArray = $parser->parse($data, $locator, $graphIri, false);
 			$graphInfoCache = $this->getGraphInfos();
 			$graphId = $graphInfoCache["$graphIri"]['graphId'];
 			// create file
-			$tmpDir = $this->knowledgeBase->getTemporaryDirectory();
+			$tmpDir = $this->environment->getPathToTemporaryDirectory();
 			$filename = $tmpDir . '/import' . md5((string)time()) . '.csv';
 			$fileHandle = fopen($filename, 'w');
 			$count = 0;
@@ -821,17 +820,17 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	public function sparqlAsk($query) {
 		//TODO works for me...., why hasnt this be enabled earlier? is the same as sparqlQuery... looks like the engine supports it. but there is probably a reason for this not to be supported
 		$start = microtime(true);
-		$engine = $this->objectManager->create('\Erfurt\Sparql\EngineDb\Adapter\Typo3', $this->databaseConnection, $this->getGraphInfos());
-		$parser = $this->objectManager->create('\Erfurt\Sparql\Parser');
+		$engine = $this->objectManager->create('Erfurt\Sparql\EngineDb\Adapter\Typo3', $this->databaseConnection, $this->getGraphInfos());
+		$parser = $this->objectManager->create('Erfurt\Sparql\Parser');
 		if (!($query instanceof Sparql\Query)) {
 			$query = $parser->parse((string)$query);
 		}
 		$result = $engine->queryGraph($query);
 		// Debug executed SPARQL queries in debug mode (7)
-		$logger = $this->knowledgeBase->getLog();
+//		$logger = $this->knowledgeBase->getLog();
 		$time = (microtime(true) - $start) * 1000;
 		$debugText = 'SPARQL Query (' . $time . ' ms)';
-		$logger->debug($debugText);
+//		$logger->debug($debugText);
 		return $result;
 	}
 
@@ -839,14 +838,14 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	public function sparqlQuery($query, $options = array()) {
 		$resultform = (isset($options[STORE_RESULTFORMAT])) ? $options[STORE_RESULTFORMAT] : STORE_RESULTFORMAT_PLAIN;
 		$start = microtime(true);
-		$engine = $this->objectManager->create('\Erfurt\Sparql\EngineDb\Adapter\Typo3', $this->databaseConnection, $this->getGraphInfos());
-		$parser = $this->objectManager->create('\Erfurt\Sparql\Parser');
+		$engine = $this->objectManager->create('Erfurt\Sparql\EngineDb\Adapter\Typo3', $this->databaseConnection, $this->getGraphInfos());
+		$parser = $this->objectManager->create('Erfurt\Sparql\Parser');
 		if (!($query instanceof Sparql\Query)) {
 			$query = $parser->parse((string)$query);
 		}
 		$result = $engine->queryGraph($query, $resultform);
 		// Debug executed SPARQL queries in debug mode (7)
-		$logger = $this->knowledgeBase->getLog();
+//		$logger = $this->knowledgeBase->getLog();
 		$time = (microtime(true) - $start) * 1000;
 		$debugText = 'SPARQL Query (' . $time . ' ms)';
 //		$logger->debug($debugText);
@@ -978,9 +977,10 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 	 * @throws \Erfurt\Exception
 	 */
 	private function fetchGraphInfos() {
-		$cache = $this->knowledgeBase->getCache();
-		$id = $cache->makeId($this, '_fetchGraphInfos', array());
-		$cachedVal = $cache->load($id);
+//		$cache = $this->knowledgeBase->getCache();
+//		$id = $cache->makeId($this, '_fetchGraphInfos', array());
+//		$cachedVal = $cache->load($id);
+		$cachedVal = false;
 		if ($cachedVal) {
 			$this->graphInfoCache = $cachedVal;
 		} else {
@@ -990,13 +990,13 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
                         WHERE s2.g = g.id
                         AND s2.s = g.iri
                         AND s2.st = 0
-                        AND s2.p = \'' . Erfurt\Vocabulary\Rdf::TYPE . '\'
-                        AND s2.o = \'' . Erfurt\Vocabulary\Owl::ONTOLOGY . '\'
+                        AND s2.p = \'' . \Erfurt\Vocabulary\Rdf::TYPE . '\'
+                        AND s2.o = \'' . \Erfurt\Vocabulary\Owl::ONTOLOGY . '\'
                         AND s2.ot = 0) as is_owl_ontology
                     FROM tx_semantic_graph g
                     LEFT JOIN tx_semantic_statement s ON (g.id = s.g
                         AND g.iri = s.s
-                        AND s.p = \'' . Erfurt\Vocabulary\Owl::IMPORTS . '\'
+                        AND s.p = \'' . \Erfurt\Vocabulary\Owl::IMPORTS . '\'
                         AND s.ot = 0)
                     LEFT JOIN tx_semantic_iri u ON (u.id = g.iri_r OR u.id = g.base_r OR u.id = s.o_r)';
 			$result = $this->sqlQuery($sql);
@@ -1056,7 +1056,7 @@ class Typo3 implements AdapterInterface, \Erfurt\Store\Sql\SqlInterface {
 					}
 				} while ($hasChanged === true);
 			}
-			$cache->save($this->graphInfoCache, $id, array('graph_info'));
+//			$cache->save($this->graphInfoCache, $id, array('graph_info'));
 		}
 	}
 
