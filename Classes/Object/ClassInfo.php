@@ -34,10 +34,6 @@ namespace Erfurt\Object;
  */
 class ClassInfo {
 
-	const CONSTRUCTOR_ARGUMENT_NAME = 'name';
-	const CONSTRUCTOR_ARGUMENT_DEPENDENCY = 'dependency';
-	const CONSTRUCTOR_ARGUMENT_DEFAULTVALUE = 'defaultvalue';
-
 	const ARGUMENT_TYPES_STRAIGHTVALUE = 0;
 	const ARGUMENT_TYPES_OBJECT = 1;
 	const ARGUMENT_TYPES_SETTING = 2;
@@ -52,9 +48,7 @@ class ClassInfo {
 	 * The constructor Dependencies for the class in the format:
 	 * 	 array(
 	 *     0 => array( <-- parameters for argument 1
-	 *       'name' => <arg name>, <-- name of argument
-	 *       'dependency' => <classname>, <-- if the argument is a class, the type of the argument
-	 *       'defaultvalue' => <mixed>) <-- if the argument is optional, its default value
+	 *        ARGUMENT_TYPES_* => value/classname/settingspath
 	 *     ),
 	 *     1 => ...
 	 *   )
@@ -124,7 +118,6 @@ class ClassInfo {
 	public function getFactoryObjectName() {
 		return $this->factoryObjectName;
 	}
-
 }
 
 ?>

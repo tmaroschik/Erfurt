@@ -9,10 +9,6 @@
 
 # @package Erfurt
 
-DateTime:
-  scope: prototype
-  autowiring: off
-
 #                                                                          #
 # Cache                                                                    #
 #                                                                          #
@@ -20,18 +16,13 @@ DateTime:
 Erfurt\Cache\CacheFactory:
   arguments:
     1:
-      setting: Erfurt.context
+      setting: Erfurt.core.context
 
 #                                                                          #
 # Log                                                                      #
 #                                                                          #
 
-Erfurt\Log\Backend\FileBackend:
-  autowiring: off
-Erfurt\Log\Backend\NullBackend:
-  autowiring: off
 Erfurt\Log\SystemLoggerInterface:
-  scope: singleton
   factoryObjectName: Erfurt\Log\LoggerFactory
   arguments:
     1:
@@ -60,3 +51,8 @@ Erfurt\Session\SessionInterface:
 
 Erfurt\Sparql\SimpleQuery:
   factoryObjectName: Erfurt\Sparql\SimpleQueryFactory
+
+Erfurt\Store\Store:
+  arguments:
+    1:
+      setting: Erfurt.core.context

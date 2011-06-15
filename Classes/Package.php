@@ -44,10 +44,10 @@ class Package extends BasePackage {
 //		$bootstrap->registerCompiletimeCommandController('flow3:core');
 //		$bootstrap->registerCompiletimeCommandController('flow3:cache');
 //
-//		$dispatcher = $bootstrap->getSignalSlotDispatcher();
+		$dispatcher = $bootstrap->getSignalSlotDispatcher();
 //		$dispatcher->connect('Erfurt\Core\Bootstrap', 'finishedRuntimeRun', 'Erfurt\Persistence\PersistenceManagerInterface', 'persistAll');
 //		$dispatcher->connect('Erfurt\Core\Bootstrap', 'dispatchedCommandLineSlaveRequest', 'Erfurt\Persistence\PersistenceManagerInterface', 'persistAll');
-//		$dispatcher->connect('Erfurt\Core\Bootstrap', 'bootstrapShuttingDown', 'Erfurt\Configuration\ConfigurationManager', 'shutdown');
+		$dispatcher->connect('Erfurt\Core\Bootstrap', 'bootstrapShuttingDown', 'Erfurt\Configuration\ConfigurationManager', 'shutdown');
 //		$dispatcher->connect('Erfurt\Core\Bootstrap', 'bootstrapShuttingDown', 'Erfurt\Object\ObjectManagerInterface', 'shutdown');
 //		$dispatcher->connect('Erfurt\Core\Bootstrap', 'bootstrapShuttingDown', 'Erfurt\Reflection\ReflectionService', 'saveToCache');
 //

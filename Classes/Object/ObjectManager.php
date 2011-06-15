@@ -89,6 +89,13 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 	protected $prototypeObjectsWhichAreCurrentlyInstanciated;
 
 	/**
+	 * Array of prototype objects currently being built, to prevent recursion.
+	 *
+	 * @var array
+	 */
+	protected $factoryObjectsWhichAreCurrentlyInstanciated = array();
+
+	/**
 	 * Constructor is protected since container should
 	 * be a singleton.
 	 *
@@ -150,6 +157,26 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 	}
 
 	/**
+	 * Sets the instance of the given object
+	 *
+	 * @param string $objectName The object name
+	 * @param object $instance A prebuilt instance
+	 * @author Robert Lemke <robert@typo3.org>
+	 */
+	public function setInstance($className, $instance) {
+		if (isset($this->singletonInstances[$className])) {
+			return;
+		}
+		if (!class_exists($className) && !interface_exists($className)) {
+			throw new \Erfurt\Object\Exception\UnknownObjectException('Cannot set instance of object "' . $className . '" because the object or classname does not exist.', 1265370539);
+		}
+		if (!$this->isSingleton($className)) {
+			throw new \Erfurt\Object\Exception\WrongScope('Cannot set instance of object "' . $className . '" because it is of scope prototype. Only singleton instances can be set.', 1265370540);
+		}
+		$this->singletonInstances[$className] = $instance;
+	}
+
+	/**
 	 * Internal implementation for getting a class.
 	 *
 	 * @param string $className
@@ -157,7 +184,11 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 	 * @return object the built object
 	 */
 	protected function getInstanceInternal($className, $givenConstructorArguments = array()) {
-		if ($className == __CLASS__) {
+		if (
+			$className == __CLASS__
+			|| $className == 'Erfurt\Object\ObjectManagerInterface'
+			|| in_array('Erfurt\Object\ObjectManagerInterface', class_implements($className))
+		) {
 			return $this;
 		}
 		$className = $this->getImplementationClassName($className);
@@ -173,21 +204,35 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 			return $this->singletonInstances[$className];
 		}
 
+		$classInfo = $this->getClassInfo($className);
+		$factoryObjectName = $classInfo->getFactoryObjectName();
+
 		$classIsSingleton = $this->isSingleton($className);
-		if (!$classIsSingleton) {
+		$classHasFactory = $this->isFactory($factoryObjectName);
+		if (!$classIsSingleton && !$classHasFactory) {
 			if (array_search($className, $this->prototypeObjectsWhichAreCurrentlyInstanciated) !== FALSE) {
 				throw new Exception\CannotBuildObject('Cyclic dependency in prototype object, for class "' . $className . '".', 1295611406);
 			}
 			$this->prototypeObjectsWhichAreCurrentlyInstanciated[] = $className;
 		}
 
-		$classInfo = $this->getClassInfo($className);
-
-		$instance = $this->instanciateObject($className, $classInfo, $givenConstructorArguments);
-		$this->injectDependencies($instance, $classInfo);
+		if ($classHasFactory && array_search($className, $this->factoryObjectsWhichAreCurrentlyInstanciated) === FALSE) {
+			$factoryInfo = $this->getClassInfo($factoryObjectName);
+			$factory = $this->instanciateObject($factoryObjectName, $factoryInfo, array());
+			$this->injectDependencies($factory, $factoryInfo);
+			$this->factoryObjectsWhichAreCurrentlyInstanciated[] = $className;
+			$instance = call_user_func_array(array($factory, 'create'), $givenConstructorArguments);
+		} else {
+			$instance = $this->instanciateObject($className, $classInfo, $givenConstructorArguments);
+			$this->injectDependencies($instance, $classInfo);
+		}
 
 		if (method_exists($instance, 'initializeObject') && is_callable(array($instance, 'initializeObject'))) {
 			$instance->initializeObject();
+		}
+
+		if ($classHasFactory) {
+			array_pop($this->factoryObjectsWhichAreCurrentlyInstanciated);
 		}
 
 		if (!$classIsSingleton) {
@@ -211,57 +256,42 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 		$classIsSingleton = $this->isSingleton($className);
 
 		if ($classIsSingleton && count($givenConstructorArguments) > 0) {
-			throw new Exception('Object "' . $className . '" has explicit constructor arguments but is a singleton; this is not allowed.', 1292858051);
+			throw new Exception('Object "' . $className . '" has explicit constructor arguments but is a singleton; this is not allowed. Set them in Objects Configuration.', 1292858051);
 		}
 
-		$constructorArguments = $this->getConstructorArguments($className, $classInfo->getConstructorArguments(), $givenConstructorArguments);
-		array_unshift($constructorArguments, $className);
-		$instance = call_user_func_array(array('t3lib_div', 'makeInstance'), $constructorArguments);
+		$arguments = $this->getConstructorArguments($className, $classInfo->getConstructorArguments(), $givenConstructorArguments);
+		switch (count($arguments)) {
+			case 0:
+				$instance = new $className();
+				break;
+			case 1:
+				$instance = new $className($arguments[0]);
+				break;
+			case 2:
+				$instance = new $className($arguments[0], $arguments[1]);
+				break;
+			case 3:
+				$instance = new $className($arguments[0], $arguments[1], $arguments[2]);
+				break;
+			case 4:
+				$instance = new $className($arguments[0], $arguments[1], $arguments[2], $arguments[3]);
+				break;
+			case 5:
+				$instance = new $className($arguments[0], $arguments[1], $arguments[2], $arguments[3], $arguments[4]);
+				break;
+			case 6:
+				$instance = new $className($arguments[0], $arguments[1], $arguments[2], $arguments[3], $arguments[4], $arguments[5]);
+				break;
+			default:
+				$class = new \ReflectionClass($className);
+				$instance = $class->newInstanceArgs($arguments);
+				break;
+		}
 
 		if ($classIsSingleton) {
 			$this->singletonInstances[$className] = $instance;
 		}
 		return $instance;
-	}
-
-	/**
-	 * Invokes the Factory defined in the object configuration of the specified object in order
-	 * to build an instance. Arguments which were defined in the object configuration are
-	 * passed to the factory method.
-	 *
-	 * @param string $className Name of the object to build
-	 * @param \Erfurt\Object\ClassInfo $classInfo
-	 * @param array $givenConstructorArguments
-	 * @return object The built object
-	 * @author Robert Lemke <robert@typo3.org>
-	 */
-	protected function instanciateObjectByFactory($className, ClassInfo $classInfo, array $givenConstructorArguments) {
-		$factory = $this->get($classInfo->getFactoryObjectName());
-		$factoryMethodName = 'create';
-
-		$factoryMethodArguments = array();
-		var_dump($givenConstructorArguments);
-		die();
-		foreach ($givenConstructorArguments as $index => $argumentInformation) {
-			switch ($argumentInformation['t']) {
-				case ObjectConfigurationArgument::ARGUMENT_TYPES_SETTING :
-					$settingPath = explode('.', $argumentInformation['v']);
-					$factoryMethodArguments[$index] = \F3\FLOW3\Utility\Arrays::getValueByPath($this->allSettings, $settingPath);
-				break;
-				case ObjectConfigurationArgument::ARGUMENT_TYPES_STRAIGHTVALUE :
-					$factoryMethodArguments[$index] = $argumentInformation['v'];
-				break;
-				case ObjectConfigurationArgument::ARGUMENT_TYPES_OBJECT :
-					$factoryMethodArguments[$index] = $this->get($argumentInformation['v']);
-				break;
-			}
-		}
-
-		if (count($factoryMethodArguments) === 0) {
-			return $factory->$factoryMethodName();
-		} else {
-			return call_user_func_array(array($factory, $factoryMethodName), $factoryMethodArguments);
-		}
 	}
 
 	/**
@@ -322,17 +352,24 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 	 */
 	private function getConstructorArguments($className, array $constructorArgumentInformation, array $givenConstructorArguments) {
 		$parameters = array();
-		foreach ($constructorArgumentInformation as $argumentInformation) {
-			$argumentName = $argumentInformation['name'];
+		foreach ($constructorArgumentInformation as $index => $argumentInformation) {
 			// We have a dependency we can automatically wire,
 			// AND the class has NOT been explicitely passed in
-			if (isset($argumentInformation['dependency']) && !(count($givenConstructorArguments) && is_a($givenConstructorArguments[0], $argumentInformation['dependency']))) {
+			if (isset($argumentInformation[ClassInfo::ARGUMENT_TYPES_OBJECT])) {
 				// Inject parameter
-				$parameter = $this->getInstanceInternal($argumentInformation['dependency']);
+				// A given argument tages precedence over default
+				if (is_a($givenConstructorArguments[$index], $argumentInformation[ClassInfo::ARGUMENT_TYPES_OBJECT])) {
+					$parameter = $givenConstructorArguments[$index];
+				} else {
+					$parameter = $this->getInstanceInternal($argumentInformation[ClassInfo::ARGUMENT_TYPES_OBJECT]);
+				}
 				if ($this->isSingleton($className) && !($parameter instanceof \Erfurt\Singleton)) {
 					$this->log('The singleton "' . $className . '" needs a prototype in the constructor. This is often a bad code smell; often you rather want to inject a singleton.', 1);
 				}
-			} elseif (count($givenConstructorArguments)) {
+			} else if (isset($argumentInformation[ClassInfo::ARGUMENT_TYPES_SETTING])) {
+				$settingsPath = \Erfurt\Utility\Arrays::trimExplode('.', $argumentInformation[ClassInfo::ARGUMENT_TYPES_SETTING]);
+				$parameter = \Erfurt\Utility\Arrays::getValueByPath($this->settings, $settingsPath);
+			} else if (isset($givenConstructorArguments[$index])) {
 				// EITHER:
 				// No dependency injectable anymore, but we still have
 				// an explicit constructor argument
@@ -340,16 +377,24 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 				// the passed constructor argument matches the type for the dependency
 				// injection, and thus the passed constructor takes precendence over
 				// autowiring.
-				$parameter = array_shift($givenConstructorArguments);
-			} elseif (array_key_exists('defaultValue', $argumentInformation)) {
+				$parameter = $givenConstructorArguments[$index];
+			} else if (array_key_exists(ClassInfo::ARGUMENT_TYPES_STRAIGHTVALUE, $argumentInformation)) {
 				// no value to set anymore, we take default value
-				$parameter = $argumentInformation['defaultValue'];
+				$parameter = $argumentInformation[ClassInfo::ARGUMENT_TYPES_STRAIGHTVALUE];
 			} else {
 				throw new \InvalidArgumentException('not a correct info array of constructor dependencies was passed!');
 			}
 			$parameters[] = $parameter;
 		}
 		return $parameters;
+	}
+
+	/**
+	 * @param string/object $object
+	 * @return boolean TRUE if the object is a factory, FALSE if it is a prototype.
+	 */
+	protected function isFactory($object) {
+		return in_array('Erfurt\Factory', class_implements($object));
 	}
 
 	/**
@@ -438,4 +483,7 @@ class ObjectManager implements ObjectManagerInterface, \Erfurt\Singleton {
 		array_shift($arguments);
 		return $this->getInstance($objectName, $arguments);
 	}
+
 }
+
+?>

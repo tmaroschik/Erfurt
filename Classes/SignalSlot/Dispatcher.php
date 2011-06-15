@@ -32,7 +32,7 @@ namespace Erfurt\SignalSlot;
  * @scope singleton
  * @api
  */
-class Dispatcher {
+class Dispatcher implements \Erfurt\Singleton {
 
 	/**
 	 * @var \Erfurt\Object\ObjectManager

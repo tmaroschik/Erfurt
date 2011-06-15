@@ -29,7 +29,7 @@ namespace Erfurt\Package;
  * @author Robert Lemke <robert@typo3.org>
  * @api
  */
-interface PackageManagerInterface {
+interface PackageManagerInterface extends \Erfurt\Singleton {
 
 	/**
 	 * Initializes the package manager.

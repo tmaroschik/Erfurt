@@ -29,7 +29,7 @@ namespace Erfurt\Sparql;
  * @package Semantic
  * @scope prototype
  */
-class SimpleQueryFactory implements \Erfurt\Singleton {
+class SimpleQueryFactory implements \Erfurt\Factory {
 
 	/**
 	 * The injected knowledge base

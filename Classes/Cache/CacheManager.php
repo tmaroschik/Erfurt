@@ -31,7 +31,7 @@ use \Erfurt\Cache\Frontend\FrontendInterface;
  * @scope singleton
  * @api
  */
-class CacheManager {
+class CacheManager implements \Erfurt\Singleton {
 
 	/**
 	 * @var \Erfurt\Cache\CacheFactory

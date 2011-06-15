@@ -25,6 +25,7 @@ namespace Erfurt\Core;
  ***************************************************************/
 
 	// Those are needed before the autoloader is active
+require_once(__DIR__ . '/../Singleton.php');
 require_once(__DIR__ . '/../Utility/Files.php');
 require_once(__DIR__ . '/../Package/PackageInterface.php');
 require_once(__DIR__ . '/../Package/Package.php');
@@ -38,7 +39,7 @@ require_once(__DIR__ . '/../Cache/CacheManager.php');
  * @scope singleton
  * @api
  */
-class Bootstrap {
+class Bootstrap implements \Erfurt\Singleton {
 
 	/**
 	 * Required PHP version
@@ -91,7 +92,7 @@ class Bootstrap {
 	/**
 	 * The same instance like $objectManager, but static, for use in the proxy classes.
 	 *
-	 * @var \F3\FLOW3\Object\ObjectManagerInterface
+	 * @var \Erfurt\Object\ObjectManagerInterface
 	 * @see initializeObjectManager(), getObjectManager()
 	 */
 	static public $staticObjectManager;
@@ -151,9 +152,10 @@ class Bootstrap {
 	 */
 	public function run() {
 		$this->initializeClassLoader();
+		$this->initializeSignalsSlots();
 		$this->initializePackageManagement();
 		$this->initializeConfiguration();
-		$this->initializeSignalsSlots();
+		$this->initializeSignalSlotsConfiguration();
 		$this->initializeCacheManagement();
 
 		$classInfoFactory = new \Erfurt\Object\ClassInfoFactory();
@@ -166,6 +168,8 @@ class Bootstrap {
 		$this->objectManager->injectClassInfoCache($classInfoCache);
 		$this->objectManager->injectClassInfoFactory($classInfoFactory);
 		self::$staticObjectManager = $this->objectManager;
+
+		$this->setInstancesOfEarlyServices();
 	}
 
 	/**
@@ -252,6 +256,16 @@ class Bootstrap {
 	 */
 	protected function initializeSignalsSlots() {
 		$this->signalSlotDispatcher = new \Erfurt\SignalSlot\Dispatcher();
+	}
+
+	/**
+	 * Initializes the Signals and Slots configuration
+	 *
+	 * @return void
+	 * @author Thomas Maroschik <tmaroschik@dfau.de>
+	 * @see run()
+	 */
+	protected function initializeSignalSlotsConfiguration() {
 		$signalsSlotsConfiguration = $this->configurationManager->getConfiguration(\Erfurt\Configuration\ConfigurationManager::CONFIGURATION_TYPE_SIGNALSSLOTS);
 		foreach ($signalsSlotsConfiguration as $signalClassName => $signalSubConfiguration) {
 			if (is_array($signalSubConfiguration)) {
@@ -270,6 +284,28 @@ class Bootstrap {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Sets the instances of services at the Object Manager which have been initialized before the Object Manager even existed.
+	 * This applies to foundational classes such as the Package Manager or the Cache Manager.
+	 *
+	 * Also injects the Object Manager into early services which so far worked without it.
+	 *
+	 * @return void
+	 * @author Robert Lemke <robert@typo3.org>
+	 */
+	protected function setInstancesOfEarlyServices() {
+		$this->objectManager->setInstance(__CLASS__, $this);
+		$this->objectManager->setInstance('Erfurt\Package\PackageManagerInterface', $this->packageManager);
+		$this->objectManager->setInstance('Erfurt\Cache\CacheManager', $this->cacheManager);
+		$this->objectManager->setInstance('Erfurt\Cache\CacheFactory', $this->cacheFactory);
+		$this->objectManager->setInstance('Erfurt\Configuration\ConfigurationManager', $this->configurationManager);
+		$this->objectManager->setInstance('Erfurt\Log\SystemLoggerInterface', $this->systemLogger);
+		$this->objectManager->setInstance('Erfurt\Utility\Environment', $this->environment);
+		$this->objectManager->setInstance('Erfurt\SignalSlot\Dispatcher', $this->signalSlotDispatcher);
+
+		$this->signalSlotDispatcher->injectObjectManager($this->objectManager);
 	}
 
 	/**
@@ -293,6 +329,16 @@ class Bootstrap {
 	 */
 	public function getObjectManager() {
 		return $this->objectManager;
+	}
+
+	/**
+	 * Returns the signal slot dispatcher instance
+	 *
+	 * @return \Erfurt\SignalSlot\Dispatcher
+	 * @author Robert Lemke <robert@typo3.org>
+	 */
+	public function getSignalSlotDispatcher() {
+		return $this->signalSlotDispatcher;
 	}
 
 	/**
@@ -330,6 +376,24 @@ class Bootstrap {
 		if (!is_dir(EF_PATH_DATA . 'Persistent')) {
 			mkdir(EF_PATH_DATA . 'Persistent');
 		}
+	}
+
+
+	public function shutdown() {
+		$this->emitBootstrapShuttingDown('runtime');
+	}
+
+
+	/**
+	 * Emits a signal that the bootstrap finished and is shutting down.
+	 *
+	 * @param string $runLevel
+	 * @return void
+	 * @author Robert Lemke <robert@typo3.org>
+	 * @signal
+	 */
+	protected function emitBootstrapShuttingDown($runLevel) {
+		$this->signalSlotDispatcher->dispatch(__CLASS__, 'bootstrapShuttingDown', array($runLevel));
 	}
 
 }

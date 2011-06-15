@@ -29,7 +29,7 @@ namespace Erfurt\Configuration;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class ConfigurationManager implements \t3lib_Singleton {
+class ConfigurationManager implements \Erfurt\Singleton {
 
 	const CONFIGURATION_TYPE_CACHES = 'Caches';
 	const CONFIGURATION_TYPE_OBJECTS = 'Objects';
@@ -213,7 +213,7 @@ class ConfigurationManager implements \t3lib_Singleton {
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function shutdown() {
-		if ($this->configurations[self::CONFIGURATION_TYPE_SETTINGS]['FLOW3']['configuration']['compileConfigurationFiles'] === TRUE && $this->cacheNeedsUpdate === TRUE) {
+		if ($this->configurations[self::CONFIGURATION_TYPE_SETTINGS]['Erfurt']['configuration']['compileConfigurationFiles'] === TRUE && $this->cacheNeedsUpdate === TRUE) {
 			$this->saveConfigurationCache();
 		}
 	}

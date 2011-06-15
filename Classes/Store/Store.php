@@ -168,6 +168,13 @@ class Store implements \Erfurt\Singleton {
 	// TODO elaborate relevance
 	private $importsClosure = array();
 
+
+	/**
+	 * @var string $context
+	 */
+	public function __construct() {
+	}
+
 	/**
 	 * Injector method for a \Erfurt\SignalSlot\Dispatcher
 	 *

@@ -27,7 +27,7 @@ Erfurt:
     #   7: Debug         - Debug messages
     level: n
 
-    path: '%EF_BASE%logs/'
+    path: '%EF_PATH_ROOT%Logs/'
 
   # Store Configuration
   store:

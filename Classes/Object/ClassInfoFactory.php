@@ -63,18 +63,64 @@ class ClassInfoFactory {
 		} catch (Exception $e) {
 			throw new Exception\UnknownObjectException('Could not analyse class:' . $className . ' maybe not loaded or no autoloader?', 1289386765);
 		}
+
 		$objectConfiguration = $this->getObjectConfiguration($className);
-		$constructorArguments = $this->getConstructorArguments($reflectedClass);
+
+		$constructorArguments = $this->overrideConstructorArgumentsWithConfiguration($this->getConstructorArguments($reflectedClass), $objectConfiguration);
+
 		$injectMethods = $this->getInjectMethods($reflectedClass);
-		if (!empty($objectConfiguration)) {
-			die();
+
+		if (isset($objectConfiguration['factoryObjectName']) && class_exists($objectConfiguration['factoryObjectName'])) {
+			return new ClassInfo($className, $constructorArguments, $injectMethods, $objectConfiguration['factoryObjectName']);
 		} else {
 			return new ClassInfo($className, $constructorArguments, $injectMethods);
 		}
 	}
 
+	/**
+	 * @param array $constructorArguments
+	 * @param array $objectConfiguration
+	 * @return array
+	 */
+	protected function overrideConstructorArgumentsWithConfiguration($constructorArguments, $objectConfiguration) {
+		if (isset($objectConfiguration['arguments'])) {
+			$constructorArguments = $this->overrideArgumentsWithArgumentsConfiguration($constructorArguments, $objectConfiguration['arguments']);
+		}
+		return $constructorArguments;
+	}
+
+	/**
+	 * @param array $arguments
+	 * @param array $argumentsConfiguration
+	 * @return array
+	 */
+	protected function overrideArgumentsWithArgumentsConfiguration($arguments, $argumentsConfiguration) {
+		foreach ($argumentsConfiguration as $position=>$argumentConfiguration) {
+			$index = $position - 1;
+			reset($argumentConfiguration);
+			$argumentType = key($argumentConfiguration);
+			$argumentValue = current($argumentConfiguration);
+			switch ($argumentType) {
+				case 'setting':
+					$arguments[$index] = array(ClassInfo::ARGUMENT_TYPES_SETTING => $argumentValue);
+					break;
+				case 'value':
+					$arguments[$index] = array(ClassInfo::ARGUMENT_TYPES_STRAIGHTVALUE => $argumentValue);
+					break;
+				case 'object':
+					$arguments[$index] = array(ClassInfo::ARGUMENT_TYPES_OBJECT => $argumentValue);
+					break;
+			}
+		}
+		return $arguments;
+	}
+
+	/**
+	 * @param string $objectClassName
+	 * @return array
+	 */
 	protected function getObjectConfiguration($objectClassName) {
-		$objectConfiguration = Array();
+		$objectConfiguration = array();
 		// Merge configuration of all defined parent objects and interfaces
 		$classNames = array_merge(array($objectClassName), class_parents($objectClassName), class_implements($objectClassName));
 		$classNames = array_reverse($classNames);
@@ -87,31 +133,53 @@ class ClassInfoFactory {
 	}
 
 	/**
+	 * Build a list of factory arguments
+	 *
+	 * @param \ReflectionClass $reflectedClass
+	 * @return array of parameter infos for factory
+	 */
+	protected function getFactoryArguments(\ReflectionClass $reflectedClass) {
+		$reflectionMethod = $reflectedClass->getMethod('create');
+		if (!is_object($reflectionMethod)) {
+			return array();
+		}
+		return $this->getMethodArguments($reflectionMethod);
+	}
+
+	/**
 	 * Build a list of constructor arguments
 	 *
 	 * @param \ReflectionClass $reflectedClass
 	 * @return array of parameter infos for constructor
 	 */
-	private function getConstructorArguments(\ReflectionClass $reflectedClass) {
+	protected function getConstructorArguments(\ReflectionClass $reflectedClass) {
 		$reflectionMethod = $reflectedClass->getConstructor();
 		if (!is_object($reflectionMethod)) {
 			return array();
 		}
+		return $this->getMethodArguments($reflectionMethod);
+	}
+
+	/**
+	 * Build a list of method arguments
+	 *
+	 * @param \ReflectionMethod $reflectionMethod
+	 * @return array of parameter infos for method
+	 */
+	protected function getMethodArguments(\ReflectionMethod $reflectionMethod) {
 		$result = array();
 		foreach ($reflectionMethod->getParameters() as $reflectionParameter) {
-			/* @var $reflectionParameter ReflectionParameter */
+			/* @var \ReflectionParameter $reflectionParameter */
 			$info = array();
 
-			$info['name'] = $reflectionParameter->getName();
-
 			if ($reflectionParameter->getClass()) {
-				$info['dependency'] = $reflectionParameter->getClass()->getName();
+				$info[ClassInfo::ARGUMENT_TYPES_OBJECT] = $reflectionParameter->getClass()->getName();
 			}
 			if ($reflectionParameter->isOptional()) {
-				$info['defaultValue'] = $reflectionParameter->getDefaultValue();
+				$info[ClassInfo::ARGUMENT_TYPES_STRAIGHTVALUE] = $reflectionParameter->getDefaultValue();
 			}
 
-			$result[] = $info;
+			$result[$reflectionParameter->getPosition()] = $info;
 		}
 		return $result;
 	}
