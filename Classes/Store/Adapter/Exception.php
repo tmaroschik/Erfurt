@@ -19,12 +19,11 @@ namespace Erfurt\Store\Adapter;
  * License along with the script.                                         *
  * If not, see http://www.gnu.org/copyleft/gpl.html.                      *
  *                                                                        */
+
 /**
- *
  * @package Semantic
- * @scope singleton
  */
-class Exception extends \Erfurt\Store\Exception\StoreException {
+class Exception extends \Erfurt\Store\Exception {
 
 }
 

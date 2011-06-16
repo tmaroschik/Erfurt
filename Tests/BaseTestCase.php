@@ -131,7 +131,7 @@ class BaseTestCase extends \PHPUnit_Framework_TestCase {
 			$store->checkSetup();
 			$this->databaseWasUsed = true;
 		}
-		catch (\Erfurt\Store\Exception\StoreException $e) {
+		catch (\Erfurt\Store\Exception $e) {
 			if ($e->getCode() === 20) {
 				// Setup successfull
 				$this->databaseWasUsed = true;

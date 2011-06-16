@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace Erfurt\Store\Exception;
+namespace Erfurt\Store\Exceptions;
 
 /*                                                                        *
  * This script belongs to the Erfurt framework.                           *
@@ -20,13 +20,13 @@ namespace Erfurt\Store\Exception;
  * If not, see http://www.gnu.org/copyleft/gpl.html.                      *
  *                                                                        */
 /**
- * Enter descriptions here
+ * Exception that is thrown when no backend is set for a Store
  *
  * @package Semantic
  * @scope singleton
  * @api
  */
-class BackendMustBeSetException extends \Erfurt\Exception {
+class BackendMustBeSetException extends \Erfurt\Store\Exception {
 
 }
 ?>

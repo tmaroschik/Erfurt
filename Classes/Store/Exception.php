@@ -20,6 +20,8 @@ namespace Erfurt\Store;
  * If not, see http://www.gnu.org/copyleft/gpl.html.                      *
  *                                                                        */
 /**
+ * Base exception for the Erfurt Store package
+ *
  * @author Philipp Frischmuth <pfrischmuth@googlemail.com>
  */
 class Exception extends \Erfurt\Exception {

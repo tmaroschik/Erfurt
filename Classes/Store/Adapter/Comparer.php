@@ -13,7 +13,7 @@ require_once 'Erfurt/Store/Adapter/Interface.php';
 /** Erfurt_Store_Sql_Interface */
 require_once 'Erfurt/Store/Sql/Interface.php';
 
-class Erfurt_Store_Adapter_Comparer_Exception extends Erfurt_Store_Exception{
+class Erfurt_Store_Adapter_Comparer_Exception extends \Erfurt\Store\Exception{
     function  __construct($method, $ref, $actual) {
         parent::__construct('comparer detected a difference at method "'.$method.'": return should be '.self::mydumpStr($ref).' but is '.self::mydumpStr($actual));
     }

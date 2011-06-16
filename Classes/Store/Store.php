@@ -235,14 +235,14 @@ class Store implements \Erfurt\Singleton {
 	 * @param string $backend virtuoso, mysqli, adodb, redland
 	 * @param array $backendOptions
 	 *
-	 * @throws \Erfurt\Store\Exception\StoreException if store is not supported or store does not implement the store
+	 * @throws \Erfurt\Store\Exception if store is not supported or store does not implement the store
 	 * adapter interface.
 	 */
 	public function initializeBackend($backend, array $backendOptions = array()) {
 		// instantiate backend adapter
 		$this->backendAdapter = $this->objectManager->create($backend, $backendOptions);
 		if (!$this->backendAdapter instanceof Adapter\AdapterInterface) {
-			throw new Exception\StoreException('Adapter class must implement Adapter\AdapterInterface.', 1307352883);
+			throw new Exception('Adapter class must implement Adapter\AdapterInterface.', 1307352883);
 		}
 	}
 
@@ -275,11 +275,11 @@ class Store implements \Erfurt\Singleton {
 		//		}
 		// check whether graph is available
 		if (!$this->isGraphAvailable($graphIri, $useAc)) {
-			throw new Exception\StoreException('Graph is not available.', 1307352939);
+			throw new Exception('Graph is not available.', 1307352939);
 		}
 		// check whether graph is editable
 		if (!$this->checkAuthorization($graphIri, 'edit', $useAc)) {
-			throw new Exception\StoreException('No permissions to edit graph.', 1307352946);
+			throw new Exception('No permissions to edit graph.', 1307352946);
 		}
 		$this->backendAdapter->addMultipleStatements($graphIri, $statementsArray);
 		//invalidate deprecated Cache Objects
@@ -312,11 +312,11 @@ class Store implements \Erfurt\Singleton {
 	public function addStatement($graphIri, $subject, $predicate, $object, $needsAuthorization = true) {
 		// check whether graph is available
 		if ($needsAuthorization && !$this->isGraphAvailable($graphIri)) {
-			throw new Exception\StoreException('Graph is not available.', 1307353201);
+			throw new Exception('Graph is not available.', 1307353201);
 		}
 		// check whether graph is editable
 		if ($needsAuthorization && !$this->checkAuthorization($graphIri, 'edit')) {
-			throw new Exception\StoreException('No permissions to edit graph.', 1307353204);
+			throw new Exception('No permissions to edit graph.', 1307353204);
 		}
 		$this->backendAdapter->addStatement($graphIri, $subject, $predicate, $object);
 		//invalidate deprecateded Cache Objects
@@ -378,10 +378,10 @@ class Store implements \Erfurt\Singleton {
 				//$queryCache->cleanUpCache(array('mode' => 'uninstall'));
 				// Delete the graph, for the import failed.
 				$this->backendAdapter->deleteGraph($this->systemOntologySettings['graphIri']);
-				throw new Exception\StoreException('Import of \'' . $this->systemOntologySettings['graphIri'] . '\' failed -> ' . $e->getMessage());
+				throw new Exception('Import of \'' . $this->systemOntologySettings['graphIri'] . '\' failed -> ' . $e->getMessage());
 			}
 			if (!$this->isGraphAvailable($this->systemOntologySettings['graphIri'], false)) {
-				throw new Exception\StoreException('Unable to load System Ontology graph.');
+				throw new Exception('Unable to load System Ontology graph.');
 			}
 			$this->versioning->enableVersioning(true);
 			//			$logger->info('System graph successfully loaded.');
@@ -420,17 +420,17 @@ class Store implements \Erfurt\Singleton {
 				//$queryCache->cleanUpCache(array('mode' => 'uninstall'));
 				// Delete the graph, for the import failed.
 				$this->backendAdapter->deleteGraph($this->systemOntologySettings['schemaIri']);
-				throw new Exception\StoreException('Import of \'' . $this->systemOntologySettings['schemaIri'] . '\' failed -> ' . $e->getMessage());
+				throw new Exception('Import of \'' . $this->systemOntologySettings['schemaIri'] . '\' failed -> ' . $e->getMessage());
 			}
 			if (!$this->isGraphAvailable($this->systemOntologySettings['schemaIri'], false)) {
-				throw new Exception\StoreException('Unable to load System Ontology schema.');
+				throw new Exception('Unable to load System Ontology schema.');
 			}
 			$this->versioning->enableVersioning(true);
 			//			$logger->info('System schema successfully loaded.');
 			$returnValue = false;
 		}
 		if ($returnValue === false) {
-			throw new Exception\StoreException('One or more system graphs imported.', 20);
+			throw new Exception('One or more system graphs imported.', 20);
 		}
 		return true;
 	}
@@ -516,11 +516,11 @@ class Store implements \Erfurt\Singleton {
 	public function deleteMultipleStatements($graphIri, array $statementsArray) {
 		// check whether graph is available
 		if (!$this->isGraphAvailable($graphIri)) {
-			throw new Exception\StoreException('Graph is not available.');
+			throw new Exception('Graph is not available.');
 		}
 		// check whether graph is editable
 		if (!$this->checkAuthorization($graphIri, 'edit')) {
-			throw new Exception\StoreException('No permissions to edit graph.');
+			throw new Exception('No permissions to edit graph.');
 		}
 		$this->backendAdapter->deleteMultipleStatements($graphIri, $statementsArray);
 		// TODO reenable query cache
@@ -545,11 +545,11 @@ class Store implements \Erfurt\Singleton {
 	public function deleteGraph($graphIri, $needsAuthorization = true) {
 		// check whether graph is available
 		if (!$this->isGraphAvailable($graphIri, $needsAuthorization)) {
-			throw new Exception\StoreException("Graph <$graphIri> is not available and therefore not removable.");
+			throw new Exception("Graph <$graphIri> is not available and therefore not removable.");
 		}
 		// check whether graph editing is allowed
 		if (!$this->checkAuthorization($graphIri, 'edit', $needsAuthorization)) {
-			throw new Exception\StoreException("No permissions to delete graph <$graphIri>.");
+			throw new Exception("No permissions to delete graph <$graphIri>.");
 		}
 		// delete graph
 		$this->backendAdapter->deleteGraph($graphIri);
@@ -596,7 +596,7 @@ class Store implements \Erfurt\Singleton {
 		$serializationType = strtolower($serializationType);
 		// check whether graph is available
 		if (!$this->isGraphAvailable($graphIri)) {
-			throw new Exception\StoreException("Graph <$graphIri> cannot be exported. Graph is not available.");
+			throw new Exception("Graph <$graphIri> cannot be exported. Graph is not available.");
 		}
 		if (in_array($serializationType, $this->backendAdapter->getSupportedExportFormats())) {
 			return $this->backendAdapter->exportRdf($graphIri, $serializationType, $filename);
@@ -758,7 +758,7 @@ class Store implements \Erfurt\Singleton {
 	/**
 	 * @param string $graphIri The IRI, which identifies the graph.
 	 * @param boolean $useAc Whether to use access control or not.
-	 * @throws \Erfurt\Store\Exception\StoreException if the requested graph is not available.
+	 * @throws \Erfurt\Store\Exception if the requested graph is not available.
 	 * @return \Erfurt\Domain\Model\Rdf\Graph Returns an instance of \Erfurt\Domain\Model\Rdf\Graph or one of its subclasses.
 	 */
 	public function getGraph($graphIri, $useAc = true) {
@@ -771,19 +771,19 @@ class Store implements \Erfurt\Singleton {
 				try {
 					$this->checkSetup();
 				}
-				catch (Exception\StoreException $e) {
+				catch (Exception $e) {
 					if ($e->getCode() === 20) {
 						// Everything is fine, system graphs now imported
 					} else {
-						throw new Exception\StoreException('Check setup failed: ' . $e->getMessage());
+						throw new Exception('Check setup failed: ' . $e->getMessage());
 					}
 				}
 				// still not available?
 				if (!$this->isGraphAvailable($graphIri, $useAc)) {
-					throw new Exception\StoreException("Graph '$graphIri' is not available.");
+					throw new Exception("Graph '$graphIri' is not available.");
 				}
 			} else {
-				throw new Exception\StoreException("Graph '$graphIri' is not available.");
+				throw new Exception("Graph '$graphIri' is not available.");
 			}
 		}
 		// if backend adapter provides its own implementation
@@ -831,7 +831,7 @@ class Store implements \Erfurt\Singleton {
 	 * @param string $type
 	 * @param boolean $useAc
 	 *
-	 * @throws \Erfurt\Store\Exception\StoreException
+	 * @throws \Erfurt\Store\Exception
 	 *
 	 * @return \Erfurt\Domain\Model\Rdf\Graph
 	 */
@@ -843,12 +843,12 @@ class Store implements \Erfurt\Singleton {
 			$message = defined('_EFDEBUG')
 					? 'Failed creating the graph. Reason: A graph with the same IRI already exists.'
 					: 'Failed creating the graph.';
-			throw new Exception\StoreException($message);
+			throw new Exception($message);
 		}
 		// check action access
 		// TODO reenable AC
 //		if ($useAc && !$this->knowledgeBase->isActionAllowed('GraphManagement')) {
-//			throw new Exception\StoreException("Failed creating the graph. Action not allowed!");
+//			throw new Exception("Failed creating the graph. Action not allowed!");
 //		}
 		try {
 			$this->backendAdapter->createGraph($graphIri, $type);
@@ -857,7 +857,7 @@ class Store implements \Erfurt\Singleton {
 			$message = defined('_EFDEBUG')
 					? "Failed creating the graph. \nReason: {$e->getMessage()}."
 					: 'Failed creating the graph.';
-			throw new Exception\StoreException($message);
+			throw new Exception($message);
 		}
 		// everything ok, create new graph
 		// no access control since we have already checked
@@ -938,7 +938,7 @@ class Store implements \Erfurt\Singleton {
 //		$queryCache = $this->knowledgeBase->getQueryCache();
 //		$queryCache->invalidateWithGraphIri($graphIri);
 		if (!$this->checkAuthorization($graphIri, 'edit', $needsAuthentication)) {
-			throw new Exception\StoreException("Import failed. Graph <$graphIri> not found or not writable.");
+			throw new Exception("Import failed. Graph <$graphIri> not found or not writable.");
 		}
 		if ($type === 'auto') {
 			// detect file type
@@ -1087,7 +1087,7 @@ class Store implements \Erfurt\Singleton {
 			// query contained a non-allowed non-existent graph
 			if (empty($graphsFiltered)) {
 				return;
-				// throw new Exception\StoreException('Query could not be executed.');
+				// throw new Exception('Query could not be executed.');
 			}
 			$queryObject->setFrom($graphsFiltered);
 			// from named only if it was set
@@ -1258,7 +1258,7 @@ class Store implements \Erfurt\Singleton {
 	 * Executes a SQL query with a SQL-capable backend.
 	 *
 	 * @param string $sqlQuery A string containing the SQL query to be executed.
-	 * @throws \Erfurt\Store\Exception\StoreException
+	 * @throws \Erfurt\Store\Exception
 	 * @return array
 	 */
 	public function sqlQuery($sqlQuery, $limit = PHP_INT_MAX, $offset = 0) {
@@ -1273,7 +1273,7 @@ class Store implements \Erfurt\Singleton {
 			return $result;
 		}
 		// TODO: will throw an exception
-		// throw new Exception\StoreException('Current backend doesn not support SQL queries.');
+		// throw new Exception('Current backend doesn not support SQL queries.');
 	}
 
 	/**
@@ -1342,10 +1342,10 @@ class Store implements \Erfurt\Singleton {
 				$graphIris = array_merge($this->getImportsClosure($graphIri), array($graphIri));
 				return $this->backendAdapter->countWhereMatches($graphIris, $whereSpec, $countSpec, $distinct);
 			} else {
-				throw new Exception\StoreException('Graph <' . $graphIri . '> is not available.');
+				throw new Exception('Graph <' . $graphIri . '> is not available.');
 			}
 		} else {
-			throw new Exception\StoreException('Count is not supported by backend.');
+			throw new Exception('Count is not supported by backend.');
 		}
 	}
 

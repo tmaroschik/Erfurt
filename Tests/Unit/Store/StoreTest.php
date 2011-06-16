@@ -201,7 +201,7 @@ class StoreTest extends \Erfurt\Tests\Unit\BaseTestCase {
 			// Should fail...
 			$this->fail();
 		}
-		catch (\Erfurt\Store\Exception\StoreException $e) {
+		catch (\Erfurt\Store\Exception $e) {
 			// Nothing to do here...
 		}
 	}
