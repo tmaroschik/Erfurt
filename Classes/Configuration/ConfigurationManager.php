@@ -159,6 +159,9 @@ class ConfigurationManager implements \Erfurt\Singleton {
 					$configuration = &$this->configurations[self::CONFIGURATION_TYPE_SETTINGS];
 					break;
 				} else {
+					if (!isset($this->configurations[self::CONFIGURATION_TYPE_SETTINGS][$packageKey])) {
+						$this->loadConfiguration($configurationType, $this->packages);
+					}
 					$configuration = &$this->configurations[self::CONFIGURATION_TYPE_SETTINGS][$packageKey];
 					break;
 				}
