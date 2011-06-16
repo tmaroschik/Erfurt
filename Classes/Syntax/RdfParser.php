@@ -111,16 +111,12 @@ class RdfParser {
 	public function parse($dataPointer, $pointerType, $baseIri = null) {
 		if ($pointerType === self::LOCATOR_URL) {
 			$result = $this->parserAdapter->parseFromUrl($dataPointer);
+		} else if ($pointerType === self::LOCATOR_FILE) {
+			$result = $this->parserAdapter->parseFromFilename($dataPointer);
+		} else if ($pointerType === self::LOCATOR_DATASTRING) {
+			$result = $this->parserAdapter->parseFromDataString($dataPointer, $baseIri);
 		} else {
-			if ($pointerType === self::LOCATOR_FILE) {
-				$result = $this->parserAdapter->parseFromFilename($dataPointer);
-			} else {
-				if ($pointerType === self::LOCATOR_DATASTRING) {
-					$result = $this->parserAdapter->parseFromDataString($dataPointer, $baseIri);
-				} else {
-					throw new RdfParserException('Type of data pointer not valid.');
-				}
-			}
+			throw new RdfParserException('Type of data pointer not valid.');
 		}
 
 		return $result;
@@ -143,16 +139,12 @@ class RdfParser {
 	public function parseNamespaces($dataPointer, $pointerType) {
 		if ($pointerType === self::LOCATOR_URL) {
 			$result = $this->parserAdapter->parseNamespacesFromUrl($dataPointer);
+		} else if ($pointerType === self::LOCATOR_FILE) {
+			$result = $this->parserAdapter->parseNamespacesFromFilename($dataPointer);
+		} else if ($pointerType === self::LOCATOR_DATASTRING) {
+			$result = $this->parserAdapter->parseNamespacesFromDataString($dataPointer);
 		} else {
-			if ($pointerType === self::LOCATOR_FILE) {
-				$result = $this->parserAdapter->parseNamespacesFromFilename($dataPointer);
-			} else {
-				if ($pointerType === self::LOCATOR_DATASTRING) {
-					$result = $this->parserAdapter->parseNamespacesFromDataString($dataPointer);
-				} else {
-					throw new RdfParserException('Type of data pointer not valid.');
-				}
-			}
+			throw new RdfParserException('Type of data pointer not valid.');
 		}
 
 		return $result;
@@ -161,16 +153,12 @@ class RdfParser {
 	public function parseToStore($dataPointer, $pointerType, $graphIri, $useAc = true, $baseIri = null) {
 		if ($pointerType === self::LOCATOR_URL) {
 			$result = $this->parserAdapter->parseFromUrlToStore($dataPointer, $graphIri, $useAc);
+		} else if ($pointerType === self::LOCATOR_FILE) {
+			$result = $this->parserAdapter->parseFromFilenameToStore($dataPointer, $graphIri, $useAc);
+		} else if ($pointerType === self::LOCATOR_DATASTRING) {
+			$result = $this->parserAdapter->parseFromDataStringToStore($dataPointer, $graphIri, $useAc, $baseIri);
 		} else {
-			if ($pointerType === self::LOCATOR_FILE) {
-				$result = $this->parserAdapter->parseFromFilenameToStore($dataPointer, $graphIri, $useAc);
-			} else {
-				if ($pointerType === self::LOCATOR_DATASTRING) {
-					$result = $this->parserAdapter->parseFromDataStringToStore($dataPointer, $graphIri, $useAc, $baseIri);
-				} else {
-					throw new RdfParserException('Type of data pointer not valid.');
-				}
-			}
+			throw new RdfParserException('Type of data pointer not valid.');
 		}
 
 		return $result;
