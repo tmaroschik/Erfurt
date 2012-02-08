@@ -21,7 +21,7 @@ namespace Erfurt\Sparql\Parser\Sparql10;
  *                                                                        */
  # for convenience in actions
 if (!defined('HIDDEN')) define('HIDDEN', \BaseRecognizer::$HIDDEN);
-class Sparql10Lexer extends \AntlrLexer {
+class QueryLexer extends \AntlrLexer {
 
 	static $PREFIX = 5;
 	static $EXPONENT = 60;
@@ -133,7 +133,7 @@ class Sparql10Lexer extends \AntlrLexer {
 
 	function __construct($input, $state = null) {
 		parent::__construct($input, $state);
-		$this->gTokenizer = new Sparql10\Tokenizer($input, $state);
+		$this->gTokenizer = new Query\Tokenizer($input, $state);
 
 	}
 

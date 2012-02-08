@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8') ;
-namespace Erfurt\Sparql\Parser\Sparql10\Sparql10;
+namespace Erfurt\Sparql\Parser\Sparql10\Query;
 
 /*                                                                        *
  * This script belongs to the Erfurt framework.                           *
@@ -603,11 +603,11 @@ class Tokenizer extends \AntlrLexer {
 	// delegates
 	// delegators
 	/**
-	 * @param Sparql10\Sparql10Lexer $gErfurt_Sparql_Parser_Sparql10_Sparql10
+	 * @param Sparql10Query\Sparql10Lexer $gErfurt_Sparql_Parser_Sparql10_Sparql10
 	 */
 	public $gSparql10;
 	/**
-	 * @param Sparql10\Sparql10Lexer $gErfurt_Sparql_Parser_Sparql10_Sparql10
+	 * @param Sparql10Query\Sparql10Lexer $gErfurt_Sparql_Parser_Sparql10_Sparql10
 	 */
 	public $gParent;
 	function __construct($input, $state = null) {

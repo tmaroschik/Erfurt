@@ -28,7 +28,7 @@ namespace Erfurt\Sparql\Parser\Sparql10;
  */
 # for convenience in actions
 if (!defined('HIDDEN')) define('HIDDEN', \BaseRecognizer::$HIDDEN);
-class Sparql10Parser extends \AntlrParser {
+class QueryParser extends \AntlrParser {
 
 	public static $tokenNames = array(
 		"<invalid>", "<EOR>", "<DOWN>", "<UP>", "BASE", "PREFIX", "NOT", "SELECT", "DISTINCT", "REDUCED", "CONSTRUCT", "DESCRIBE", "ASK", "FROM", "NAMED", "WHERE", "ORDER", "GROUP", "BY", "ASC", "DESC", "LIMIT", "OFFSET", "OPTIONAL", "GRAPH", "UNION", "FILTER", "A", "AS", "STR", "LANG", "LANGMATCHES", "DATATYPE", "BOUND", "SAMETERM", "ISIRI", "ISURI", "ISBLANK", "ISLITERAL", "REGEX", "TRUE", "FALSE", "LESS", "GREATER", "OPEN_CURLY_BRACE", "CLOSE_CURLY_BRACE", "IRI_REF", "PN_PREFIX", "PNAME_NS", "PN_LOCAL", "PNAME_LN", "VARNAME", "VAR1", "VAR2", "MINUS", "LANGTAG", "INTEGER", "DOT", "DECIMAL", "DIGIT", "EXPONENT", "DOUBLE", "PLUS", "INTEGER_POSITIVE", "DECIMAL_POSITIVE", "DOUBLE_POSITIVE", "INTEGER_NEGATIVE", "DECIMAL_NEGATIVE", "DOUBLE_NEGATIVE", "ECHAR", "UNICODE_CHAR", "STRING_LITERAL1", "STRING_LITERAL2", "STRING_LITERAL_LONG1", "STRING_LITERAL_LONG2", "HEX_DIGIT", "EOL", "WS", "PN_CHARS_BASE", "PN_CHARS_U", "PN_CHARS", "BLANK_NODE_LABEL", "REFERENCE", "AND", "OR", "OR_SINGLE", "COMMENT", "SEMICOLON", "ASTERISK", "COMMA", "NOT_SIGN", "DIVIDE", "EQUAL", "OPEN_BRACE", "CLOSE_BRACE", "LESS_EQUAL", "GREATER_EQUAL", "NOT_EQUAL", "OPEN_SQUARE_BRACE", "CLOSE_SQUARE_BRACE", "HAT_LABEL"
@@ -144,7 +144,7 @@ class Sparql10Parser extends \AntlrParser {
 			$state = new \RecognizerSharedState();
 		}
 		parent::__construct($input, $state);
-		$this->gSparql10 = new Sparql10\Sparql10($input, $state, $this);
+		$this->gSparql10 = new Query\Sparql10Query($input, $state, $this);
 
 	}
 
@@ -473,7 +473,7 @@ class Sparql10Parser extends \AntlrParser {
 
 }
 
-Sparql10Parser::$FOLLOW_query10_in_parse71 = new \Set(array());
-Sparql10Parser::$FOLLOW_EOF_in_parse73 = new \Set(array(1));
+QueryParser::$FOLLOW_query10_in_parse71 = new \Set(array());
+QueryParser::$FOLLOW_EOF_in_parse73 = new \Set(array(1));
 
 ?>

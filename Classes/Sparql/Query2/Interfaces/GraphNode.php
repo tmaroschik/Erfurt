@@ -25,7 +25,7 @@ namespace Erfurt\Sparql\Query2\Interfaces;
  * @package Semantic
  * @scope prototype
  */
-interface GraphNode extends IfObjectList {
+interface GraphNode extends ObjectList {
 
 }
 

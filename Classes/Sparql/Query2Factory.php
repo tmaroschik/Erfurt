@@ -43,6 +43,10 @@ class Query2Factory implements \Erfurt\Singleton {
 		$this->objectManager = $objectManager;
 	}
 
+	public function create($queryString, $parsePartial = null) {
+		return $this->createFromQueryString($queryString, $parsePartial);
+	}
+
 	public function createFromQueryString($queryString, $parsePartial = null) {
 		// $parser = new Erfurt_Sparql_Parser_Sparql10();
 		// $fromParser = $parser->initFromString($queryString, array());
@@ -52,7 +56,7 @@ class Query2Factory implements \Erfurt\Singleton {
 		//     throw new Exception("Error in parser: ". print_r($fromParser['errors'], true));
 		//     return null;
 		// }
-		$parser = $this->objectManager->create('Parser\Sparql10');
+		$parser = $this->objectManager->create('Erfurt\Sparql\Parser\Sparql10Query');
 		try {
 			$q = $parser->initFromString($queryString, $parsePartial);
 			if ($q['errors']) {

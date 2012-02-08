@@ -33,6 +33,10 @@ class ClassLoader {
 	 */
 	protected $packages = array();
 
+	public function __construct() {
+		require EF_PATH_FRAMEWORK . 'Resources/PHP/Antlr/antlr.php';
+	}
+
 	/**
 	 * Loads php files containing classes or interfaces found in the classes directory of
 	 * a package and specifically registered classes.

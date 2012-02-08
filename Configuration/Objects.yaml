@@ -52,6 +52,9 @@ Erfurt\Session\SessionInterface:
 Erfurt\Sparql\SimpleQuery:
   factoryObjectName: Erfurt\Sparql\SimpleQueryFactory
 
+Erfurt\Sparql\Query2:
+  factoryObjectName: Erfurt\Sparql\Query2Factory
+
 Erfurt\Store\Store:
   arguments:
     1:

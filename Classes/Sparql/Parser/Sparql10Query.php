@@ -26,15 +26,15 @@ namespace Erfurt\Sparql\Parser;
  * @copyright Copyright (c) 2010 {@link http://aksw.org aksw}
  * @license http://opensource.org/licenses/gpl-license.php GNU General Public License (GPL)
  */
-class Sparql10 implements SparqlInterface {
+class Sparql10Query implements SparqlInterface {
 
 	public static function initFromString($queryString, $parsePartial = null) {
 		$retval = null;
 		$input = new Util\CaseInsensitiveStream($queryString);
-		$lexer = new Sparql10\Sparql10Lexer($input);
+		$lexer = new Sparql10\QueryLexer($input);
 		//		if (!count($lexer->getErrors())) {
 		$tokens = new \CommonTokenStream($lexer);
-		$parser = new Sparql10\Sparql10Parser($tokens);
+		$parser = new Sparql10\QueryParser($tokens);
 		if ($parsePartial != null && is_string($parsePartial) && method_exists($parser, $parsePartial)) {
 			$retval = call_user_func(array($parser, $parsePartial));
 		} else {
